@@ -248,10 +248,9 @@ export default function StudioPage() {
             camera_height: geometry.cameraHeight,
             eye_line: geometry.eyeLine,
           });
-          liveVisualAlertCountRef.current = weakestVisualCategories(liveVcs.categories).filter(
-            (c) => c.score < 60,
-          ).length;
-          const worst = weakestVisualCategories(liveVcs.categories)[0];
+          const measurable = weakestVisualCategories(liveVcs.categories);
+          liveVisualAlertCountRef.current = measurable.filter((c) => c.score < 60).length;
+          const worst = measurable[0];
           if (worst) liveFramingSignalRef.current = buildFramingSignal(worst.score, worst.label);
         }
       }
@@ -393,7 +392,7 @@ export default function StudioPage() {
       // going on, the right move is to defer everything else to the
       // post-session report, not pile on another interruption.
       const dls = computeDeliveryLoadScore({
-        activeSignalCount: signals.length,
+        activeSignals: signals,
         scriptCompletionRatio: null,
         visualAlertCount: liveVisualAlertCountRef.current,
         speechDifficulty: Math.min(100, liveFillerRateRef.current * 5),

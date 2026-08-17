@@ -65,14 +65,24 @@ export function buildFramingSignal(deviationScore: number, categoryLabel: string
   };
 }
 
-/** Catch-all lower-priority signal, e.g. a filler-word spike — DRM's "minor delivery issue." */
+const FILLER_ACTIONABLE_THRESHOLD = 8;
+
+/**
+ * Catch-all lower-priority signal, e.g. a filler-word spike — DRM's
+ * "minor delivery issue." Severity is rescaled to the same ~50-100 range
+ * the other signal builders use once they clear their own threshold
+ * (drift/framing/pacing all land there too) — a raw fillerRate (typically
+ * single digits to ~20) would otherwise read as trivially low severity
+ * next to them despite being equally "actionable."
+ */
 export function buildFillerSignal(fillerRate: number): DeliverySignal | null {
-  if (fillerRate < 8) return null;
-  return { category: "other", severity: clamp(fillerRate, 0, 100), message: "Take a breath instead of filling the pause." };
+  if (fillerRate < FILLER_ACTIONABLE_THRESHOLD) return null;
+  const severity = clamp(50 + (fillerRate - FILLER_ACTIONABLE_THRESHOLD) * 5, 50, 100);
+  return { category: "other", severity, message: "Take a breath instead of filling the pause." };
 }
 
 export interface DeliveryLoadInputs {
-  activeSignalCount: number;
+  activeSignals: DeliverySignal[];
   /** 0-1, fraction of script nodes already covered so far — lower means more ground still to cover. */
   scriptCompletionRatio: number | null;
   visualAlertCount: number;
@@ -86,13 +96,22 @@ export interface DeliveryLoadInputs {
  * treatment as P1's Genericity Score. `scriptCompletionRatio` is null
  * when no script was prepared for this take — that component is dropped
  * and the remaining three renormalized, not scored as maximum complexity.
+ *
+ * The "active feedback signals" component uses each signal's own severity
+ * (not just how many are firing), with a modest bump per additional
+ * simultaneous signal — a single mild issue shouldn't load the founder as
+ * much as several severe ones firing at once.
  */
 export function computeDeliveryLoadScore(inputs: DeliveryLoadInputs): number {
-  const components = [
-    clamp(inputs.activeSignalCount * 25, 0, 100),
-    clamp(inputs.visualAlertCount * 25, 0, 100),
-    clamp(inputs.speechDifficulty, 0, 100),
-  ];
+  const signalLoad = inputs.activeSignals.length
+    ? clamp(
+        average(inputs.activeSignals.map((s) => s.severity)) * (1 + 0.15 * (inputs.activeSignals.length - 1)),
+        0,
+        100,
+      )
+    : 0;
+
+  const components = [signalLoad, clamp(inputs.visualAlertCount * 25, 0, 100), clamp(inputs.speechDifficulty, 0, 100)];
   if (inputs.scriptCompletionRatio !== null) {
     components.push(clamp((1 - inputs.scriptCompletionRatio) * 100, 0, 100));
   }

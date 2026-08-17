@@ -29,7 +29,7 @@ function buildPrompt(topic: string, recentTranscript: string): string {
 
 async function assessWithAnthropic(apiKey: string, topic: string, recentTranscript: string): Promise<number> {
   const client = new Anthropic({ apiKey });
-  const model = process.env.LYCEUM_LIVE_MODEL ?? "claude-sonnet-5";
+  const model = process.env.LYCEUM_ONBOARDING_MODEL ?? "claude-sonnet-5";
 
   const message = await client.messages.create({
     model,
