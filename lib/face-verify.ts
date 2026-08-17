@@ -1,5 +1,5 @@
-import OpenAI from "openai";
 import { z } from "zod";
+import { GPT_VISION_MODEL, getOpenRouterClient } from "./openrouter";
 
 const FaceVerificationSchema = z.object({
   isRealFace: z.boolean(),
@@ -38,16 +38,10 @@ Respond with the structured JSON only.`;
  * style suggestions happens separately in lib/onboarding-llm.ts.
  */
 export async function verifyFace(imageDataUrl: string): Promise<FaceVerification> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set. Face verification requires it.");
-  }
-
-  const client = new OpenAI({ apiKey });
-  const model = process.env.LYCEUM_FACE_VERIFY_MODEL ?? "gpt-4o-mini";
+  const client = getOpenRouterClient();
 
   const response = await client.chat.completions.create({
-    model,
+    model: GPT_VISION_MODEL,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       {

@@ -2,6 +2,7 @@
 
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
@@ -42,9 +43,13 @@ export default function AppHome() {
       <div>
         <h1>You&apos;re in, {user.email ?? "stranger"}.</h1>
         <p>
-          There&apos;s nothing here yet. That&apos;s not a bug, that&apos;s the roadmap. Check
-          back after the next pivot.
+          The console is still mostly roadmap. The one real thing here: the
+          filming studio.
         </p>
+        <Link href="/studio" className="btn btn-primary" style={{ marginBottom: 12 }}>
+          Open Studio
+        </Link>
+        <br />
         <button className="btn btn-ghost" onClick={() => signOut(auth)}>
           Sign out
         </button>

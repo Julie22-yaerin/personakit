@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
+import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import {
   PERSONA_DIMENSIONS,
   PersonaVectorSchema,
@@ -126,14 +126,12 @@ async function synthesizeWithAnthropic(
 }
 
 async function synthesizeWithOpenAI(
-  apiKey: string,
   input: OnboardingSynthesisInput,
 ): Promise<OnboardingSynthesisResult> {
-  const client = new OpenAI({ apiKey });
-  const model = process.env.LYCEUM_ONBOARDING_FALLBACK_MODEL ?? "gpt-4o";
+  const client = getOpenRouterClient();
 
   const response = await client.chat.completions.create({
-    model,
+    model: GPT_REASONING_MODEL,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: buildUserPrompt(input) },
@@ -178,8 +176,8 @@ async function synthesizeWithOpenAI(
 
 /**
  * Claude is the preferred synthesis model (matches every other prompt in
- * this app); when ANTHROPIC_API_KEY isn't set, this falls back to OpenAI
- * so onboarding still works end-to-end with just an OpenAI key.
+ * this app); when ANTHROPIC_API_KEY isn't set, this falls back to GPT via
+ * OpenRouter so onboarding still works end-to-end.
  */
 export async function synthesizeOnboarding(
   input: OnboardingSynthesisInput,
@@ -187,10 +185,9 @@ export async function synthesizeOnboarding(
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return synthesizeWithAnthropic(anthropicKey, input);
 
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (openaiKey) return synthesizeWithOpenAI(openaiKey, input);
+  if (process.env.OPENROUTER_API_KEY) return synthesizeWithOpenAI(input);
 
   throw new Error(
-    "Neither ANTHROPIC_API_KEY nor OPENAI_API_KEY is set. Onboarding analysis needs one of them.",
+    "Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Onboarding analysis needs one of them.",
   );
 }
