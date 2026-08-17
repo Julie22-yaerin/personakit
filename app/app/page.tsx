@@ -43,11 +43,15 @@ export default function AppHome() {
       <div>
         <h1>You&apos;re in, {user.email ?? "stranger"}.</h1>
         <p>
-          The console is still mostly roadmap. Two real things here: the
-          identity interview and the filming studio.
+          The console is still mostly roadmap. Three real things here: the
+          identity interview, content scoring, and the filming studio.
         </p>
         <Link href="/identity" className="btn btn-primary" style={{ marginBottom: 12 }}>
           Founder Identity
+        </Link>
+        <br />
+        <Link href="/content" className="btn btn-ghost" style={{ marginBottom: 12 }}>
+          Content Lab
         </Link>
         <br />
         <Link href="/studio" className="btn btn-ghost" style={{ marginBottom: 12 }}>

@@ -1,0 +1,85 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { CommunicationProfileSchema, FounderOriginSchema, IdentityCategorySchema } from "../../../../lib/founder-identity";
+import { extractContentScoring } from "../../../../lib/content-llm";
+import {
+  classifyGenericity,
+  classifyPersonaStability,
+  classifyProvocation,
+  classifyProvocationQuality,
+  genericityScore,
+  personaStabilityScore,
+  provocationQuality,
+  provocationScore,
+  weakestPersonaStabilityFactors,
+} from "../../../../lib/content-scoring";
+
+export const runtime = "nodejs";
+
+const RequestSchema = z.object({
+  content: z.string().min(1),
+  candidates: z.array(z.object({ category: IdentityCategorySchema, text: z.string().min(1) })),
+  communicationProfile: CommunicationProfileSchema.optional(),
+  founderOrigin: FounderOriginSchema.optional(),
+});
+
+/**
+ * DRM §6/§16/§17/§18 — P1 content scoring. The LLM only extracts raw
+ * components (lib/content-llm.ts); every final score below is a pure
+ * function of those components (lib/content-scoring.ts).
+ */
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => null);
+  const parsed = RequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  const { content, candidates, communicationProfile, founderOrigin } = parsed.data;
+
+  if (candidates.length === 0) {
+    return NextResponse.json(
+      { error: "No confirmed identity yet — confirm at least one candidate on /identity before scoring content." },
+      { status: 400 },
+    );
+  }
+  if (content.trim().split(/\s+/).length < 5) {
+    return NextResponse.json({ error: "That's too short to score meaningfully." }, { status: 400 });
+  }
+
+  try {
+    const extraction = await extractContentScoring(content, { candidates, communicationProfile, founderOrigin });
+
+    const stability = personaStabilityScore(extraction.personaStability);
+    const generic = genericityScore(extraction.genericity);
+    const provocation = provocationScore(extraction.provocation);
+    const pq = provocationQuality(provocation, extraction.evidenceStrength);
+
+    return NextResponse.json({
+      personaStability: {
+        score: stability,
+        label: classifyPersonaStability(stability),
+        components: extraction.personaStability,
+        weakestFactors: weakestPersonaStabilityFactors(extraction.personaStability),
+        notes: extraction.stabilityNotes,
+      },
+      genericity: {
+        score: generic,
+        label: classifyGenericity(generic),
+        components: extraction.genericity,
+        flaggedPhrases: extraction.flaggedPhrases,
+      },
+      provocation: {
+        score: provocation,
+        label: classifyProvocation(provocation),
+        components: extraction.provocation,
+        evidenceStrength: extraction.evidenceStrength,
+        quality: pq,
+        qualityLabel: classifyProvocationQuality(pq),
+        notes: extraction.provocationNotes,
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Content scoring failed.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+}
