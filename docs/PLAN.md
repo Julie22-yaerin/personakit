@@ -11,13 +11,16 @@ unit-tested TypeScript package with zero LLM calls. The API layer wires the
 two together and never lets the LLM emit a final score itself.
 
 ```
-apps/web              Next.js console (UI + API routes)
-packages/scoring-engine  pure deterministic math (§2,3,5,7,8,9) — no I/O
+apps/web                 Next.js console (UI + API routes)
+packages/scoring-engine  pure deterministic math (§2,3,5-12,15,17-20) — no I/O
 packages/llm-extraction  Claude prompts + zod schemas → structured JSON
-packages/shared-types    zod schemas / types shared across the two above
+packages/shared-types    zod schemas / types shared across the packages above
+packages/store           JSON-file-backed persistence for Layer 6's training data
 ```
 
-## Phase 1 — Layers 1–3 (this iteration)
+## Status: Phases 1–4 (Layers 1–6) implemented
+
+## Phase 1 — Layers 1–3
 
 ### 1. Repo scaffold
 - pnpm workspace monorepo: `apps/web`, `packages/scoring-engine`,
@@ -69,32 +72,50 @@ that Layer 3 doesn't have yet. Comment Probability (§10), Persona Authenticity
 (§4), Face/Gesture Layer (§13), Script-to-Performance Alignment (§14),
 Archetype Engine (§15) are later layers/secondary per §22.
 
-## Phase 2 — Layer 4: Virality Prediction (§6, §10, §11, §12, §19, §20)
-- Information Reveal Curve extraction + visualization (§6).
-- Comment Probability σ(...) (§10).
-- VPS composite (§11) — now that Hook/CG/TS/SS/PS/PCS all exist, plus
-  Retention-structure and Memorability extraction to fill the two remaining
-  VPS terms.
-- Prediction Confidence `f(N,Q,D)` (§12) — starts LOW for every new creator
-  until historical data accumulates (needs a persistence layer / DB, first
-  real storage requirement in the project).
-- Evidence Strength Unit (§19) + the OBSERVATION→...→EVIDENCE recommendation
-  format (§20) wrapping every score the UI surfaces.
+## Phase 2 — Layer 4: Virality Prediction (§6, §10, §11, §12, §19, §20) — done
+- `reveal`/`engagement` raw sub-features added to Layer 2's per-sentence
+  extraction (one LLM call still; DRM §24 boundary unchanged).
+- `informationRevealCurve` + `classifyRevealPattern` (§6): front-loaded /
+  starved / progressive / strong-payoff, plus `retentionStructureScore` (the
+  VPS "R" term) — deterministic heuristics on the extracted curve, documented
+  in `scoring-engine/src/virality.ts`.
+- `commentProbability` — the §10 sigmoid, default equal weights documented as
+  a starting point for §18 calibration.
+- `viralPotentialScore` (§11) — exact weighted formula; renormalizes when no
+  target persona is available instead of scoring the missing PCS term as 0.
+- `predictionConfidence`/`classifyConfidence` (§12) — `f(N,Q,D)` driven by
+  `packages/store` history; LOW for a creator with zero recorded performance.
+- `evidenceStrengthUnit`/`classifyEvidence` (§19) and `buildRecommendations`
+  (§20, the OBSERVATION→...→EVIDENCE format) — both pure, template-based, no
+  LLM commentary.
+- Wired into `POST /api/script/analyze` as `viralityPrediction`.
 
-## Phase 3 — Layer 5: Script Mutation (§16, §15)
-- Content Archetype Engine (§15) — weighted archetype mixture from persona +
-  script history.
-- Content Mutation Engine (§16) — generate N controlled variants of a script
-  (e.g. curiosity-heavy vs provocation-heavy), each independently scored
-  through the Phase 1–2 pipeline so variants are comparable, not just "another
-  draft."
+## Phase 3 — Layer 5: Script Mutation (§16, §15) — done
+- `classifyArchetypes` (§15) — deterministic nearest-neighbor mixture over 10
+  hand-authored archetype exemplar persona vectors (not an LLM judgment call,
+  since the input is already numeric); folded into `POST /api/persona/extract`
+  and recomputed live in the Creator Model UI as the persona sliders move.
+- `generateScriptVariants` (§16, `packages/llm-extraction`) — LLM rewrites the
+  script toward a controlled curiosity/provocation/mystery emphasis profile;
+  each variant is then re-scored through the full Layer 2/3/4 pipeline
+  (`POST /api/script/mutate`), so DRM §24's separation still holds — the LLM
+  never emits a score, only variant text that gets independently measured.
 
-## Phase 4 — Layer 6: Performance Feedback (§17, §18)
-- Persistence for published videos + actual performance metrics (§17 schema).
-- Prediction error `E = |VPS_predicted - Performance_normalized|`.
-- Creator-specific calibration `Y = f(P,X,A)` (§18) — per-creator weight
-  recalibration from accumulated (prediction, outcome) pairs. This is the
-  loop-closing step and the actual product moat per §18/§23.
+## Phase 4 — Layer 6: Performance Feedback (§17, §18) — done
+- `packages/store` (`JsonFileStore`) — the project's first persistence layer:
+  published-video records (§17 schema) and per-creator calibration, behind a
+  `PersonaKitStore` interface so a real database can replace it later without
+  touching callers.
+- `performanceNormalizedScore` + `predictionError` (§17) — `E =
+  |VPS_predicted - Performance_normalized|`, computed in
+  `POST /api/creator/[creatorId]/performance`.
+- `recalibrateWeights` (§18) — projected-gradient-descent fit of `VpsWeights`
+  to a creator's accumulated (predicted components, actual outcome) pairs,
+  falling back to the global DRM §11 defaults until 5 samples exist. Runs
+  automatically after every recorded performance.
+- `Experiment` page — publish a prediction, record real performance, watch
+  this creator's own VPS weights diverge from the defaults. Closes the loop
+  back into the Persona Engine per DRM §25.
 
 ## Deferred / secondary (build only if it serves the loop)
 - Persona Authenticity (§4) — needs historical-content store (ties into

@@ -1,7 +1,8 @@
 "use client";
 
+import { classifyArchetypes } from "@personakit/scoring-engine";
 import { PERSONA_DIMENSIONS, type PersonaVector } from "@personakit/shared-types";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "personakit:targetPersona";
 
@@ -21,6 +22,9 @@ export default function CreatorModelPage() {
       }
     }
   }, []);
+
+  // DRM §15 — deterministic, recomputed live as the sliders move; no LLM call.
+  const archetypes = useMemo(() => (persona ? classifyArchetypes(persona) : null), [persona]);
 
   async function handleExtract() {
     setLoading(true);
@@ -95,6 +99,37 @@ export default function CreatorModelPage() {
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {archetypes && (
+        <div className="panel">
+          <h2>Archetype Mixture (Layer 5)</h2>
+          <p>
+            Primary: <strong>{archetypes.primary}</strong> · Secondary:{" "}
+            <strong>{archetypes.secondary}</strong> · Tertiary:{" "}
+            <strong>{archetypes.tertiary}</strong>
+          </p>
+          {Object.entries(archetypes.weights)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, weight]) => (
+              <div key={name} style={{ marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span>{name}</span>
+                  <span>{Math.round(weight * 100)}%</span>
+                </div>
+                <div style={{ background: "var(--border)", borderRadius: 4, height: 6 }}>
+                  <div
+                    style={{
+                      width: `${weight * 100}%`,
+                      background: "var(--accent)",
+                      height: 6,
+                      borderRadius: 4,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
         </div>
       )}
     </div>

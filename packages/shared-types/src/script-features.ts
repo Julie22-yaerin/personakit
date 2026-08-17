@@ -50,6 +50,26 @@ export const ShareabilitySubFeaturesSchema = z.object({
 });
 export type ShareabilitySubFeatures = z.infer<typeof ShareabilitySubFeaturesSchema>;
 
+/**
+ * DRM §6 — Information Reveal Curve input. `cumulativeInformationRevealed`
+ * is the running total (0-100) of how much of the script's core
+ * question/payoff has been resolved by the end of this sentence.
+ */
+export const RevealSubFeaturesSchema = z.object({
+  cumulativeInformationRevealed: score(),
+});
+export type RevealSubFeatures = z.infer<typeof RevealSubFeaturesSchema>;
+
+/** DRM §10 — Comment Probability sub-features: C, Q, D, I, F. */
+export const EngagementSubFeaturesSchema = z.object({
+  controversy: score(),
+  unresolvedQuestion: score(),
+  disagreementPotential: score(),
+  identityInvolvement: score(),
+  frictionConfusion: score(),
+});
+export type EngagementSubFeatures = z.infer<typeof EngagementSubFeaturesSchema>;
+
 export const ScriptSentenceFeaturesSchema = z.object({
   index: z.number().int().min(0),
   text: z.string().min(1),
@@ -57,6 +77,8 @@ export const ScriptSentenceFeaturesSchema = z.object({
   curiosityGap: CuriosityGapSubFeaturesSchema,
   tension: TensionSubFeaturesSchema,
   provocation: ProvocationSubFeaturesSchema,
+  reveal: RevealSubFeaturesSchema,
+  engagement: EngagementSubFeaturesSchema,
 });
 export type ScriptSentenceFeatures = z.infer<typeof ScriptSentenceFeaturesSchema>;
 

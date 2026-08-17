@@ -8,12 +8,14 @@ import {
 import { PersonaVectorSchema } from "@personakit/shared-types";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { buildViralityPrediction } from "../../../../lib/prediction";
 
 export const runtime = "nodejs";
 
 const RequestSchema = z.object({
   script: z.string().min(1, "script is required"),
   targetPersona: PersonaVectorSchema.optional(),
+  creatorId: z.string().min(1).default("default"),
 });
 
 export async function POST(request: Request) {
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { script, targetPersona } = parsed.data;
+  const { script, targetPersona, creatorId } = parsed.data;
 
   try {
     // Layer 2: LLM extracts raw sub-features. Layer 3: deterministic scoring.
@@ -46,7 +48,16 @@ export async function POST(request: Request) {
           })()
         : undefined;
 
-    return NextResponse.json({ features, scores, personaMatch });
+    // Layer 4: virality prediction, built entirely from Layer 2/3 output.
+    const viralityPrediction = await buildViralityPrediction(
+      creatorId,
+      features,
+      scores,
+      targetPersona,
+      personaMatch?.persona_consistency_score ?? null,
+    );
+
+    return NextResponse.json({ features, scores, personaMatch, viralityPrediction });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Script analysis failed.";
     return NextResponse.json({ error: message }, { status: 502 });

@@ -32,6 +32,14 @@ provocation.identityInvolvement — how much it implicates the listener's identi
 provocation.novelty — how novel the provocative framing is.
 provocation.rhetoricalAggression — how confrontational the phrasing is (NOT insult intensity — a calm, confident challenge can score high here).
 
+reveal.cumulativeInformationRevealed — 0-100, the RUNNING TOTAL (not just this sentence's own contribution) of how much of the script's central question/payoff has been resolved by the end of this sentence. Sentence 1's value is how much is already resolved by the end of sentence 1; the last sentence's value should reflect how resolved the core question is by the end of the whole script.
+
+engagement.controversy — how much this sentence's claim conflicts with a common/mainstream view.
+engagement.unresolvedQuestion — how much this sentence leaves an explicit open question in the viewer's mind.
+engagement.disagreementPotential — how likely viewers are to disagree with each other about this claim specifically.
+engagement.identityInvolvement — how much responding implicates the commenter's own identity/group.
+engagement.frictionConfusion — how confusing or hard to parse this sentence is (this should PULL DOWN comment probability, not raise it).
+
 Whole-script sub-features (shareability, scored once for the full script):
 shareability.identityRelevance — how much sharing it signals something about the sharer's identity.
 shareability.relatability — how broadly the audience will see themselves in it.
@@ -110,6 +118,32 @@ const provocationSchema = {
   ],
 };
 
+const revealSchema = {
+  type: "object" as const,
+  properties: {
+    cumulativeInformationRevealed: scoreProperty,
+  },
+  required: ["cumulativeInformationRevealed"],
+};
+
+const engagementSchema = {
+  type: "object" as const,
+  properties: {
+    controversy: scoreProperty,
+    unresolvedQuestion: scoreProperty,
+    disagreementPotential: scoreProperty,
+    identityInvolvement: scoreProperty,
+    frictionConfusion: scoreProperty,
+  },
+  required: [
+    "controversy",
+    "unresolvedQuestion",
+    "disagreementPotential",
+    "identityInvolvement",
+    "frictionConfusion",
+  ],
+};
+
 const shareabilitySchema = {
   type: "object" as const,
   properties: {
@@ -145,8 +179,19 @@ const SCRIPT_FEATURES_TOOL_INPUT_SCHEMA = {
           curiosityGap: curiosityGapSchema,
           tension: tensionSchema,
           provocation: provocationSchema,
+          reveal: revealSchema,
+          engagement: engagementSchema,
         },
-        required: ["index", "text", "hook", "curiosityGap", "tension", "provocation"],
+        required: [
+          "index",
+          "text",
+          "hook",
+          "curiosityGap",
+          "tension",
+          "provocation",
+          "reveal",
+          "engagement",
+        ],
       },
     },
     shareability: shareabilitySchema,

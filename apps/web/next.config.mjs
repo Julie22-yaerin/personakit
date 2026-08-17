@@ -5,6 +5,7 @@ const nextConfig = {
     "@personakit/shared-types",
     "@personakit/scoring-engine",
     "@personakit/llm-extraction",
+    "@personakit/store",
   ],
 };
 

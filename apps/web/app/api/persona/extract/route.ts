@@ -1,4 +1,5 @@
 import { extractPersonaVector } from "@personakit/llm-extraction";
+import { classifyArchetypes } from "@personakit/scoring-engine";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -21,7 +22,11 @@ export async function POST(request: Request) {
       parsed.data.sourceText,
       parsed.data.sourceLabel,
     );
-    return NextResponse.json({ personaVector });
+    // DRM §15 — archetype mixture is a deterministic nearest-neighbor
+    // classification over the already-numeric persona vector, not a new
+    // LLM judgment call.
+    const archetypes = classifyArchetypes(personaVector);
+    return NextResponse.json({ personaVector, archetypes });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Persona extraction failed.";
     return NextResponse.json({ error: message }, { status: 502 });

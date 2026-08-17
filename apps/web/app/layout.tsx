@@ -18,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/">Pipeline</Link>
               <Link href="/creator-model">Creator Model</Link>
               <Link href="/content-lab">Content Lab</Link>
+              <Link href="/experiment">Experiment</Link>
             </nav>
           </header>
           <main className="console-main">{children}</main>
