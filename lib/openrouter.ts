@@ -21,9 +21,9 @@ export function getOpenRouterClient(): OpenAI {
   return client;
 }
 
-/** GPT — the decision-maker: analysis, verification, structured recommendations. */
+/** GPT — the decision-maker: analysis, verification, structured recommendations. Mini only, by explicit cost instruction. */
 export const GPT_VISION_MODEL = process.env.LYCEUM_FACE_VERIFY_MODEL ?? "openai/gpt-4o-mini";
-export const GPT_REASONING_MODEL = process.env.LYCEUM_ONBOARDING_FALLBACK_MODEL ?? "openai/gpt-4o";
+export const GPT_REASONING_MODEL = process.env.LYCEUM_ONBOARDING_FALLBACK_MODEL ?? "openai/gpt-4o-mini";
 
 /** Gemini Flash — the executor: fast, cheap, live/frequent calls during filming. */
 export const GEMINI_FLASH_MODEL = process.env.LYCEUM_LIVE_MODEL ?? "google/gemini-3.7-flash";
