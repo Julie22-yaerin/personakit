@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { z } from "zod";
 import {
   CommunicationProfileSchema,
@@ -54,6 +55,11 @@ function buildUserPrompt(answers: InterviewAnswers): string {
     .join("\n\n");
 }
 
+// additionalProperties:false is required on EVERY object node (not just the
+// top level) for OpenAI/OpenRouter's strict structured-outputs mode — the
+// Anthropic tool schema doesn't need it, but it's harmless there too, so
+// these shapes are shared by both call sites below.
+
 const CANDIDATE_ITEM_SCHEMA = {
   type: "object" as const,
   properties: {
@@ -62,6 +68,7 @@ const CANDIDATE_ITEM_SCHEMA = {
     evidenceQuote: { type: "string" as const, minLength: 1 },
   },
   required: ["category", "text", "evidenceQuote"],
+  additionalProperties: false as const,
 };
 
 const COMMUNICATION_PROFILE_SCHEMA = {
@@ -73,6 +80,7 @@ const COMMUNICATION_PROFILE_SCHEMA = {
     vocabulary: { type: "string" as const, minLength: 1 },
   },
   required: ["communicationStyle", "humorStyle", "emotionalStyle", "vocabulary"],
+  additionalProperties: false as const,
 };
 
 const FOUNDER_ORIGIN_SCHEMA = {
@@ -82,6 +90,7 @@ const FOUNDER_ORIGIN_SCHEMA = {
     text: { type: "string" as const, minLength: 1 },
   },
   required: ["title", "text"],
+  additionalProperties: false as const,
 };
 
 const RAW_RESULT_SCHEMA = z.object({
@@ -98,9 +107,9 @@ const RAW_RESULT_SCHEMA = z.object({
 
 function withIds(raw: z.infer<typeof RAW_RESULT_SCHEMA>): IdentityExtractionResult {
   return {
-    candidates: raw.candidates.map((c, i) =>
+    candidates: raw.candidates.map((c) =>
       IdentityCandidateSchema.parse({
-        id: `cand_${Date.now()}_${i}`,
+        id: crypto.randomUUID(),
         category: c.category,
         text: c.text,
         evidenceQuote: c.evidenceQuote,
@@ -119,68 +128,107 @@ async function extractWithAnthropic(
   const client = new Anthropic({ apiKey });
   const model = process.env.LYCEUM_ONBOARDING_MODEL ?? "claude-sonnet-5";
 
-  const message = await client.messages.create({
-    model,
-    max_tokens: 2048,
-    system: SYSTEM_PROMPT,
-    tools: [
-      {
-        name: "record_identity_extraction",
-        description: "Record the extracted identity candidates and descriptive profile.",
-        input_schema: {
-          type: "object",
-          properties: {
-            candidates: { type: "array", items: CANDIDATE_ITEM_SCHEMA },
-            communicationProfile: COMMUNICATION_PROFILE_SCHEMA,
-            founderOrigin: FOUNDER_ORIGIN_SCHEMA,
+  const attempt = async (correction?: string): Promise<IdentityExtractionResult> => {
+    const message = await client.messages.create({
+      model,
+      max_tokens: 2048,
+      system: SYSTEM_PROMPT,
+      tools: [
+        {
+          name: "record_identity_extraction",
+          description: "Record the extracted identity candidates and descriptive profile.",
+          input_schema: {
+            type: "object",
+            properties: {
+              candidates: { type: "array", items: CANDIDATE_ITEM_SCHEMA },
+              communicationProfile: COMMUNICATION_PROFILE_SCHEMA,
+              founderOrigin: FOUNDER_ORIGIN_SCHEMA,
+            },
+            required: ["candidates", "communicationProfile", "founderOrigin"],
           },
-          required: ["candidates", "communicationProfile", "founderOrigin"],
         },
-      },
-    ],
-    tool_choice: { type: "tool", name: "record_identity_extraction" },
-    messages: [{ role: "user", content: buildUserPrompt(answers) }],
-  });
+      ],
+      tool_choice: { type: "tool", name: "record_identity_extraction" },
+      messages: [
+        {
+          role: "user",
+          content: correction
+            ? `${buildUserPrompt(answers)}\n\n${correction}`
+            : buildUserPrompt(answers),
+        },
+      ],
+    });
 
-  const toolUse = message.content.find(
-    (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
-  );
-  if (!toolUse) throw new Error("Claude did not call the extraction tool.");
+    const toolUse = message.content.find(
+      (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
+    );
+    if (!toolUse) throw new Error("Claude did not call the extraction tool.");
 
-  return withIds(RAW_RESULT_SCHEMA.parse(toolUse.input));
+    return withIds(RAW_RESULT_SCHEMA.parse(toolUse.input));
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    // Only retry malformed-output errors (schema parse / missing tool call)
+    // — a real API error (auth, rate limit, billing) will just fail the
+    // same way again, so retrying only doubles the wasted call.
+    if (err instanceof Anthropic.APIError) throw err;
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(
+      `Your previous response did not satisfy the required schema (${reason}). Call the tool again with every field present, and evidenceQuote copied verbatim from the answers above.`,
+    );
+  }
 }
 
 async function extractWithOpenAI(answers: InterviewAnswers): Promise<IdentityExtractionResult> {
   const client = getOpenRouterClient();
 
-  const response = await client.chat.completions.create({
-    model: GPT_REASONING_MODEL,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserPrompt(answers) },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "identity_extraction",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            candidates: { type: "array", items: CANDIDATE_ITEM_SCHEMA },
-            communicationProfile: COMMUNICATION_PROFILE_SCHEMA,
-            founderOrigin: FOUNDER_ORIGIN_SCHEMA,
+  const attempt = async (correction?: string): Promise<IdentityExtractionResult> => {
+    const response = await client.chat.completions.create({
+      model: GPT_REASONING_MODEL,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: correction
+            ? `${buildUserPrompt(answers)}\n\n${correction}`
+            : buildUserPrompt(answers),
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "identity_extraction",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              candidates: { type: "array", items: CANDIDATE_ITEM_SCHEMA },
+              communicationProfile: COMMUNICATION_PROFILE_SCHEMA,
+              founderOrigin: FOUNDER_ORIGIN_SCHEMA,
+            },
+            required: ["candidates", "communicationProfile", "founderOrigin"],
+            additionalProperties: false,
           },
-          required: ["candidates", "communicationProfile", "founderOrigin"],
-          additionalProperties: false,
         },
       },
-    },
-  });
+    });
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error("OpenAI returned no content.");
-  return withIds(RAW_RESULT_SCHEMA.parse(JSON.parse(content)));
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error("Model returned no content.");
+    return withIds(RAW_RESULT_SCHEMA.parse(JSON.parse(content)));
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    if (err instanceof OpenAI.APIError) throw err;
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(
+      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present, and evidenceQuote copied verbatim from the answers above.`,
+    );
+  }
 }
 
 export async function extractIdentityCandidates(

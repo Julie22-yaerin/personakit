@@ -69,6 +69,10 @@ export const INTERVIEW_QUESTIONS = [
       "What's the origin story — why did you start this? What happened that made you obsessed with this problem?",
   },
   {
+    id: "motivation",
+    prompt: "What are you actually chasing here — for yourself, not the pitch-deck version?",
+  },
+  {
     id: "contrarian_belief",
     prompt: "What do you believe about your industry that most people disagree with?",
   },
@@ -95,6 +99,13 @@ export const INTERVIEW_QUESTIONS = [
 ] as const;
 
 export type InterviewQuestionId = (typeof INTERVIEW_QUESTIONS)[number]["id"];
+
+/** Minimum words for an interview answer to be worth sending to extraction at all. */
+export const MIN_ANSWER_WORDS = 3;
+
+export function isAnswerSubstantive(answer: string | undefined): boolean {
+  return (answer ?? "").trim().split(/\s+/).filter(Boolean).length >= MIN_ANSWER_WORDS;
+}
 
 export const InterviewAnswersSchema = z.record(z.string(), z.string());
 export type InterviewAnswers = z.infer<typeof InterviewAnswersSchema>;

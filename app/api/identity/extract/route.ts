@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { InterviewAnswersSchema } from "../../../../lib/founder-identity";
+import { INTERVIEW_QUESTIONS, InterviewAnswersSchema, isAnswerSubstantive } from "../../../../lib/founder-identity";
 import { extractIdentityCandidates } from "../../../../lib/identity-llm";
 import { computeSelfKnowledgeScore } from "../../../../lib/identity-scoring";
 
@@ -23,12 +23,20 @@ export async function POST(request: Request) {
   }
   const { answers } = parsed.data;
 
+  const missing = INTERVIEW_QUESTIONS.filter((q) => !isAnswerSubstantive(answers[q.id]));
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `These answers are missing or too short: ${missing.map((q) => q.id).join(", ")}` },
+      { status: 400 },
+    );
+  }
+
   try {
     const extraction = await extractIdentityCandidates(answers);
 
     const selfKnowledgeScore = computeSelfKnowledgeScore({
       beliefText: answers.contrarian_belief ?? "",
-      motivationText: answers.origin ?? "",
+      motivationText: answers.motivation ?? "",
       worldviewText: `${answers.contrarian_belief ?? ""} ${answers.frustration ?? ""}`,
       originText: answers.origin ?? "",
       boundaryText: answers.boundaries ?? "",
