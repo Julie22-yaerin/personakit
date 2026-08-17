@@ -140,7 +140,9 @@ export function classifyVisualConsistency(score: number): VisualConsistencyLabel
 }
 
 /** Ranks which measurable category is furthest off the founder's declared signature, worst first. */
-export function weakestVisualCategories(categories: VisualCategoryResult[]): VisualCategoryResult[] {
+export function weakestVisualCategories(
+  categories: VisualCategoryResult[],
+): (VisualCategoryResult & { score: number })[] {
   return categories
     .filter((c): c is VisualCategoryResult & { score: number } => c.score !== null)
     .sort((a, b) => a.score - b.score);

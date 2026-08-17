@@ -20,7 +20,18 @@ import {
 } from "../../lib/speech-analysis";
 import type { SessionPlan } from "../../lib/studio-llm";
 import { SCRIPT_NODE_LABELS, type ScriptGraph, type ScriptNodeCoverage, type DriftSegment } from "../../lib/script";
-import { VisualSessionAccumulator } from "../../lib/visual-measurement";
+import { generateEditSuggestions, type EditSuggestion } from "../../lib/edit-suggestions";
+import {
+  buildDriftSignal,
+  buildFillerSignal,
+  buildFramingSignal,
+  buildPacingSignal,
+  computeDeliveryLoadScore,
+  isDeliveryLoadHigh,
+  selectPriorityIssue,
+  type DeliverySignal,
+} from "../../lib/delivery-load";
+import { readFrameGeometry, VisualSessionAccumulator } from "../../lib/visual-measurement";
 import {
   classifyVisualConsistency,
   computeVisualConsistencyScore,
@@ -106,6 +117,7 @@ export default function StudioPage() {
   const [deliveryReport, setDeliveryReport] = useState<DeliveryReport | null>(null);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const [editSuggestions, setEditSuggestions] = useState<EditSuggestion[]>([]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -121,6 +133,19 @@ export default function StudioPage() {
   const volumeSamplesRef = useRef<number[]>([]);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartRef = useRef<number>(0);
+  const transcriptRef = useRef("");
+  const livePacingSignalRef = useRef<DeliverySignal | null>(null);
+  const liveFramingSignalRef = useRef<DeliverySignal | null>(null);
+  const liveFillerSignalRef = useRef<DeliverySignal | null>(null);
+  const liveFillerRateRef = useRef(0);
+  const liveVisualAlertCountRef = useRef(0);
+
+  // The coach loop's setInterval closure is created once per recording
+  // session and never sees new renders — without this, it would keep
+  // reading the empty `transcript` from the moment recording started.
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
 
   // Auth + onboarding gate, and pull the persona baseline / last session plan.
   useEffect(() => {
@@ -203,8 +228,33 @@ export default function StudioPage() {
         setLiveVolume(volume);
       }
       const elapsedMs = Date.now() - sessionStartRef.current;
-      setLiveWpm(computeSpeechRate(speechSegmentsRef.current, elapsedMs));
-      setLiveFillerRate(computeFillerRate(speechSegmentsRef.current));
+      const wpm = computeSpeechRate(speechSegmentsRef.current, elapsedMs);
+      const fillerRate = computeFillerRate(speechSegmentsRef.current);
+      setLiveWpm(wpm);
+      setLiveFillerRate(fillerRate);
+      liveFillerRateRef.current = fillerRate;
+
+      livePacingSignalRef.current = buildPacingSignal(wpm);
+      liveFillerSignalRef.current = buildFillerSignal(fillerRate);
+
+      liveFramingSignalRef.current = null;
+      liveVisualAlertCountRef.current = 0;
+      if (visualTargets) {
+        const geometry = readFrameGeometry(result.landmarks, result.blendshapes);
+        if (geometry) {
+          const liveVcs = computeVisualConsistencyScore(visualTargets, {
+            framing: geometry.framing,
+            camera_distance: geometry.cameraDistance,
+            camera_height: geometry.cameraHeight,
+            eye_line: geometry.eyeLine,
+          });
+          liveVisualAlertCountRef.current = weakestVisualCategories(liveVcs.categories).filter(
+            (c) => c.score < 60,
+          ).length;
+          const worst = weakestVisualCategories(liveVcs.categories)[0];
+          if (worst) liveFramingSignalRef.current = buildFramingSignal(worst.score, worst.label);
+        }
+      }
     }, METRICS_INTERVAL_MS);
   }
 
@@ -300,17 +350,69 @@ export default function StudioPage() {
     }
   }
 
+  /**
+   * DRM §11-14 — real-time coaching is signal-driven, not LLM opinion:
+   * gather whatever deterministic signals are currently actionable
+   * (drift, pacing, framing, filler), let selectPriorityIssue pick the
+   * ONE highest-priority one per its fixed order, and show its template
+   * message. Only when nothing deterministic is actionable does this
+   * fall back to the original freeform Gemini coaching tip — preserving
+   * that feature for the "nothing's specifically wrong, but here's a
+   * direction" case it was built for.
+   */
   function startCoachLoop() {
     coachIntervalRef.current = setInterval(async () => {
       const video = videoRef.current;
       if (!video || video.readyState < 2) return;
+
+      const signals: DeliverySignal[] = [];
+      if (scriptGraph) {
+        try {
+          const res = await fetch("/api/studio/live-drift", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              topic: scriptGraph.sourceText,
+              recentTranscript: transcriptRef.current.slice(-600),
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            const driftSignal = buildDriftSignal(100 - data.relevance);
+            if (driftSignal) signals.push(driftSignal);
+          }
+        } catch {
+          // best-effort — a missed drift check just means no drift signal this tick
+        }
+      }
+      if (livePacingSignalRef.current) signals.push(livePacingSignalRef.current);
+      if (liveFramingSignalRef.current) signals.push(liveFramingSignalRef.current);
+      if (liveFillerSignalRef.current) signals.push(liveFillerSignalRef.current);
+
+      // DRM §11-14 — target DLS < 35. When there's already this much
+      // going on, the right move is to defer everything else to the
+      // post-session report, not pile on another interruption.
+      const dls = computeDeliveryLoadScore({
+        activeSignalCount: signals.length,
+        scriptCompletionRatio: null,
+        visualAlertCount: liveVisualAlertCountRef.current,
+        speechDifficulty: Math.min(100, liveFillerRateRef.current * 5),
+      });
+      if (isDeliveryLoadHigh(dls)) return;
+
+      const priority = selectPriorityIssue(signals);
+      if (priority) {
+        showTip(priority.message);
+        return;
+      }
+
       try {
         const res = await fetch("/api/studio/coach", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             frameDataUrl: frameToDataUrl(video),
-            recentTranscript: transcript.slice(-600),
+            recentTranscript: transcriptRef.current.slice(-600),
             personaVector,
             lastPlan,
           }),
@@ -330,6 +432,10 @@ export default function StudioPage() {
     visualAccumulatorRef.current = new VisualSessionAccumulator();
     speechSegmentsRef.current = [];
     volumeSamplesRef.current = [];
+    livePacingSignalRef.current = null;
+    liveFramingSignalRef.current = null;
+    liveFillerSignalRef.current = null;
+    transcriptRef.current = "";
     setTranscript("");
     setRecordedUrl(null);
     setPlan(null);
@@ -337,6 +443,7 @@ export default function StudioPage() {
     setSpeechResult(null);
     setDeliveryReport(null);
     setDeliveryError(null);
+    setEditSuggestions([]);
     setLiveWpm(0);
     setLiveFillerRate(0);
     setLiveVolume(0);
@@ -380,10 +487,11 @@ export default function StudioPage() {
     transcriptionRef.current = null;
     setCoachingTip(null);
 
+    const fillerRate = computeFillerRate(speechSegmentsRef.current);
     if (speechSegmentsRef.current.length > 0 || volumeSamplesRef.current.length > 0) {
       setSpeechResult({
         wpm: computeSpeechRate(speechSegmentsRef.current, Date.now() - sessionStartRef.current),
-        fillerRate: computeFillerRate(speechSegmentsRef.current),
+        fillerRate,
         pauses: computePauseDistribution(speechSegmentsRef.current),
         volumeVariation: computeVolumeVariation(volumeSamplesRef.current),
         hasTranscript: speechSegmentsRef.current.length > 0,
@@ -391,6 +499,18 @@ export default function StudioPage() {
     }
     volumeSamplerRef.current?.dispose();
     volumeSamplerRef.current = null;
+
+    // Pause/filler-based suggestions don't need a script — set a base
+    // list now, then replace it with the full list (including cut
+    // candidates + coverage gaps) once/if the delivery report lands.
+    setEditSuggestions(
+      generateEditSuggestions({
+        driftSegments: [],
+        missingCoverage: [],
+        speechSegments: speechSegmentsRef.current,
+        fillerRate,
+      }),
+    );
 
     if (scriptGraph && transcript.trim()) {
       setDeliveryLoading(true);
@@ -404,6 +524,14 @@ export default function StudioPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Delivery analysis failed");
         setDeliveryReport(data);
+        setEditSuggestions(
+          generateEditSuggestions({
+            driftSegments: data.drift.segments,
+            missingCoverage: data.alignment.missing,
+            speechSegments: speechSegmentsRef.current,
+            fillerRate,
+          }),
+        );
       } catch (err) {
         setDeliveryError(err instanceof Error ? err.message : "Delivery analysis failed");
       } finally {
@@ -754,6 +882,27 @@ export default function StudioPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {editSuggestions.length > 0 && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 10 }}>
+              Edit Suggestions ({editSuggestions.length})
+            </div>
+            <p className="auth-caption" style={{ textAlign: "left", marginBottom: 12 }}>
+              Pointers for whatever you edit this raw footage in — not a verdict, just where to look.
+            </p>
+            {editSuggestions.map((s, i) => (
+              <div key={i} style={{ marginBottom: 10 }}>
+                <p style={{ fontSize: 13, margin: 0 }}>{s.message}</p>
+                {s.evidence && (
+                  <p style={{ fontSize: 12, fontStyle: "italic", color: "var(--muted)", margin: "2px 0 0" }}>
+                    &ldquo;{s.evidence}&rdquo;
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
