@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { CommunicationProfileSchema, FounderOriginSchema, IdentityCategorySchema } from "../../../../lib/founder-identity";
 import { extractContentScoring } from "../../../../lib/content-llm";
+import { CompanyContextSchema } from "../../../../lib/company-context";
+import { extractRedLineAssessment } from "../../../../lib/redline-llm";
+import {
+  classifyCCCS,
+  companyContextConsistencyScore,
+  hasRedFlags,
+  redFlags,
+  yellowFlags,
+} from "../../../../lib/redline-scoring";
 import {
   classifyGenericity,
   classifyPersonaStability,
@@ -23,6 +32,7 @@ const RequestSchema = z.object({
   candidates: z.array(z.object({ category: IdentityCategorySchema, text: z.string().min(1) })),
   communicationProfile: CommunicationProfileSchema.optional(),
   founderOrigin: FounderOriginSchema.optional(),
+  companyContext: CompanyContextSchema.optional(),
 });
 
 /**
@@ -36,7 +46,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { content, candidates, communicationProfile, founderOrigin } = parsed.data;
+  const { content, candidates, communicationProfile, founderOrigin, companyContext } = parsed.data;
 
   if (candidates.length === 0) {
     return NextResponse.json(
@@ -55,6 +65,31 @@ export async function POST(request: Request) {
     const generic = genericityScore(extraction.genericity);
     const provocation = provocationScore(extraction.provocation);
     const pq = provocationQuality(provocation, extraction.evidenceStrength);
+
+    // DRM §19-20 — red-line checking is a separate LLM extraction from
+    // persona/genericity/provocation scoring above. It's genuinely
+    // best-effort: if it fails (including a credit-depleted provider),
+    // the rest of this response is still valid and useful, so this
+    // never throws into the outer catch.
+    let redLine = null;
+    try {
+      const assessment = await extractRedLineAssessment(content, companyContext);
+      const touchesProduct = assessment.flags.some((f) => f.zone === "yellow" || f.zone === "red");
+      const cccsScore = touchesProduct ? companyContextConsistencyScore(assessment.cccs) : null;
+      redLine = {
+        flags: assessment.flags,
+        redFlags: redFlags(assessment.flags),
+        yellowFlags: yellowFlags(assessment.flags),
+        hasRedFlags: hasRedFlags(assessment.flags),
+        touchesProduct,
+        cccs:
+          cccsScore !== null
+            ? { score: cccsScore, label: classifyCCCS(cccsScore), components: assessment.cccs }
+            : null,
+      };
+    } catch {
+      redLine = null;
+    }
 
     return NextResponse.json({
       personaStability: {
@@ -80,6 +115,7 @@ export async function POST(request: Request) {
         qualityLabel: classifyProvocationQuality(provocation, pq),
         notes: extraction.provocationNotes,
       },
+      redLine,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Content scoring failed.";

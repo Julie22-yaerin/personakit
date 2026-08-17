@@ -54,6 +54,14 @@ export default function AppHome() {
           Content Lab
         </Link>
         <br />
+        <Link href="/company" className="btn btn-ghost" style={{ marginBottom: 12 }}>
+          Company Context
+        </Link>
+        <br />
+        <Link href="/distribution" className="btn btn-ghost" style={{ marginBottom: 12 }}>
+          Distribution
+        </Link>
+        <br />
         <Link href="/studio" className="btn btn-ghost" style={{ marginBottom: 12 }}>
           Open Studio
         </Link>

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { isContentSubstantive } from "../../lib/content-scoring";
 import type { CommunicationProfile, FounderOrigin, IdentityCandidate } from "../../lib/founder-identity";
+import { EMPTY_COMPANY_CONTEXT, type CompanyContext } from "../../lib/company-context";
 
 interface PersonaStabilityResult {
   score: number;
@@ -35,10 +36,25 @@ interface ProvocationResult {
   notes: string;
 }
 
+interface RedLineFlagResult {
+  zone: "green" | "yellow" | "red";
+  quote: string;
+  reason: string;
+}
+
+interface RedLineResult {
+  redFlags: RedLineFlagResult[];
+  yellowFlags: RedLineFlagResult[];
+  hasRedFlags: boolean;
+  touchesProduct: boolean;
+  cccs: { score: number; label: string; components: Record<string, number> } | null;
+}
+
 interface ScoreResponse {
   personaStability: PersonaStabilityResult;
   genericity: GenericityResult;
   provocation: ProvocationResult;
+  redLine: RedLineResult | null;
 }
 
 interface HistoryEntry {
@@ -75,12 +91,19 @@ function provocationQualityColor(label: string): string {
   return "var(--muted)";
 }
 
+function cccsColor(label: string): string {
+  if (label === "accurate and aligned") return GOOD_COLOR;
+  if (label === "mostly accurate") return WARN_COLOR;
+  return BAD_COLOR;
+}
+
 export default function ContentLabPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [confirmedCandidates, setConfirmedCandidates] = useState<IdentityCandidate[]>([]);
   const [communicationProfile, setCommunicationProfile] = useState<CommunicationProfile | undefined>();
   const [founderOrigin, setFounderOrigin] = useState<FounderOrigin | undefined>();
+  const [companyContext, setCompanyContext] = useState<CompanyContext>(EMPTY_COMPANY_CONTEXT);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const [content, setContent] = useState("");
@@ -110,6 +133,7 @@ export default function ContentLabPage() {
         setCommunicationProfile(identity.communicationProfile ?? undefined);
         setFounderOrigin(identity.founderOrigin ?? undefined);
       }
+      setCompanyContext(data.companyContext ?? EMPTY_COMPANY_CONTEXT);
       setHistory(((data.contentHistory ?? []) as HistoryEntry[]).slice().reverse());
       setUser(u);
     });
@@ -129,6 +153,7 @@ export default function ContentLabPage() {
           candidates: confirmedCandidates.map((c) => ({ category: c.category, text: c.text })),
           communicationProfile,
           founderOrigin,
+          companyContext: companyContext.productDescription.trim() ? companyContext : undefined,
         }),
       });
       const data = await res.json();
@@ -197,6 +222,12 @@ export default function ContentLabPage() {
           <p className="auth-caption" style={{ textAlign: "left", marginBottom: 18 }}>
             Scored against the {confirmedCandidates.length} identity attribute
             {confirmedCandidates.length === 1 ? "" : "s"} you&apos;ve confirmed so far.
+            {!companyContext.productDescription.trim() && (
+              <>
+                {" "}
+                <Link href="/company">Set up Company Context</Link> to also check product/company claims.
+              </>
+            )}
           </p>
           <textarea
             rows={8}
@@ -275,6 +306,62 @@ export default function ContentLabPage() {
               </div>
               <p style={{ fontSize: 13, color: "var(--text)", marginTop: 8 }}>{result.provocation.notes}</p>
             </div>
+
+            {result.redLine === null ? (
+              <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+                Red-line check wasn&apos;t available this time.
+              </p>
+            ) : !result.redLine.touchesProduct ? (
+              <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+                Nothing here touches your product or company — outside the red-line system entirely.
+              </p>
+            ) : (
+              <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+                <div className="price-name" style={{ marginBottom: 10 }}>Company Red Line</div>
+
+                {result.redLine.redFlags.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: BAD_COLOR, marginBottom: 6 }}>
+                      RED — {result.redLine.redFlags.length} flagged
+                    </div>
+                    {result.redLine.redFlags.map((f, i) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <p style={{ fontSize: 13, fontStyle: "italic", margin: 0 }}>&ldquo;{f.quote}&rdquo;</p>
+                        <p style={{ fontSize: 12, color: "var(--muted)", margin: "2px 0 0" }}>{f.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {result.redLine.yellowFlags.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: WARN_COLOR, marginBottom: 6 }}>
+                      YELLOW — {result.redLine.yellowFlags.length} to review
+                    </div>
+                    {result.redLine.yellowFlags.map((f, i) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <p style={{ fontSize: 13, fontStyle: "italic", margin: 0 }}>&ldquo;{f.quote}&rdquo;</p>
+                        <p style={{ fontSize: 12, color: "var(--muted)", margin: "2px 0 0" }}>{f.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {result.redLine.cccs && (
+                  <div style={{ paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                      <div className="price-name">Company Context Consistency — {result.redLine.cccs.label}</div>
+                      <span className="score-badge" style={{ color: cccsColor(result.redLine.cccs.label) }}>
+                        {Math.round(result.redLine.cccs.score)}
+                      </span>
+                    </div>
+                    {Object.entries(result.redLine.cccs.components).map(([k, v]) => (
+                      <ComponentBar key={k} label={k} value={v} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
