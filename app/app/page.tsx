@@ -1,0 +1,44 @@
+"use client";
+
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { auth } from "../../lib/firebase";
+
+export default function AppHome() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) router.replace("/login");
+    });
+    return unsubscribe;
+  }, [router]);
+
+  if (user === undefined) {
+    return (
+      <div className="app-shell">
+        <p style={{ color: "var(--muted)" }}>Checking if you're actually in...</p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  return (
+    <div className="app-shell">
+      <div>
+        <h1>You&apos;re in, {user.email ?? "stranger"}.</h1>
+        <p>
+          There&apos;s nothing here yet. That&apos;s not a bug, that&apos;s the roadmap. Check
+          back after the next pivot.
+        </p>
+        <button className="btn btn-ghost" onClick={() => signOut(auth)}>
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
