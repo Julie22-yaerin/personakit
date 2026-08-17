@@ -48,10 +48,17 @@ the profile doc just won't save until Firestore exists).
 
 ## Deploy
 
-Railway project: `e91e6ffc-128b-439c-9633-6db8648f7d28`. The same
+Deployed on Railway (see the Railway dashboard for the project — GitHub
+integration auto-deploys every push to `main`). The same
 `NEXT_PUBLIC_FIREBASE_*` values from `.env.local` need to be set as Railway
-environment variables (Next.js inlines them at build time), then:
+environment variables (Next.js inlines them at build time). To trigger a
+manual redeploy instead of waiting on a push:
 
 ```bash
-railway up
+railway redeploy --service personakit --from-source
 ```
+
+**Never commit a Railway token to this repo.** Set `RAILWAY_TOKEN` as a
+local shell env var when running CLI commands, and if a token is ever
+pasted into a chat, git commit, or log, treat it as compromised and
+regenerate it from the Railway dashboard.
