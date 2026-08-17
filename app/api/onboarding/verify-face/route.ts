@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { synthesizeOnboarding } from "../../../../lib/onboarding-llm";
-import { FaceFeaturesSchema, PersonalityAnswersSchema } from "../../../../lib/persona";
+import { verifyFace } from "../../../../lib/face-verify";
 
 export const runtime = "nodejs";
 
 const RequestSchema = z.object({
-  personality: PersonalityAnswersSchema,
-  faceFeatures: FaceFeaturesSchema.optional(),
-  faceDescription: z.string().optional(),
+  imageDataUrl: z.string().startsWith("data:image/"),
 });
 
 export async function POST(request: Request) {
@@ -19,10 +16,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await synthesizeOnboarding(parsed.data);
+    const result = await verifyFace(parsed.data.imageDataUrl);
     return NextResponse.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Onboarding analysis failed.";
+    const message = err instanceof Error ? err.message : "Face verification failed.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

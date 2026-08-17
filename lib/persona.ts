@@ -76,6 +76,8 @@ export type StyleSuggestions = z.infer<typeof StyleSuggestionsSchema>;
 export const OnboardingProfileSchema = z.object({
   personality: PersonalityAnswersSchema,
   faceFeatures: FaceFeaturesSchema.optional(),
+  /** GPT vision's feature description from /api/onboarding/verify-face, when a photo was verified. */
+  faceDescription: z.string().optional(),
   personaVector: PersonaVectorSchema,
   styleSuggestions: StyleSuggestionsSchema,
   completedAt: z.string(),

@@ -8,7 +8,28 @@ import { scanFace, type FaceScanResult } from "../../lib/face-scan";
 import { PERSONA_DIMENSIONS, classifyRivalry, type PersonaVector, type StyleSuggestions } from "../../lib/persona";
 import { auth, db } from "../../lib/firebase";
 
-type Step = "personality" | "scan" | "processing" | "results" | "error";
+type Step = "personality" | "scan" | "verifying" | "rejected" | "processing" | "results" | "error";
+
+function drawToCanvas(source: HTMLVideoElement | HTMLImageElement, maxDim = 640): HTMLCanvasElement {
+  const isVideo = source instanceof HTMLVideoElement;
+  const w = isVideo ? source.videoWidth : source.naturalWidth;
+  const h = isVideo ? source.videoHeight : source.naturalHeight;
+  const scale = Math.min(1, maxDim / Math.max(w, h));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(w * scale));
+  canvas.height = Math.max(1, Math.round(h * scale));
+  canvas.getContext("2d")?.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Couldn't read that image."));
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -18,13 +39,15 @@ export default function OnboardingPage() {
   const [strengths, setStrengths] = useState("");
   const [struggles, setStruggles] = useState("");
   const [faceFeatures, setFaceFeatures] = useState<FaceScanResult | null>(null);
+  const [faceDescription, setFaceDescription] = useState<string | undefined>(undefined);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [personaVector, setPersonaVector] = useState<PersonaVector | null>(null);
   const [styleSuggestions, setStyleSuggestions] = useState<StyleSuggestions | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => onAuthStateChanged(auth, (u) => {
@@ -45,7 +68,7 @@ export default function OnboardingPage() {
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
       })
-      .catch(() => setCameraError("Couldn't access your camera. You can skip this step."));
+      .catch(() => setCameraError("Couldn't access your camera. Upload a photo or skip this step."));
     return () => {
       cancelled = true;
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -58,31 +81,84 @@ export default function OnboardingPage() {
     streamRef.current = null;
   }
 
-  async function handleCapture() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
+  async function processImageSource(source: HTMLVideoElement | HTMLImageElement) {
     stopCamera();
-    let result: FaceScanResult | null = null;
+    const canvas = drawToCanvas(source);
+
+    let features: FaceScanResult | null = null;
     try {
-      result = await scanFace(canvas);
+      features = await scanFace(canvas);
     } catch {
-      result = null;
+      features = null;
     }
-    setFaceFeatures(result);
-    runAnalysis(result);
+
+    setStep("verifying");
+    const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+
+    try {
+      const res = await fetch("/api/onboarding/verify-face", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Verification is an enhancement, not a hard gate — if the check
+        // itself fails (e.g. the vision API is down), don't block onboarding.
+        setFaceFeatures(features);
+        runAnalysis(features, undefined);
+        return;
+      }
+      if (!data.isRealFace) {
+        setRejectionReason(data.reason ?? "That doesn't look like a real face photo.");
+        setStep("rejected");
+        return;
+      }
+
+      setFaceFeatures(features);
+      setFaceDescription(data.features as string);
+      runAnalysis(features, data.features as string);
+    } catch {
+      setFaceFeatures(features);
+      runAnalysis(features, undefined);
+    }
+  }
+
+  async function handleCapture() {
+    if (videoRef.current) await processImageSource(videoRef.current);
+  }
+
+  async function handleFileChosen(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    stopCamera();
+    try {
+      const img = await loadImageFromFile(file);
+      await processImageSource(img);
+    } catch {
+      setCameraError("Couldn't read that photo. Try a different file.");
+    }
   }
 
   function handleSkipScan() {
     stopCamera();
     setFaceFeatures(null);
-    runAnalysis(null);
+    setFaceDescription(undefined);
+    runAnalysis(null, undefined);
   }
 
-  async function runAnalysis(capturedFace: FaceScanResult | null = faceFeatures) {
+  function handleRetake() {
+    setRejectionReason(null);
+    setCameraError(null);
+    setStep("scan");
+  }
+
+  async function runAnalysis(
+    capturedFace: FaceScanResult | null = faceFeatures,
+    description: string | undefined = faceDescription,
+  ) {
     setStep("processing");
     setErrorMessage(null);
     try {
@@ -94,6 +170,7 @@ export default function OnboardingPage() {
           faceFeatures: capturedFace
             ? { blendshapes: capturedFace.blendshapes, capturedAt: new Date().toISOString() }
             : undefined,
+          faceDescription: description,
         }),
       });
       const data = await res.json();
@@ -111,6 +188,7 @@ export default function OnboardingPage() {
               faceFeatures: capturedFace
                 ? { blendshapes: capturedFace.blendshapes, capturedAt: new Date().toISOString() }
                 : null,
+              faceDescription: description ?? null,
               personaVector: data.personaVector,
               styleSuggestions: data.styleSuggestions,
               completedAt: new Date().toISOString(),
@@ -142,8 +220,9 @@ export default function OnboardingPage() {
       <div style={{ width: "100%", maxWidth: 480 }}>
         <p className="onboarding-step-label">
           {step === "personality" && "Step 1 of 3 · who you are"}
-          {step === "scan" && "Step 2 of 3 · face scan (optional)"}
-          {(step === "processing" || step === "results" || step === "error") && "Step 3 of 3 · your baseline"}
+          {(step === "scan" || step === "rejected") && "Step 2 of 3 · face scan (optional)"}
+          {(step === "verifying" || step === "processing" || step === "results" || step === "error") &&
+            "Step 3 of 3 · your baseline"}
         </p>
 
         {step === "personality" && (
@@ -183,8 +262,8 @@ export default function OnboardingPage() {
           <div className="auth-card" style={{ textAlign: "left" }}>
             <h1 className="onboarding-title">Quick face scan.</h1>
             <p className="auth-caption" style={{ textAlign: "left", marginBottom: 18 }}>
-              Runs entirely in your browser. We keep the extracted expression
-              baseline, not the photo.
+              We check it's really you and pull an expression baseline — the
+              photo itself isn&apos;t kept.
             </p>
             {cameraError ? (
               <p className="error">{cameraError}</p>
@@ -193,17 +272,45 @@ export default function OnboardingPage() {
                 <video ref={videoRef} autoPlay playsInline muted />
               </div>
             )}
-            <canvas ref={canvasRef} style={{ display: "none" }} />
             <button className="btn btn-primary btn-block" onClick={handleCapture} disabled={!!cameraError}>
               Capture
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleFileChosen}
+            />
             <button
               className="btn btn-ghost btn-block"
               style={{ marginTop: 10 }}
-              onClick={handleSkipScan}
+              onClick={() => fileInputRef.current?.click()}
             >
+              Upload a photo instead
+            </button>
+            <button className="btn btn-ghost btn-block" style={{ marginTop: 10 }} onClick={handleSkipScan}>
               Skip this step
             </button>
+          </div>
+        )}
+
+        {step === "rejected" && (
+          <div className="auth-card" style={{ textAlign: "left" }}>
+            <h1 className="onboarding-title">Didn&apos;t land.</h1>
+            <p className="auth-error">{rejectionReason}</p>
+            <button className="btn btn-primary btn-block" onClick={handleRetake}>
+              Try another photo
+            </button>
+            <button className="btn btn-ghost btn-block" style={{ marginTop: 10 }} onClick={handleSkipScan}>
+              Skip this step
+            </button>
+          </div>
+        )}
+
+        {step === "verifying" && (
+          <div className="auth-card" style={{ textAlign: "center" }}>
+            <p style={{ color: "var(--muted)" }}>Checking your photo...</p>
           </div>
         )}
 
