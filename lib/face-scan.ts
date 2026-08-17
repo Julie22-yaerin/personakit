@@ -22,8 +22,15 @@ function loadFaceLandmarker(): Promise<FaceLandmarker> {
   return landmarkerPromise;
 }
 
+export interface NormalizedLandmark {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface FaceScanResult {
   blendshapes: Record<string, number>;
+  landmarks: NormalizedLandmark[];
 }
 
 /**
@@ -45,7 +52,7 @@ export async function scanFace(
   for (const category of categories) {
     blendshapes[category.categoryName] = category.score;
   }
-  return { blendshapes };
+  return { blendshapes, landmarks: result.faceLandmarks?.[0] ?? [] };
 }
 
 // --- Continuous (live filming) detection: a separate landmarker instance,
@@ -118,5 +125,5 @@ export async function detectFaceForVideo(
   for (const category of categories) {
     blendshapes[category.categoryName] = category.score;
   }
-  return { blendshapes };
+  return { blendshapes, landmarks: result.faceLandmarks?.[0] ?? [] };
 }

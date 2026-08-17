@@ -8,11 +8,53 @@ import { auth, db } from "../../lib/firebase";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
+import {
+  classifySpeechRate,
+  computeFillerRate,
+  computePauseDistribution,
+  computeSpeechRate,
+  computeVolumeVariation,
+  VolumeSampler,
+  type PauseDistribution,
+  type SpeechSegment,
+} from "../../lib/speech-analysis";
 import type { SessionPlan } from "../../lib/studio-llm";
+import { SCRIPT_NODE_LABELS, type ScriptGraph, type ScriptNodeCoverage, type DriftSegment } from "../../lib/script";
+import { VisualSessionAccumulator } from "../../lib/visual-measurement";
+import {
+  classifyVisualConsistency,
+  computeVisualConsistencyScore,
+  weakestVisualCategories,
+  type VisualCategoryResult,
+  type VisualMeasurements,
+  type VisualSignatureTargets,
+} from "../../lib/visual-signature";
 
 const METRICS_INTERVAL_MS = 400;
 const COACH_INTERVAL_MS = 15000;
 const TOAST_DURATION_MS = 6000;
+const CALIBRATION_DURATION_MS = 3000;
+const CALIBRATION_INTERVAL_MS = 200;
+const DEFAULT_ACCEPTABLE_RANGE = 15;
+const MAX_VISUAL_HISTORY = 20;
+
+interface VisualHistoryEntry {
+  recordedAt: string;
+  score: number;
+  label: string;
+}
+
+interface SpeechResult {
+  wpm: number;
+  fillerRate: number;
+  pauses: PauseDistribution;
+  volumeVariation: number;
+}
+
+interface DeliveryReport {
+  alignment: { score: number; coverage: ScriptNodeCoverage[]; missing: ScriptNodeCoverage[] };
+  drift: { score: number; label: string; segments: DriftSegment[]; mostOffTopic: DriftSegment | null };
+}
 
 function frameToDataUrl(video: HTMLVideoElement, maxDim = 480): string {
   const scale = Math.min(1, maxDim / Math.max(video.videoWidth, video.videoHeight));
@@ -40,14 +82,40 @@ export default function StudioPage() {
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
 
+  const [visualTargets, setVisualTargets] = useState<VisualSignatureTargets | null>(null);
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibrationError, setCalibrationError] = useState<string | null>(null);
+  const [calibrationNote, setCalibrationNote] = useState<string | null>(null);
+  const [vcsResult, setVcsResult] = useState<{ score: number; label: string; categories: VisualCategoryResult[] } | null>(
+    null,
+  );
+  const [visualHistory, setVisualHistory] = useState<VisualHistoryEntry[]>([]);
+
+  const [liveWpm, setLiveWpm] = useState(0);
+  const [liveFillerRate, setLiveFillerRate] = useState(0);
+  const [liveVolume, setLiveVolume] = useState(0);
+  const [speechResult, setSpeechResult] = useState<SpeechResult | null>(null);
+
+  const [scriptText, setScriptText] = useState("");
+  const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [scriptError, setScriptError] = useState<string | null>(null);
+  const [deliveryReport, setDeliveryReport] = useState<DeliveryReport | null>(null);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const metricsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const metricsSamplesRef = useRef<LiveDisplayMetrics[]>([]);
+  const visualAccumulatorRef = useRef<VisualSessionAccumulator>(new VisualSessionAccumulator());
   const coachIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const transcriptionRef = useRef<LiveTranscript | null>(null);
+  const speechSegmentsRef = useRef<SpeechSegment[]>([]);
+  const volumeSamplerRef = useRef<VolumeSampler | null>(null);
+  const volumeSamplesRef = useRef<number[]>([]);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartRef = useRef<number>(0);
 
@@ -67,6 +135,8 @@ export default function StudioPage() {
       }
       setPersonaVector(data.onboarding?.personaVector);
       setLastPlan(data.studio?.latestPlan);
+      setVisualTargets(data.visualSignature?.targets ?? null);
+      setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
       setUser(u);
     });
     return unsubscribe;
@@ -100,6 +170,7 @@ export default function StudioPage() {
       if (coachIntervalRef.current) clearInterval(coachIntervalRef.current);
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
       transcriptionRef.current?.stop();
+      volumeSamplerRef.current?.dispose();
       if (recordedUrl) URL.revokeObjectURL(recordedUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,7 +192,109 @@ export default function StudioPage() {
       const metrics = deriveLiveMetrics(result.blendshapes);
       setLiveMetrics(metrics);
       metricsSamplesRef.current.push(metrics);
+      visualAccumulatorRef.current.addFrame(result.landmarks, result.blendshapes);
+
+      if (volumeSamplerRef.current) {
+        const volume = volumeSamplerRef.current.sample();
+        volumeSamplesRef.current.push(volume);
+        setLiveVolume(volume);
+      }
+      const elapsedMs = Date.now() - sessionStartRef.current;
+      setLiveWpm(computeSpeechRate(speechSegmentsRef.current, elapsedMs));
+      setLiveFillerRate(computeFillerRate(speechSegmentsRef.current));
     }, METRICS_INTERVAL_MS);
+  }
+
+  /**
+   * Captures a short reference burst and treats what it measures as the
+   * founder's own target — the DRM's "you told us you want it to feel
+   * controlled, minimal and technical" target is this measured baseline,
+   * not an invented number. Scene readings (lighting/background) go
+   * through the vision model; if that call fails (e.g. no LLM credit),
+   * calibration still saves the geometric targets rather than failing
+   * outright — partial signal beats none.
+   */
+  async function handleCalibrateVisualSignature() {
+    const video = videoRef.current;
+    if (!video || !streamRef.current) return;
+    setCalibrating(true);
+    setCalibrationError(null);
+    setCalibrationNote(null);
+
+    const acc = new VisualSessionAccumulator();
+    const ticks = Math.ceil(CALIBRATION_DURATION_MS / CALIBRATION_INTERVAL_MS);
+    for (let i = 0; i < ticks; i++) {
+      if (video.readyState >= 2) {
+        const result = await detectFaceForVideo(video, performance.now());
+        if (result) acc.addFrame(result.landmarks, result.blendshapes);
+      }
+      await new Promise((resolve) => setTimeout(resolve, CALIBRATION_INTERVAL_MS));
+    }
+
+    const geometric = acc.summarize();
+    if (acc.frameCount === 0) {
+      setCalibrationError("Couldn't detect a face during calibration — make sure you're facing the camera.");
+      setCalibrating(false);
+      return;
+    }
+
+    const targets: VisualSignatureTargets = {};
+    for (const [key, value] of Object.entries(geometric) as [keyof VisualMeasurements, number][]) {
+      targets[key] = { target: value, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
+    }
+
+    let sceneFailed = false;
+    try {
+      const res = await fetch("/api/studio/visual-scene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl: frameToDataUrl(video) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        targets.lighting = { target: data.lighting, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
+        targets.background = { target: data.background, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
+      } else {
+        sceneFailed = true;
+      }
+    } catch {
+      sceneFailed = true;
+    }
+
+    if (user) {
+      await setDoc(
+        doc(db, "users", user.uid),
+        { visualSignature: { targets, calibratedAt: serverTimestamp() } },
+        { merge: true },
+      );
+    }
+    setVisualTargets(targets);
+    setCalibrating(false);
+    setCalibrationNote(
+      sceneFailed
+        ? "Lighting/background targets need the vision model, which couldn't be reached — the rest of your signature (framing, distance, eye-line, movement, expression) was saved."
+        : "Visual signature calibrated.",
+    );
+  }
+
+  async function handlePrepareScript() {
+    if (!scriptText.trim()) return;
+    setScriptLoading(true);
+    setScriptError(null);
+    try {
+      const res = await fetch("/api/studio/script/decompose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceText: scriptText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Script decomposition failed");
+      setScriptGraph(data);
+    } catch (err) {
+      setScriptError(err instanceof Error ? err.message : "Script decomposition failed");
+    } finally {
+      setScriptLoading(false);
+    }
   }
 
   function startCoachLoop() {
@@ -151,10 +324,26 @@ export default function StudioPage() {
     if (!streamRef.current) return;
     chunksRef.current = [];
     metricsSamplesRef.current = [];
+    visualAccumulatorRef.current = new VisualSessionAccumulator();
+    speechSegmentsRef.current = [];
+    volumeSamplesRef.current = [];
     setTranscript("");
     setRecordedUrl(null);
     setPlan(null);
+    setVcsResult(null);
+    setSpeechResult(null);
+    setDeliveryReport(null);
+    setDeliveryError(null);
+    setLiveWpm(0);
+    setLiveFillerRate(0);
+    setLiveVolume(0);
     sessionStartRef.current = Date.now();
+
+    try {
+      volumeSamplerRef.current = new VolumeSampler(streamRef.current);
+    } catch {
+      volumeSamplerRef.current = null;
+    }
 
     const recorder = new MediaRecorder(streamRef.current, { mimeType: "video/webm" });
     recorder.ondataavailable = (e) => {
@@ -171,13 +360,15 @@ export default function StudioPage() {
     startLiveMetricsLoop();
     startCoachLoop();
     if (isSpeechRecognitionSupported()) {
-      transcriptionRef.current = startLiveTranscription((chunk) => {
+      transcriptionRef.current = startLiveTranscription((chunk, timestampMs) => {
         setTranscript((prev) => (prev ? `${prev} ${chunk}` : chunk));
+        speechSegmentsRef.current.push({ text: chunk, timestampMs });
       });
     }
   }
 
-  function handleStopRecording() {
+  async function handleStopRecording() {
+    const video = videoRef.current;
     mediaRecorderRef.current?.stop();
     setIsRecording(false);
     if (metricsIntervalRef.current) clearInterval(metricsIntervalRef.current);
@@ -185,6 +376,73 @@ export default function StudioPage() {
     transcriptionRef.current?.stop();
     transcriptionRef.current = null;
     setCoachingTip(null);
+
+    if (speechSegmentsRef.current.length > 0 || volumeSamplesRef.current.length > 0) {
+      setSpeechResult({
+        wpm: computeSpeechRate(speechSegmentsRef.current, Date.now() - sessionStartRef.current),
+        fillerRate: computeFillerRate(speechSegmentsRef.current),
+        pauses: computePauseDistribution(speechSegmentsRef.current),
+        volumeVariation: computeVolumeVariation(volumeSamplesRef.current),
+      });
+    }
+    volumeSamplerRef.current?.dispose();
+    volumeSamplerRef.current = null;
+
+    if (scriptGraph && transcript.trim()) {
+      setDeliveryLoading(true);
+      setDeliveryError(null);
+      try {
+        const res = await fetch("/api/studio/script/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ graph: scriptGraph, transcript }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Delivery analysis failed");
+        setDeliveryReport(data);
+      } catch (err) {
+        setDeliveryError(err instanceof Error ? err.message : "Delivery analysis failed");
+      } finally {
+        setDeliveryLoading(false);
+      }
+    }
+
+    if (!visualTargets || !video) return;
+    const measured: VisualMeasurements = { ...visualAccumulatorRef.current.summarize() };
+    try {
+      const res = await fetch("/api/studio/visual-scene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl: frameToDataUrl(video) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        measured.lighting = data.lighting;
+        measured.background = data.background;
+      }
+    } catch {
+      // scene readings are best-effort — VCS still computes from geometry alone
+    }
+
+    const vcs = computeVisualConsistencyScore(visualTargets, measured);
+    setVcsResult({ score: vcs.score, label: classifyVisualConsistency(vcs.score), categories: vcs.categories });
+
+    if (user) {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const prevHistory = (snap.data()?.visualSignatureHistory ?? []) as VisualHistoryEntry[];
+      const entry: VisualHistoryEntry = {
+        recordedAt: new Date().toISOString(),
+        score: vcs.score,
+        label: classifyVisualConsistency(vcs.score),
+      };
+      const nextHistory = [...prevHistory, entry].slice(-MAX_VISUAL_HISTORY);
+      await setDoc(
+        doc(db, "users", user.uid),
+        { visualSignatureHistory: nextHistory, visualSignatureHistoryUpdatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      setVisualHistory([...nextHistory].reverse());
+    }
   }
 
   async function handleGetPlan() {
@@ -242,6 +500,34 @@ export default function StudioPage() {
         <p className="onboarding-step-label">Studio · live filming</p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+          <div className="price-name" style={{ marginBottom: 8 }}>Script (optional)</div>
+          <p className="auth-caption" style={{ textAlign: "left", marginBottom: 10 }}>
+            Paste your talking points or topic — never memorize it. We&apos;ll check afterward whether your
+            delivery covered the ground it needed to, not whether you said it word for word.
+          </p>
+          <textarea
+            rows={4}
+            value={scriptText}
+            onChange={(e) => setScriptText(e.target.value)}
+            placeholder="What's this take about?"
+            disabled={isRecording}
+          />
+          <button
+            className="btn btn-ghost btn-block"
+            onClick={handlePrepareScript}
+            disabled={scriptLoading || isRecording || !scriptText.trim()}
+          >
+            {scriptLoading ? "Structuring..." : scriptGraph ? "Re-structure Script" : "Prepare Script"}
+          </button>
+          {scriptError && <p className="error" style={{ marginTop: 8 }}>{scriptError}</p>}
+          {scriptGraph && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+              Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
+            </div>
+          )}
+        </div>
+
+        <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           {cameraError ? (
             <p className="error">{cameraError}</p>
           ) : (
@@ -252,6 +538,11 @@ export default function StudioPage() {
                   <MetricBar label="Eye contact" value={liveMetrics.eyeContact} />
                   <MetricBar label="Smile" value={liveMetrics.smile} />
                   <MetricBar label="Expressiveness" value={liveMetrics.expressiveness} />
+                  <MetricBar label="Volume" value={liveVolume} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#fff", marginTop: 4 }}>
+                    <span>{Math.round(liveWpm)} wpm</span>
+                    <span>{liveFillerRate.toFixed(1)} fillers/100w</span>
+                  </div>
                 </div>
               )}
               {coachingTip && <div className="studio-tip-toast">{coachingTip}</div>}
@@ -274,6 +565,28 @@ export default function StudioPage() {
             <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
               Live transcript isn&apos;t supported in this browser — recording still works.
             </p>
+          )}
+
+          {!isRecording && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                  {visualTargets ? "Visual signature calibrated" : "Visual signature not calibrated yet"}
+                </span>
+                <button
+                  className="btn btn-ghost"
+                  style={{ padding: "6px 12px", fontSize: 12 }}
+                  onClick={handleCalibrateVisualSignature}
+                  disabled={calibrating || !!cameraError}
+                >
+                  {calibrating ? "Calibrating..." : visualTargets ? "Recalibrate" : "Calibrate Visual Signature"}
+                </button>
+              </div>
+              {calibrationError && <p className="error" style={{ marginTop: 8 }}>{calibrationError}</p>}
+              {calibrationNote && (
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>{calibrationNote}</p>
+              )}
+            </div>
           )}
         </div>
 
@@ -300,6 +613,118 @@ export default function StudioPage() {
           </div>
         )}
 
+        {deliveryLoading && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <p style={{ color: "var(--muted)", margin: 0 }}>Checking delivery against your script...</p>
+          </div>
+        )}
+        {deliveryError && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <p className="error" style={{ margin: 0 }}>{deliveryError}</p>
+          </div>
+        )}
+        {deliveryReport && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <div className="price-name">Script Alignment</div>
+              <span className="score-badge">{Math.round(deliveryReport.alignment.score)}</span>
+            </div>
+            {deliveryReport.alignment.coverage.map((c) => (
+              <div key={c.type} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginTop: 6 }}>
+                <span style={{ color: c.covered ? "var(--text)" : "var(--muted)" }}>
+                  {c.covered ? "✓" : "○"} {SCRIPT_NODE_LABELS[c.type]}
+                </span>
+              </div>
+            ))}
+            {deliveryReport.alignment.missing.length > 0 && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+                Missing: {deliveryReport.alignment.missing.map((m) => SCRIPT_NODE_LABELS[m.type]).join(", ")}
+              </div>
+            )}
+
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div className="price-name">Drift — {deliveryReport.drift.label}</div>
+                <span className="score-badge">{Math.round(deliveryReport.drift.score)}</span>
+              </div>
+              {deliveryReport.drift.mostOffTopic && (
+                <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
+                  Furthest off-topic: &ldquo;{deliveryReport.drift.mostOffTopic.text}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {speechResult && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 10 }}>
+              Delivery — {classifySpeechRate(speechResult.wpm)}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+              <span>Speech rate</span>
+              <span>{Math.round(speechResult.wpm)} wpm</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+              <span>Filler rate</span>
+              <span>{speechResult.fillerRate.toFixed(1)} / 100 words</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+              <span>Volume variation</span>
+              <span>{Math.round(speechResult.volumeVariation)}</span>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
+              Pauses — natural {speechResult.pauses.natural}, hesitant {speechResult.pauses.hesitant}, long{" "}
+              {speechResult.pauses.long}
+            </div>
+          </div>
+        )}
+
+        {vcsResult && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <div className="price-name">Visual Consistency — {vcsResult.label}</div>
+              <span className="score-badge" style={{ color: vcsColor(vcsResult.label) }}>
+                {Math.round(vcsResult.score)}
+              </span>
+            </div>
+            {vcsResult.categories
+              .filter((c): c is VisualCategoryResult & { score: number } => c.score !== null)
+              .map((c) => (
+                <ComponentBar key={c.label} label={c.label} value={c.score} />
+              ))}
+            {weakestVisualCategories(vcsResult.categories)[0] && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+                Furthest from signature: {weakestVisualCategories(vcsResult.categories)[0].label}
+              </div>
+            )}
+          </div>
+        )}
+
+        {visualHistory.length > 0 && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 10 }}>Visual Consistency History (last {visualHistory.length})</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Score</th>
+                  <th>Label</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visualHistory.map((h, i) => (
+                  <tr key={i}>
+                    <td style={{ fontSize: 12 }}>{new Date(h.recordedAt).toLocaleString()}</td>
+                    <td>{Math.round(h.score)}</td>
+                    <td style={{ fontSize: 12 }}>{h.label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {plan && (
           <div className="auth-card" style={{ textAlign: "left" }}>
             <h1 className="onboarding-title" style={{ fontSize: 20 }}>Next-take plan.</h1>
@@ -313,6 +738,26 @@ export default function StudioPage() {
             <PlanBlock label="Pacing" text={plan.pacing} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function vcsColor(label: string): string {
+  if (label === "on signature" || label === "close") return "var(--accent)";
+  if (label === "drifting") return "var(--warn)";
+  return "var(--bad)";
+}
+
+function ComponentBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}>
+        <span>{label}</span>
+        <span>{Math.round(value)}</span>
+      </div>
+      <div style={{ background: "var(--border)", borderRadius: 4, height: 5 }}>
+        <div style={{ width: `${value}%`, background: "var(--accent)", height: 5, borderRadius: 4 }} />
       </div>
     </div>
   );

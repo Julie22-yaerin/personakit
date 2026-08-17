@@ -41,9 +41,12 @@ export interface LiveTranscript {
 /**
  * Starts continuous live transcription. `onFinalChunk` fires once per
  * finalized segment (not on every interim guess) — the caller accumulates
- * the full transcript.
+ * the full transcript. `timestampMs` is `performance.now()` at the moment
+ * the segment finalized, for speech-rate/pause analysis.
  */
-export function startLiveTranscription(onFinalChunk: (text: string) => void): LiveTranscript | null {
+export function startLiveTranscription(
+  onFinalChunk: (text: string, timestampMs: number) => void,
+): LiveTranscript | null {
   const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   if (!Ctor) return null;
 
@@ -58,7 +61,7 @@ export function startLiveTranscription(onFinalChunk: (text: string) => void): Li
       const result = event.results[i];
       if (result.isFinal) finalText += result[0].transcript + " ";
     }
-    if (finalText.trim()) onFinalChunk(finalText.trim());
+    if (finalText.trim()) onFinalChunk(finalText.trim(), performance.now());
   };
   recognition.onerror = () => {
     // transient errors (e.g. brief silence) are common and non-fatal; the
