@@ -49,6 +49,7 @@ interface SpeechResult {
   fillerRate: number;
   pauses: PauseDistribution;
   volumeVariation: number;
+  hasTranscript: boolean;
 }
 
 interface DeliveryReport {
@@ -86,9 +87,11 @@ export default function StudioPage() {
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationError, setCalibrationError] = useState<string | null>(null);
   const [calibrationNote, setCalibrationNote] = useState<string | null>(null);
-  const [vcsResult, setVcsResult] = useState<{ score: number; label: string; categories: VisualCategoryResult[] } | null>(
-    null,
-  );
+  const [vcsResult, setVcsResult] = useState<{
+    score: number | null;
+    label: string | null;
+    categories: VisualCategoryResult[];
+  } | null>(null);
   const [visualHistory, setVisualHistory] = useState<VisualHistoryEntry[]>([]);
 
   const [liveWpm, setLiveWpm] = useState(0);
@@ -383,6 +386,7 @@ export default function StudioPage() {
         fillerRate: computeFillerRate(speechSegmentsRef.current),
         pauses: computePauseDistribution(speechSegmentsRef.current),
         volumeVariation: computeVolumeVariation(volumeSamplesRef.current),
+        hasTranscript: speechSegmentsRef.current.length > 0,
       });
     }
     volumeSamplerRef.current?.dispose();
@@ -425,9 +429,16 @@ export default function StudioPage() {
     }
 
     const vcs = computeVisualConsistencyScore(visualTargets, measured);
-    setVcsResult({ score: vcs.score, label: classifyVisualConsistency(vcs.score), categories: vcs.categories });
+    setVcsResult({
+      score: vcs.score,
+      label: vcs.score !== null ? classifyVisualConsistency(vcs.score) : null,
+      categories: vcs.categories,
+    });
 
-    if (user) {
+    // Only persist a history entry when something was actually measured —
+    // a null score means "no face detected," not "scored 0," and saving
+    // that as a history row would misrepresent this session as a bad take.
+    if (user && vcs.score !== null) {
       const snap = await getDoc(doc(db, "users", user.uid));
       const prevHistory = (snap.data()?.visualSignatureHistory ?? []) as VisualHistoryEntry[];
       const entry: VisualHistoryEntry = {
@@ -630,10 +641,15 @@ export default function StudioPage() {
               <span className="score-badge">{Math.round(deliveryReport.alignment.score)}</span>
             </div>
             {deliveryReport.alignment.coverage.map((c) => (
-              <div key={c.type} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginTop: 6 }}>
-                <span style={{ color: c.covered ? "var(--text)" : "var(--muted)" }}>
+              <div key={c.type} style={{ marginTop: 6 }}>
+                <span style={{ fontSize: 13, color: c.covered ? "var(--text)" : "var(--muted)" }}>
                   {c.covered ? "✓" : "○"} {SCRIPT_NODE_LABELS[c.type]}
                 </span>
+                {c.covered && c.evidenceQuote && (
+                  <p style={{ fontSize: 12, fontStyle: "italic", color: "var(--muted)", margin: "2px 0 0 18px" }}>
+                    &ldquo;{c.evidenceQuote}&rdquo;
+                  </p>
+                )}
               </div>
             ))}
             {deliveryReport.alignment.missing.length > 0 && (
@@ -647,7 +663,7 @@ export default function StudioPage() {
                 <div className="price-name">Drift — {deliveryReport.drift.label}</div>
                 <span className="score-badge">{Math.round(deliveryReport.drift.score)}</span>
               </div>
-              {deliveryReport.drift.mostOffTopic && (
+              {deliveryReport.drift.score >= 20 && deliveryReport.drift.mostOffTopic && (
                 <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
                   Furthest off-topic: &ldquo;{deliveryReport.drift.mostOffTopic.text}&rdquo;
                 </p>
@@ -659,44 +675,60 @@ export default function StudioPage() {
         {speechResult && (
           <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
             <div className="price-name" style={{ marginBottom: 10 }}>
-              Delivery — {classifySpeechRate(speechResult.wpm)}
+              Delivery{speechResult.hasTranscript ? ` — ${classifySpeechRate(speechResult.wpm)}` : ""}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
-              <span>Speech rate</span>
-              <span>{Math.round(speechResult.wpm)} wpm</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
-              <span>Filler rate</span>
-              <span>{speechResult.fillerRate.toFixed(1)} / 100 words</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+            {speechResult.hasTranscript ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+                  <span>Speech rate</span>
+                  <span>{Math.round(speechResult.wpm)} wpm</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+                  <span>Filler rate</span>
+                  <span>{speechResult.fillerRate.toFixed(1)} / 100 words</span>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
+                  Pauses — natural {speechResult.pauses.natural}, hesitant {speechResult.pauses.hesitant}, long{" "}
+                  {speechResult.pauses.long}
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
+                No transcript captured this take — speech rate, filler rate and pauses need it.
+              </p>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginTop: 6 }}>
               <span>Volume variation</span>
               <span>{Math.round(speechResult.volumeVariation)}</span>
-            </div>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
-              Pauses — natural {speechResult.pauses.natural}, hesitant {speechResult.pauses.hesitant}, long{" "}
-              {speechResult.pauses.long}
             </div>
           </div>
         )}
 
         {vcsResult && (
           <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div className="price-name">Visual Consistency — {vcsResult.label}</div>
-              <span className="score-badge" style={{ color: vcsColor(vcsResult.label) }}>
-                {Math.round(vcsResult.score)}
-              </span>
-            </div>
-            {vcsResult.categories
-              .filter((c): c is VisualCategoryResult & { score: number } => c.score !== null)
-              .map((c) => (
-                <ComponentBar key={c.label} label={c.label} value={c.score} />
-              ))}
-            {weakestVisualCategories(vcsResult.categories)[0] && (
-              <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-                Furthest from signature: {weakestVisualCategories(vcsResult.categories)[0].label}
-              </div>
+            {vcsResult.score === null || vcsResult.label === null ? (
+              <p style={{ color: "var(--muted)", margin: 0 }}>
+                No face was detected during this take, so visual consistency couldn&apos;t be measured.
+              </p>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <div className="price-name">Visual Consistency — {vcsResult.label}</div>
+                  <span className="score-badge" style={{ color: vcsColor(vcsResult.label) }}>
+                    {Math.round(vcsResult.score)}
+                  </span>
+                </div>
+                {vcsResult.categories
+                  .filter((c): c is VisualCategoryResult & { score: number } => c.score !== null)
+                  .map((c) => (
+                    <ComponentBar key={c.label} label={c.label} value={c.score} />
+                  ))}
+                {weakestVisualCategories(vcsResult.categories)[0] && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+                    Furthest from signature: {weakestVisualCategories(vcsResult.categories)[0].label}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

@@ -86,6 +86,9 @@ export class VolumeSampler {
     this.source = this.audioContext.createMediaStreamSource(stream);
     this.source.connect(this.analyser);
     this.buffer = new Uint8Array(this.analyser.fftSize);
+    // Some browsers (notably Safari) can create a context in "suspended"
+    // state even from a user-gesture handler; resume defensively.
+    void this.audioContext.resume();
   }
 
   /** Current RMS volume, 0-1. */

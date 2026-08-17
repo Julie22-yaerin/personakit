@@ -97,10 +97,17 @@ export interface VisualCategoryResult {
  * always null in this app today. Null categories are dropped and the
  * remaining weights renormalized, never averaged in as zero.
  */
+/**
+ * Score is `null` — not 0 — when a session never measured anything usable
+ * (e.g. no face was detected the entire take). A 0 would render as "off
+ * signature," which is a claim about bad camera work; the honest claim
+ * here is "we couldn't measure this session at all," a different fact the
+ * caller needs to render differently.
+ */
 export function computeVisualConsistencyScore(
   targets: VisualSignatureTargets,
   measured: VisualMeasurements,
-): { score: number; categories: VisualCategoryResult[] } {
+): { score: number | null; categories: VisualCategoryResult[] } {
   const categories: VisualCategoryResult[] = VCS_CATEGORIES.map((cat) => {
     const attrScores = cat.attributes
       .filter((attr) => targets[attr] !== undefined && measured[attr] !== undefined)
@@ -116,7 +123,7 @@ export function computeVisualConsistencyScore(
     .map((c, i) => ({ ...c, weight: VCS_CATEGORIES[i].weight }))
     .filter((c): c is VisualCategoryResult & { weight: number; score: number } => c.score !== null);
 
-  if (usable.length === 0) return { score: 0, categories };
+  if (usable.length === 0) return { score: null, categories };
 
   const weightSum = usable.reduce((sum, c) => sum + c.weight, 0);
   const raw = usable.reduce((sum, c) => sum + c.weight * c.score, 0);
