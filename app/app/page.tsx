@@ -1,18 +1,28 @@
 "use client";
 
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { auth } from "../../lib/firebase";
+import { auth, db } from "../../lib/firebase";
 
 export default function AppHome() {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (!u) {
+        setUser(null);
+        router.replace("/login");
+        return;
+      }
+      const snap = await getDoc(doc(db, "users", u.uid));
+      if (!snap.exists() || !snap.data().onboardingCompletedAt) {
+        router.replace("/onboarding");
+        return;
+      }
       setUser(u);
-      if (!u) router.replace("/login");
     });
     return unsubscribe;
   }, [router]);

@@ -5,7 +5,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -19,6 +19,11 @@ async function ensureUserDoc(uid: string, email: string | null) {
     { email, lastSeenAt: serverTimestamp(), createdAt: serverTimestamp() },
     { merge: true },
   );
+}
+
+async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/app"> {
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() && snap.data().onboardingCompletedAt ? "/app" : "/onboarding";
 }
 
 function friendlyError(message: string): string {
@@ -44,7 +49,7 @@ export default function LoginPage() {
     try {
       const cred = await signInWithPopup(auth, googleProvider);
       await ensureUserDoc(cred.user.uid, cred.user.email);
-      router.push("/app");
+      router.push(await nextRouteAfterAuth(cred.user.uid));
     } catch (err) {
       setError(friendlyError(err instanceof Error ? err.message : ""));
     } finally {
@@ -62,7 +67,7 @@ export default function LoginPage() {
           ? await createUserWithEmailAndPassword(auth, email, password)
           : await signInWithEmailAndPassword(auth, email, password);
       await ensureUserDoc(cred.user.uid, cred.user.email);
-      router.push("/app");
+      router.push(await nextRouteAfterAuth(cred.user.uid));
     } catch (err) {
       setError(friendlyError(err instanceof Error ? err.message : ""));
     } finally {

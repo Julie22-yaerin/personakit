@@ -578,6 +578,40 @@ footer {
   line-height: 1.6;
 }
 
+/* ---------- onboarding ---------- */
+
+.onboarding-step-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+  margin: 0 0 14px;
+}
+
+.onboarding-title {
+  font-family: var(--serif);
+  font-size: 26px;
+  margin: 0 0 18px;
+}
+
+.camera-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+
+.camera-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
 @media (max-width: 720px) {
   .grid-3,
   .quote-grid,
