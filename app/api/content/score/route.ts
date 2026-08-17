@@ -8,6 +8,8 @@ import {
   classifyProvocation,
   classifyProvocationQuality,
   genericityScore,
+  isContentSubstantive,
+  personaStabilityRecommendation,
   personaStabilityScore,
   provocationQuality,
   provocationScore,
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (content.trim().split(/\s+/).length < 5) {
+  if (!isContentSubstantive(content)) {
     return NextResponse.json({ error: "That's too short to score meaningfully." }, { status: 400 });
   }
 
@@ -60,6 +62,7 @@ export async function POST(request: Request) {
         label: classifyPersonaStability(stability),
         components: extraction.personaStability,
         weakestFactors: weakestPersonaStabilityFactors(extraction.personaStability),
+        recommendation: personaStabilityRecommendation(extraction.personaStability),
         notes: extraction.stabilityNotes,
       },
       genericity: {
@@ -74,7 +77,7 @@ export async function POST(request: Request) {
         components: extraction.provocation,
         evidenceStrength: extraction.evidenceStrength,
         quality: pq,
-        qualityLabel: classifyProvocationQuality(pq),
+        qualityLabel: classifyProvocationQuality(provocation, pq),
         notes: extraction.provocationNotes,
       },
     });

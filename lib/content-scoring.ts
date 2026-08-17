@@ -6,6 +6,12 @@ function average(values: number[]): number {
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 }
 
+export const MIN_CONTENT_WORDS = 5;
+
+export function isContentSubstantive(text: string): boolean {
+  return text.trim().split(/\s+/).filter(Boolean).length >= MIN_CONTENT_WORDS;
+}
+
 /** DRM §6 — the raw 0-100 components the LLM extracts by comparing content to confirmed identity. */
 export interface PersonaStabilityComponents {
   voice: number;
@@ -56,11 +62,26 @@ export interface PersonaStabilityFactor {
   value: number;
 }
 
-/** Ranks which component is dragging Persona Stability down, largest gap first. */
+/** Ranks which component is dragging Persona Stability down, weakest first. */
 export function weakestPersonaStabilityFactors(components: PersonaStabilityComponents): PersonaStabilityFactor[] {
   return (Object.keys(components) as (keyof PersonaStabilityComponents)[])
     .map((factor) => ({ factor, value: components[factor] }))
     .sort((a, b) => a.value - b.value);
+}
+
+const PERSONA_STABILITY_RECOMMENDATIONS: Record<keyof PersonaStabilityComponents, string> = {
+  voice: "Read it back out loud — if it doesn't sound like something you'd actually say, rewrite the sentence structure, not just the word choice.",
+  beliefs: "Check this against what you confirmed on the identity interview — either it contradicts something you said you believe, or it's not actually connected to any of it.",
+  tone: "The emotional register is off from your confirmed style — either dial it toward how you actually deliver things, or note this is a deliberate departure.",
+  topics: "This isn't in the territory you've established expertise or obsession in — fine occasionally, but it won't read as distinctly you.",
+  behavior: "The way you're making the argument here doesn't match your established pattern (how you hedge, assert, or push back) — that's usually more noticeable than the topic itself.",
+  vocabulary: "The word choices don't match your confirmed vocabulary profile — this is often the fastest tell that something was smoothed over by an editor or a model.",
+};
+
+/** DRM §6 — a template recommendation tied to whichever component is weakest, not a free-text LLM opinion. */
+export function personaStabilityRecommendation(components: PersonaStabilityComponents): string {
+  const weakest = weakestPersonaStabilityFactors(components)[0];
+  return PERSONA_STABILITY_RECOMMENDATIONS[weakest.factor];
 }
 
 /** DRM §16 — the raw 0-100 genericity signals the LLM extracts. No weights given in the DRM; equal-weighted average, documented default. */
@@ -136,9 +157,17 @@ export function provocationQuality(provocation: number, evidenceStrength: number
   return clamp(provocation * (clamp(evidenceStrength, 0, 100) / 100), 0, 100);
 }
 
-export type ProvocationQualityLabel = "rage bait" | "thin" | "substantive thesis";
+export type ProvocationQualityLabel = "not provocative enough to matter" | "rage bait" | "thin" | "substantive thesis";
 
-export function classifyProvocationQuality(pq: number): ProvocationQualityLabel {
+/**
+ * "Rage bait" specifically means HIGH provocation with LOW evidence — it's
+ * a claim about the *type* of low quality, not just a low number. Content
+ * that simply isn't provocative in the first place (Provocation < 25, DRM
+ * §17's own "safe / generic" band) has nothing to evaluate PQ against, so
+ * it gets its own label instead of being mislabeled as bait.
+ */
+export function classifyProvocationQuality(provocation: number, pq: number): ProvocationQualityLabel {
+  if (provocation < 25) return "not provocative enough to matter";
   if (pq < 25) return "rage bait";
   if (pq < 50) return "thin";
   return "substantive thesis";

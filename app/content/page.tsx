@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
+import { isContentSubstantive } from "../../lib/content-scoring";
 import type { CommunicationProfile, FounderOrigin, IdentityCandidate } from "../../lib/founder-identity";
 
 interface PersonaStabilityResult {
@@ -13,6 +14,7 @@ interface PersonaStabilityResult {
   label: string;
   components: Record<string, number>;
   weakestFactors: { factor: string; value: number }[];
+  recommendation: string;
   notes: string;
 }
 
@@ -39,7 +41,39 @@ interface ScoreResponse {
   provocation: ProvocationResult;
 }
 
+interface HistoryEntry {
+  scoredAt: string;
+  excerpt: string;
+  personaStability: number;
+  genericity: number;
+  provocation: number;
+  provocationQuality: number;
+}
+
 const MAX_HISTORY = 20;
+
+const GOOD_COLOR = "var(--accent)";
+const WARN_COLOR = "var(--warn)";
+const BAD_COLOR = "var(--bad)";
+
+function stabilityColor(label: string): string {
+  if (label === "unmistakably them" || label === "recognizable") return GOOD_COLOR;
+  if (label === "drifting") return WARN_COLOR;
+  return BAD_COLOR;
+}
+
+function genericityColor(label: string): string {
+  if (label === "specific and grounded" || label === "mostly grounded") return GOOD_COLOR;
+  if (label === "generic") return WARN_COLOR;
+  return BAD_COLOR;
+}
+
+function provocationQualityColor(label: string): string {
+  if (label === "substantive thesis") return GOOD_COLOR;
+  if (label === "thin") return WARN_COLOR;
+  if (label === "rage bait") return BAD_COLOR;
+  return "var(--muted)";
+}
 
 export default function ContentLabPage() {
   const router = useRouter();
@@ -47,6 +81,7 @@ export default function ContentLabPage() {
   const [confirmedCandidates, setConfirmedCandidates] = useState<IdentityCandidate[]>([]);
   const [communicationProfile, setCommunicationProfile] = useState<CommunicationProfile | undefined>();
   const [founderOrigin, setFounderOrigin] = useState<FounderOrigin | undefined>();
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const [content, setContent] = useState("");
   const [result, setResult] = useState<ScoreResponse | null>(null);
@@ -75,6 +110,7 @@ export default function ContentLabPage() {
         setCommunicationProfile(identity.communicationProfile ?? undefined);
         setFounderOrigin(identity.founderOrigin ?? undefined);
       }
+      setHistory(((data.contentHistory ?? []) as HistoryEntry[]).slice().reverse());
       setUser(u);
     });
     return unsubscribe;
@@ -101,8 +137,8 @@ export default function ContentLabPage() {
 
       if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
-        const prevHistory = (snap.data()?.contentHistory ?? []) as unknown[];
-        const entry = {
+        const prevHistory = (snap.data()?.contentHistory ?? []) as HistoryEntry[];
+        const entry: HistoryEntry = {
           scoredAt: new Date().toISOString(),
           excerpt: content.slice(0, 140),
           personaStability: data.personaStability.score,
@@ -110,14 +146,13 @@ export default function ContentLabPage() {
           provocation: data.provocation.score,
           provocationQuality: data.provocation.quality,
         };
+        const nextHistory = [...prevHistory, entry].slice(-MAX_HISTORY);
         await setDoc(
           doc(db, "users", user.uid),
-          {
-            contentHistory: [...prevHistory, entry].slice(-MAX_HISTORY),
-            contentHistoryUpdatedAt: serverTimestamp(),
-          },
+          { contentHistory: nextHistory, contentHistoryUpdatedAt: serverTimestamp() },
           { merge: true },
         );
+        setHistory([...nextHistory].reverse());
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scoring failed");
@@ -169,7 +204,11 @@ export default function ContentLabPage() {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Paste a post, script, or transcript..."
           />
-          <button className="btn btn-primary btn-block" onClick={handleScore} disabled={loading || !content.trim()}>
+          <button
+            className="btn btn-primary btn-block"
+            onClick={handleScore}
+            disabled={loading || !isContentSubstantive(content)}
+          >
             {loading ? "Scoring..." : "Score This"}
           </button>
           {error && <p className="error">{error}</p>}
@@ -180,7 +219,9 @@ export default function ContentLabPage() {
             <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div className="price-name">Persona Stability — {result.personaStability.label}</div>
-                <span className="score-badge">{Math.round(result.personaStability.score)}</span>
+                <span className="score-badge" style={{ color: stabilityColor(result.personaStability.label) }}>
+                  {Math.round(result.personaStability.score)}
+                </span>
               </div>
               <p style={{ fontSize: 13, color: "var(--text)", marginTop: 8, marginBottom: 12 }}>
                 {result.personaStability.notes}
@@ -188,12 +229,18 @@ export default function ContentLabPage() {
               {Object.entries(result.personaStability.components).map(([k, v]) => (
                 <ComponentBar key={k} label={k} value={v} />
               ))}
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
+                  Weakest: {result.personaStability.weakestFactors[0]?.factor}
+                </div>
+                <p style={{ fontSize: 13, margin: 0 }}>{result.personaStability.recommendation}</p>
+              </div>
             </div>
 
             <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div className="price-name">Genericity — {result.genericity.label}</div>
-                <span className="score-badge" style={{ color: result.genericity.score >= 75 ? "var(--bad)" : undefined }}>
+                <span className="score-badge" style={{ color: genericityColor(result.genericity.label) }}>
                   {Math.round(result.genericity.score)}
                 </span>
               </div>
@@ -212,7 +259,7 @@ export default function ContentLabPage() {
               )}
             </div>
 
-            <div className="auth-card" style={{ textAlign: "left" }}>
+            <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div className="price-name">Provocation — {result.provocation.label}</div>
                 <span className="score-badge">{Math.round(result.provocation.score)}</span>
@@ -222,11 +269,39 @@ export default function ContentLabPage() {
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 12 }}>
                 <div className="price-name">Provocation Quality — {result.provocation.qualityLabel}</div>
-                <span className="score-badge">{Math.round(result.provocation.quality)}</span>
+                <span className="score-badge" style={{ color: provocationQualityColor(result.provocation.qualityLabel) }}>
+                  {Math.round(result.provocation.quality)}
+                </span>
               </div>
               <p style={{ fontSize: 13, color: "var(--text)", marginTop: 8 }}>{result.provocation.notes}</p>
             </div>
           </>
+        )}
+
+        {history.length > 0 && (
+          <div className="auth-card" style={{ textAlign: "left" }}>
+            <div className="price-name" style={{ marginBottom: 10 }}>History (last {history.length})</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Excerpt</th>
+                  <th>Stability</th>
+                  <th>Generic</th>
+                  <th>PQ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h, i) => (
+                  <tr key={i}>
+                    <td style={{ fontSize: 12, maxWidth: 260 }}>{h.excerpt}</td>
+                    <td>{Math.round(h.personaStability)}</td>
+                    <td>{Math.round(h.genericity)}</td>
+                    <td>{Math.round(h.provocationQuality)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
