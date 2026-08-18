@@ -60,6 +60,14 @@ export default function IdentityPage() {
   const [editText, setEditText] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Mandatory-setup mode: reached via the /app "not set up yet" redirect
+  // (or the ?setup=1 chain it kicks off) rather than a normal revisit.
+  const [setupMode, setSetupMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+  }, []);
+
   // Restore an in-progress draft (survives an accidental tab close before
   // extraction ever ran) — Firestore data, loaded below, takes priority
   // once auth resolves.
@@ -202,7 +210,7 @@ export default function IdentityPage() {
     try {
       await persistIdentity(candidates, communicationProfile, founderOrigin, selfKnowledgeScore, answers);
       if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
-      router.push("/app");
+      router.push(setupMode ? "/company?setup=1" : "/app");
     } finally {
       setSaving(false);
     }
@@ -228,6 +236,11 @@ export default function IdentityPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Founder Identity</p>
+        {setupMode && (
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+            One-time setup, step 1 of 2. After this you'll only come back here by clicking the cat.
+          </p>
+        )}
 
         {step === "interview" && (
           <div className="auth-card" style={{ textAlign: "left" }}>
@@ -407,7 +420,7 @@ export default function IdentityPage() {
             </div>
 
             <button className="btn btn-primary btn-block" onClick={handleSaveIdentity} disabled={saving}>
-              {saving ? "Saving..." : "Save to Persona Memory"}
+              {saving ? "Saving..." : setupMode ? "Continue to Company Context" : "Save to Persona Memory"}
             </button>
           </>
         )}

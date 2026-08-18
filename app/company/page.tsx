@@ -30,6 +30,12 @@ export default function CompanyPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [setupMode, setSetupMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
@@ -69,10 +75,18 @@ export default function CompanyPage() {
       };
       await setDoc(
         doc(db, "users", user.uid),
-        { companyContext: context, companyContextUpdatedAt: serverTimestamp() },
+        {
+          companyContext: context,
+          companyContextUpdatedAt: serverTimestamp(),
+          ...(setupMode ? { founderSetupCompletedAt: serverTimestamp() } : {}),
+        },
         { merge: true },
       );
       setSaved(true);
+      if (setupMode) {
+        router.push("/app");
+        return;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save.");
     } finally {
@@ -93,6 +107,11 @@ export default function CompanyPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Company Context</p>
+        {setupMode && (
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+            One-time setup, step 2 of 2. After this you'll only come back here by clicking the cat.
+          </p>
+        )}
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           <h1 className="onboarding-title">The founder is free. The product must be clear.</h1>
@@ -161,14 +180,16 @@ export default function CompanyPage() {
             onClick={handleSave}
             disabled={saving || !isCompanyContextSubstantive(productDescription)}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : setupMode ? "Finish setup" : "Save"}
           </button>
-          {saved && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>Saved.</p>}
+          {saved && !setupMode && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>Saved.</p>}
           {error && <p className="error">{error}</p>}
 
-          <Link href="/content" className="btn btn-ghost btn-block" style={{ marginTop: 12 }}>
-            Go to Content Lab
-          </Link>
+          {!setupMode && (
+            <Link href="/content" className="btn btn-ghost btn-block" style={{ marginTop: 12 }}>
+              Go to Content Lab
+            </Link>
+          )}
         </div>
       </div>
     </AppShell>

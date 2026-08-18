@@ -214,6 +214,10 @@ export default function ContentLabPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Content Lab</p>
+        <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+          The archive of every piece you've scored. For a new score, it's usually faster to just paste it in the{" "}
+          <Link href="/app" style={{ color: "var(--accent)" }}>dashboard chat</Link>.
+        </p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           <h1 className="onboarding-title">Does this actually sound like you?</h1>

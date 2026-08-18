@@ -2,6 +2,7 @@
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
@@ -137,6 +138,10 @@ export default function DistributionPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Distribution</p>
+        <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+          The archive of everything you've logged. Paste a link in the{" "}
+          <Link href="/app" style={{ color: "var(--accent)" }}>dashboard chat</Link> to have it pulled in automatically.
+        </p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           <h1 className="onboarding-title">The economic metric, not views.</h1>

@@ -786,6 +786,15 @@ footer {
 
 /* ---------- pixel cat mascot ---------- */
 
+.p-mascot-float {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: block;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45));
+}
+
 .pixel-cat {
   display: inline-block;
   animation: pixel-cat-bob 3.2s ease-in-out infinite;

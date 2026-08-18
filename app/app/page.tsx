@@ -11,6 +11,7 @@ import type { AssistantIntent } from "../../lib/assistant";
 import type { CommunicationProfile, FounderOrigin, IdentityCandidate } from "../../lib/founder-identity";
 import { EMPTY_COMPANY_CONTEXT, type CompanyContext } from "../../lib/company-context";
 import type { PersonaVector, StyleSuggestions } from "../../lib/persona";
+import { SCRIPT_NODE_LABELS, type ScriptGraph } from "../../lib/script";
 import {
   DEFAULT_EDS_WEIGHTS,
   classifyFDS,
@@ -28,13 +29,14 @@ interface AssistantMessage {
 
 const STARTER_PROMPTS = [
   "Score this post for me",
+  "Write me a script about...",
   "What should I wear on camera?",
   "How's my distribution looking?",
   "Founders with a similar style to me?",
 ];
 
 const WELCOME_TEXT =
-  "Hey — I'm your PERSONA assistant. Paste something to score, ask for a visual/style suggestion, check your distribution numbers, tell me something about yourself, or ask for a case study. One box, everything routes from here.";
+  "Hey — I'm your PERSONA assistant. Paste something to score, ask me to write a script, ask for a visual/style suggestion, paste a link to check its numbers, tell me something about yourself, or ask for a case study. One box, everything routes from here.";
 
 export default function AppHome() {
   const router = useRouter();
@@ -65,6 +67,13 @@ export default function AppHome() {
       const data = snap.data();
       if (!snap.exists() || !data?.onboardingCompletedAt) {
         router.replace("/onboarding");
+        return;
+      }
+      // Founder Identity + Company Context are a mandatory one-time setup
+      // the first time someone reaches the dashboard — after that they're
+      // archive pages, reachable only by clicking the cat.
+      if (!data?.founderSetupCompletedAt) {
+        router.replace("/identity?setup=1");
         return;
       }
       const identity = data.founderIdentity;
@@ -200,6 +209,75 @@ Economic Distribution Score (total): ${Math.round(edsTotal)}`,
     );
   }
 
+  async function handleGenerateScript(topic: string) {
+    const res = await authedFetch("/api/assistant/generate-script", {
+      topic,
+      candidates: confirmedCandidates.map((c) => ({ category: c.category, text: c.text })),
+      communicationProfile,
+      founderOrigin,
+      companyContext: companyContext.productDescription.trim() ? companyContext : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      pushAssistant(data.error ?? "Couldn't write that script.");
+      return;
+    }
+    const graph = data as ScriptGraph;
+    const text = graph.nodes.map((n) => `${SCRIPT_NODE_LABELS[n.type].toUpperCase()}\n${n.concept}`).join("\n\n");
+    pushAssistant(text, { label: "Open Studio to film it", url: "/studio" });
+  }
+
+  async function handleAnalyzeLink(url: string) {
+    const res = await authedFetch("/api/assistant/analyze-link", { url });
+    const data = await res.json();
+    if (!res.ok) {
+      pushAssistant(data.error ?? "Couldn't read that link.");
+      return;
+    }
+    if (!data.found) {
+      pushAssistant(
+        `I fetched that link but couldn't find real numbers on the page — a lot of platforms (YouTube, TikTok, Instagram) load view/like counts with JavaScript after the page loads, which a plain server fetch can't see. ${data.note ?? ""}`.trim(),
+        { label: "Log it manually in Distribution", url: "/distribution" },
+      );
+      return;
+    }
+
+    if (user) {
+      const entry = {
+        loggedAt: new Date().toISOString(),
+        label: data.label || url,
+        reach: data.views ?? 0,
+        engagement: data.likes ?? 0,
+        profileVisits: 0,
+        follows: 0,
+        qualifiedLeads: 0,
+        productSignups: 0,
+        customerConversions: 0,
+        hiringInbound: 0,
+        investorInbound: 0,
+        partnershipInbound: 0,
+      };
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const prevLog = (snap.data()?.distributionLog ?? []) as DistributionEntry[];
+      const nextLog = [...prevLog, entry];
+      await setDoc(
+        doc(db, "users", user.uid),
+        { distributionLog: nextLog, distributionLogUpdatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      setDistributionLog(nextLog);
+    }
+
+    const parts = [
+      data.views != null ? `${Number(data.views).toLocaleString()} views` : null,
+      data.likes != null ? `${Number(data.likes).toLocaleString()} likes` : null,
+    ].filter(Boolean);
+    pushAssistant(`Found it: ${parts.join(", ") || "some numbers"}. Logged it to your Distribution history.`, {
+      label: "See it in Distribution",
+      url: "/distribution",
+    });
+  }
+
   async function handleCaseStudy(question: string) {
     const res = await authedFetch("/api/assistant/case-study", { question, personaVector });
     const data = await res.json();
@@ -246,6 +324,12 @@ Economic Distribution Score (total): ${Math.round(edsTotal)}`,
           break;
         case "case_study":
           await handleCaseStudy(text);
+          break;
+        case "generate_script":
+          await handleGenerateScript(data.scriptTopic || text);
+          break;
+        case "analyze_link":
+          await handleAnalyzeLink(data.url || text);
           break;
         default:
           pushAssistant(data.reply);
