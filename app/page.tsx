@@ -1,215 +1,631 @@
+import { Geist, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
+import { ArrowRight, Camera, Hand, Scissors, ScanFace } from "lucide-react";
+import { Logo } from "../components/landing/Logo";
+import { MetricCard, MetricRow } from "../components/landing/MetricCard";
+import { PersonaScorePanel } from "../components/landing/PersonaScore";
+import { PredictionCard } from "../components/landing/PredictionCard";
+import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysis";
+import { PersonaTimeline } from "../components/landing/PersonaTimeline";
+import { PerformanceChart } from "../components/landing/PerformanceChart";
+import { Reveal } from "../components/landing/Reveal";
+import "./persona-landing.css";
+
+const grotesk = Geist({ subsets: ["latin"], variable: "--font-grotesk" });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
 export default function LandingPage() {
   return (
-    <>
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="wordmark">
-            THE LYCEUM
+    <div className={`p-page ${grotesk.variable} ${mono.variable}`}>
+      {/* ---------- NAV ---------- */}
+      <nav className="p-nav">
+        <div className="p-nav-inner">
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <Logo />
           </Link>
-          <div className="nav-links">
-            <a href="#product">Product</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#proof">Proof</a>
-            <Link href="/login" className="btn btn-primary" style={{ padding: "9px 18px" }}>
-              Enter
+          <div className="p-nav-links">
+            <a href="#engine">Product</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#founders">For Founders</a>
+            <a href="#creators">For Creators</a>
+          </div>
+          <div className="p-nav-actions">
+            <Link href="/login" className="p-nav-signin">
+              Sign in
+            </Link>
+            <Link href="/login" className="p-btn p-btn-primary p-btn-sm">
+              Build your persona
             </Link>
           </div>
         </div>
       </nav>
 
-      <section className="hero">
-        <div className="wrap">
-          <p className="eyebrow">BYOK · LOCAL-FIRST · ZERO-LATENCY CIRCUIT BREAKER</p>
-          <h1>
-            We built the AI workspace
-            <br />
-            every VC asked for.
-          </h1>
-          <p className="sub">
-            Enterprise-grade. Local-first. A circuit breaker that trips before your API bill does.
-            Every box on the checklist, checked. You&apos;ll forget we exist by the next
-            fundraising cycle, and honestly — same.
-          </p>
-          <div className="hero-ctas">
-            <Link href="/login" className="btn btn-primary">
-              Request Access
-            </Link>
-            <a href="#pricing" className="btn btn-ghost">
-              Read the Deck We Won&apos;t Send You
-            </a>
+      {/* ---------- HERO ---------- */}
+      <section className="p-hero">
+        <div className="p-wrap">
+          <div className="p-hero-grid">
+            <Reveal>
+              <div>
+                <p className="p-eyebrow">Founder Persona Intelligence</p>
+                <h1>
+                  Stop making content that sounds like everyone else.
+                  <br />
+                  Build a persona people remember.
+                </h1>
+                <p className="p-hero-sub">
+                  Your personality is already part of your marketing. We turn it into something you
+                  can measure, test, and improve.
+                </p>
+                <div className="p-hero-ctas">
+                  <Link href="/login" className="p-btn p-btn-primary">
+                    Build my persona
+                  </Link>
+                  <a href="#how-it-works" className="p-btn p-btn-ghost">
+                    See how it works <ArrowRight size={15} />
+                  </a>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.15}>
+              <div className="p-hero-visual">
+                <div className="p-phone-mock">
+                  <div className="p-phone-label">RAW TAKE · NO OVERLAY BAKED IN</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <PersonaScorePanel
+                    metrics={[
+                      { label: "AUTHORITY", value: 84 },
+                      { label: "CONTRARIANISM", value: 91 },
+                      { label: "WARMTH", value: 28 },
+                      { label: "MEMORABILITY", value: 93 },
+                      { label: "VULNERABILITY", value: 34 },
+                      { label: "HUMOR", value: 71 },
+                    ]}
+                    identitySignal="Strategic Contrarian"
+                    confidence={91.4}
+                  />
+                  <PredictionCard
+                    metrics={[
+                      { label: "CURIOSITY", value: 92 },
+                      { label: "COMMENT POTENTIAL", value: 86 },
+                      { label: "SHARE POTENTIAL", value: 74 },
+                      { label: "PROFILE INTENT", value: 81 },
+                    ]}
+                  />
+                </div>
+              </div>
+            </Reveal>
           </div>
-          <p className="hero-note">no credit card · no sales call · no promises</p>
         </div>
       </section>
 
-      <div className="logo-strip">
-        <div className="wrap">
-          <p>Trusted by three investors who ghosted us and one who still likes our tweets</p>
-          <div className="logo-row">
-            <span>Seed &amp; Regret Capital</span>
-            <span>Q4 Vibes Ventures</span>
-            <span>We&apos;ll Circle Back LP</span>
-            <span>Uncle&apos;s Money LLC</span>
+      {/* ---------- PROBLEM ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Your content isn&apos;t boring because your product is boring.</h2>
+              <p>You&apos;re probably just presenting yourself like everyone else.</p>
+            </div>
+          </Reveal>
+          <div className="p-grid-3">
+            <Reveal delay={0}>
+              <div className="p-card p-problem-card">
+                <span className="p-tag">THE TECH FOUNDER</span>
+                <p style={{ margin: 0, fontSize: 15, color: "var(--p-text-secondary)", lineHeight: 1.6 }}>
+                  Brilliant product.
+                  <br />
+                  Zero personality.
+                  <br />
+                  Terrified of looking stupid on camera.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <div className="p-card p-problem-card">
+                <span className="p-tag">THE PERFECTIONIST</span>
+                <p style={{ margin: 0, fontSize: 15, color: "var(--p-text-secondary)", lineHeight: 1.6 }}>
+                  Three hours editing a 30-second video.
+                  <br />
+                  Twelve views.
+                  <br />
+                  Never posts again.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <div className="p-card p-problem-card">
+                <span className="p-tag">THE CORPORATE FOUNDER</span>
+                <p style={{ margin: 0, fontSize: 15, color: "var(--p-text-secondary)", lineHeight: 1.6 }}>
+                  &ldquo;We&apos;re excited to announce&hellip;&rdquo;
+                  <br />
+                  <br />
+                  Nobody was excited.
+                </p>
+              </div>
+            </Reveal>
           </div>
         </div>
-      </div>
+      </section>
 
-      <section id="product">
-        <div className="wrap">
-          <div className="section-head">
-            <p className="eyebrow">The Product</p>
-            <h2>Everything a pitch deck promises. Nothing a person asked for.</h2>
-            <p>
-              We shipped the three features every AI workspace slide claims to have. We are, as
-              far as we can tell, indistinguishable from everyone else doing this. That was
-              always the plan.
+      {/* ---------- CORE IDEA ---------- */}
+      <section className="p-section" id="how-it-works">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Personality is not a vibe. It is a variable.</h2>
+              <p>
+                Most creator tools optimize captions, hashtags, posting schedules, thumbnails. This
+                system studies identity, personality signals, tone, authority, warmth,
+                contrarianism, vulnerability, humor, aggression, curiosity, memorability, and visual
+                behavior — then connects those variables to actual content performance.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <FlowDiagram
+              steps={[
+                ["PERSONA", "CONTENT", "AUDIENCE", "PLATFORM"],
+                "PREDICTED RESPONSE",
+                "REAL RESPONSE",
+                "MODEL UPDATE",
+              ]}
+              accent
+            />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- PERSONA ENGINE ---------- */}
+      <section className="p-section" id="engine">
+        <div className="p-wrap">
+          <div className="p-hero-grid">
+            <Reveal>
+              <div>
+                <h2 style={{ fontSize: "clamp(28px,4vw,42px)", letterSpacing: "-0.02em", margin: "0 0 16px" }}>
+                  Know exactly what you&apos;re projecting.
+                </h2>
+                <p style={{ fontSize: 17, color: "var(--p-text-secondary)", lineHeight: 1.6, marginBottom: 20 }}>
+                  Upload your profile, previous posts, scripts, videos, images, bio, and target
+                  audience. The system generates a measurable persona profile.
+                </p>
+                <span className="p-badge">MODEL ESTIMATE · NOT A PSYCHOLOGICAL DIAGNOSIS</span>
+              </div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <MetricCard
+                metrics={[
+                  { label: "AUTHORITY", value: 84 },
+                  { label: "CONTRARIANISM", value: 91 },
+                  { label: "WARMTH", value: 28 },
+                  { label: "HUMOR", value: 71 },
+                  { label: "VULNERABILITY", value: 34 },
+                  { label: "AGGRESSION", value: 63 },
+                  { label: "MEMORABILITY", value: 93 },
+                  { label: "TREND ALIGNMENT", value: 77 },
+                ]}
+              />
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- CONTENT LAB ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Don&apos;t ask AI to write another script.</h2>
+              <p>Ask it what version of you should appear in the script.</p>
+            </div>
+          </Reveal>
+          <WorkflowSteps
+            steps={[
+              { index: "01", title: "Upload", description: "Upload an idea, draft, or existing video." },
+              {
+                index: "02",
+                title: "Analyze",
+                description: "Persona engine analyzes how the content currently communicates identity.",
+              },
+              {
+                index: "03",
+                title: "Identify",
+                description:
+                  "System identifies weak identity signals, generic phrasing, predictable structure, missing tension, weak curiosity, inconsistent persona behavior.",
+              },
+              {
+                index: "04",
+                title: "Regenerate",
+                description: "Generate a revised content concept — not just hook, body, CTA.",
+              },
+            ]}
+          />
+          <Reveal delay={0.15}>
+            <div style={{ marginTop: 56 }}>
+              <FlowDiagram
+                steps={[
+                  "PERSONA SIGNAL",
+                  "HOOK",
+                  "TENSION",
+                  "PROOF",
+                  "IDENTITY REINFORCEMENT",
+                  "CURIOSITY GAP",
+                  "CTA",
+                ]}
+                accent
+              />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- VISUAL DIRECTOR ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Your persona doesn&apos;t stop at words.</h2>
+              <p>The system generates a visual direction for filming.</p>
+            </div>
+          </Reveal>
+          <div className="p-hero-grid">
+            <Reveal delay={0.05}>
+              <div className="p-phone-mock" style={{ maxWidth: 320 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ScanFace size={64} strokeWidth={0.9} color="rgba(255,59,48,0.55)" />
+                </div>
+                <div className="p-phone-label">FACIAL TRACKING · ILLUSTRATIVE</div>
+              </div>
+            </Reveal>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <Reveal delay={0.1}>
+                <div className="p-card">
+                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Camera size={13} /> CAMERA
+                  </div>
+                  <SpecRow label="Distance" value="1.4m" />
+                  <SpecRow label="Angle" value="eye-level" />
+                  <SpecRow label="Movement" value="low" />
+                </div>
+              </Reveal>
+              <Reveal delay={0.15}>
+                <div className="p-card">
+                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <ScanFace size={13} /> FACE
+                  </div>
+                  <SpecRow label="Eye contact" value="high" />
+                  <SpecRow label="Expression" value="restrained" />
+                  <SpecRow label="Smile frequency" value="low" />
+                </div>
+              </Reveal>
+              <Reveal delay={0.2}>
+                <div className="p-card">
+                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Hand size={13} /> GESTURE
+                  </div>
+                  <SpecRow label="Hand movement" value="medium" />
+                  <SpecRow label="Pause frequency" value="high" />
+                </div>
+              </Reveal>
+              <Reveal delay={0.25}>
+                <div className="p-card">
+                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Scissors size={13} /> EDITING
+                  </div>
+                  <SpecRow label="Cut frequency" value="1.8/sec" />
+                  <MetricRow label="Text density" value={64} />
+                  <MetricRow label="Visual novelty" value={72} />
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- PREDICTION ENGINE ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Before you post, make a hypothesis.</h2>
+            </div>
+          </Reveal>
+          <div className="p-hero-grid">
+            <Reveal delay={0.05}>
+              <div className="p-card">
+                <div
+                  className="p-mono"
+                  style={{ fontSize: 11, color: "var(--p-text-secondary)", letterSpacing: "0.08em", marginBottom: 16 }}
+                >
+                  CONTENT PREDICTION
+                </div>
+                <MetricRow label="Persona alignment" value={91} />
+                <MetricRow label="Hook strength" value={87} />
+                <MetricRow label="Curiosity" value={93} />
+                <MetricRow label="Identity clarity" value={89} />
+                <MetricRow label="Audience tension" value={81} />
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--p-border)" }}>
+                  <PredictedTag label="Comment probability" value="HIGH" />
+                  <PredictedTag label="Profile intent" value="HIGH" />
+                  <PredictedTag label="Share potential" value="MEDIUM" />
+                </div>
+                <p style={{ fontSize: 12, color: "var(--p-text-secondary)", marginTop: 18, marginBottom: 0 }}>
+                  Predictions are estimates, not guarantees. Social algorithms remain probabilistic
+                  systems.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <FlowDiagram steps={["PREDICTED", "POST", "ACTUAL PERFORMANCE", "LEARNING"]} />
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- FEEDBACK LOOP ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Every post teaches the system who you actually are online.</h2>
+              <p>
+                Connect a social account or manually import performance data — views, likes,
+                comments, shares, saves, profile visits, followers gained, watch time, retention,
+                website clicks.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <PerformanceChart
+              rows={[
+                { label: "Curiosity", predicted: 93, actual: 88 },
+                { label: "Authority", predicted: 84, actual: 79 },
+                { label: "Comments", predicted: 86, actual: 91 },
+                { label: "Shares", predicted: 74, actual: 63 },
+                { label: "Profile intent", predicted: 81, actual: 87 },
+              ]}
+            />
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p
+              className="p-mono"
+              style={{ textAlign: "center", fontSize: 13, color: "var(--p-text-secondary)", marginTop: 28 }}
+            >
+              The next recommendation is based on what actually happened.
             </p>
-          </div>
-          <div className="grid-3">
-            <div className="card">
-              <span className="tag">Feature 01</span>
-              <h3>Circuit Breaker (BYOK)</h3>
-              <p>
-                Bring your own key, and we&apos;ll cut it off the moment it gets interesting.
-                Zero-latency, because we measured it once and never again.
-              </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- PERSONA EVOLVES ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head" style={{ margin: "0 auto 56px", textAlign: "center" }}>
+              <h2>Your persona is not a document.</h2>
             </div>
-            <div className="card">
-              <span className="tag">Feature 02</span>
-              <h3>Local-First</h3>
-              <p>
-                Your data never leaves your machine, mostly because we haven&apos;t finished the
-                sync server. Call it a privacy feature. We do.
-              </p>
-            </div>
-            <div className="card">
-              <span className="tag">Feature 03</span>
-              <h3>Collaborative Workspace</h3>
-              <p>
-                Real-time collaboration for teams of one, which is the average team size that has
-                used this so far.
-              </p>
-            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <PersonaTimeline
+              points={[
+                {
+                  label: "WEEK 01",
+                  metrics: [
+                    { label: "Contrarianism", value: 72 },
+                    { label: "Authority", value: 61 },
+                    { label: "Memorability", value: 68 },
+                  ],
+                },
+                {
+                  label: "WEEK 04",
+                  metrics: [
+                    { label: "Contrarianism", value: 84 },
+                    { label: "Authority", value: 76 },
+                    { label: "Memorability", value: 82 },
+                  ],
+                },
+                {
+                  label: "WEEK 08",
+                  metrics: [
+                    { label: "Contrarianism", value: 89 },
+                    { label: "Authority", value: 83 },
+                    { label: "Memorability", value: 91 },
+                  ],
+                },
+              ]}
+            />
+          </Reveal>
+          <p
+            className="p-mono"
+            style={{ textAlign: "center", fontSize: 13, color: "var(--p-text-secondary)", marginTop: 32 }}
+          >
+            Your model changes as your audience responds.
+          </p>
+        </div>
+      </section>
+
+      {/* ---------- FOUNDERS / CREATORS ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <div className="p-grid-2">
+            <Reveal>
+              <div className="p-card p-split-card" id="founders">
+                <span className="p-eyebrow" style={{ marginBottom: 12 }}>
+                  For Founders
+                </span>
+                <h3 style={{ fontSize: 24, margin: "0 0 8px", fontWeight: 600 }}>
+                  Turn your personality into distribution.
+                </h3>
+                <ul>
+                  <li>Founder persona</li>
+                  <li>Positioning</li>
+                  <li>Content experiments</li>
+                  <li>Audience response</li>
+                  <li>Personal brand analytics</li>
+                  <li>Founder-led growth</li>
+                </ul>
+                <Link href="/login" className="p-btn p-btn-primary">
+                  Build my founder persona
+                </Link>
+              </div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="p-card p-split-card" id="creators">
+                <span className="p-eyebrow" style={{ marginBottom: 12 }}>
+                  For Creators / Marketers
+                </span>
+                <h3 style={{ fontSize: 24, margin: "0 0 8px", fontWeight: 600 }}>
+                  Understand which identity signals actually move your audience.
+                </h3>
+                <ul>
+                  <li>Persona analysis</li>
+                  <li>Content analysis</li>
+                  <li>Visual direction</li>
+                  <li>Performance prediction</li>
+                  <li>Feedback loop</li>
+                  <li>Experimentation</li>
+                </ul>
+                <Link href="/login" className="p-btn p-btn-ghost">
+                  Analyze my content
+                </Link>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
-      <section className="stats" id="proof">
-        <div className="wrap">
-          <div className="stat-row">
-            <div>
-              <div className="stat-num">$0</div>
-              <div className="stat-label">ARR, proudly unbothered</div>
+      {/* ---------- DIFFERENCE ---------- */}
+      <section className="p-section">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <h2>Not another AI writer.</h2>
             </div>
-            <div>
-              <div className="stat-num">14</div>
-              <div className="stat-label">pivots before this landing page</div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="p-table-wrap">
+              <table className="p-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Generic AI</th>
+                    <th>Persona</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ComparisonRow label="Writes scripts" left="check" right="check" />
+                  <ComparisonRow label="Knows your persona" left="limited" right="check" />
+                  <ComparisonRow label="Measures identity signals" left="cross" right="check" />
+                  <ComparisonRow label="Predicts response" left="limited" right="check" />
+                  <ComparisonRow label="Tracks actual results" left="limited" right="check" />
+                  <ComparisonRow label="Learns from your posts" left="cross" right="check" />
+                  <ComparisonRow label="Builds a persistent persona model" left="cross" right="check" />
+                  <ComparisonRow label="Connects personality to performance" left="cross" right="check" />
+                </tbody>
+              </table>
             </div>
-            <div>
-              <div className="stat-num">1</div>
-              <div className="stat-label">investor who still texts us, unprompted</div>
-            </div>
-            <div>
-              <div className="stat-num">99.2%</div>
-              <div className="stat-label">of visitors who will never come back, and we respect it</div>
-            </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
-      <section>
-        <div className="wrap">
-          <div className="section-head">
-            <p className="eyebrow">What People Are Saying</p>
-            <h2>Unsolicited, mostly.</h2>
-          </div>
-          <div className="quote-grid">
-            <div className="quote">
-              <p className="text">
-                &ldquo;I signed up to see what the fuss was about. There was no fuss. I stayed
-                anyway.&rdquo;
-              </p>
-              <div className="attr">— a person, on a Tuesday</div>
-            </div>
-            <div className="quote">
-              <p className="text">
-                &ldquo;It does exactly what it says it does, which is more than I can say for the
-                other twelve tabs I have open.&rdquo;
-              </p>
-              <div className="attr">— someone who did not ask to be quoted</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing">
-        <div className="wrap">
-          <div className="section-head">
-            <p className="eyebrow">Pricing</p>
-            <h2>Pick the tier that matches how much you believe in us.</h2>
-          </div>
-          <div className="price-grid">
-            <div className="price-card">
-              <div className="price-name">Free</div>
-              <div className="price-amount">$0</div>
-              <div className="price-caption">For the curious and the cheap. Same thing.</div>
-              <ul className="price-features">
-                <li>Full product, no strings</li>
-                <li>Community support (there is no community)</li>
-                <li>Our undying gratitude</li>
-              </ul>
-              <Link href="/login" className="btn btn-ghost btn-block">
-                Start free
+      {/* ---------- FINAL CTA ---------- */}
+      <section className="p-final">
+        <div className="p-wrap">
+          <Reveal>
+            <h2>Be recognizable before you become famous.</h2>
+            <p>Build the version of yourself people remember.</p>
+            <div className="p-final-actions">
+              <Link href="/login" className="p-btn p-btn-primary">
+                Build my persona
               </Link>
-            </div>
-            <div className="price-card featured">
-              <div className="price-name">Pro</div>
-              <div className="price-amount">$29/mo</div>
-              <div className="price-caption">For people who want an invoice to feel serious.</div>
-              <ul className="price-features">
-                <li>Everything in Free</li>
-                <li>Priority support (we reply eventually)</li>
-                <li>A line item you can show your co-founder</li>
-              </ul>
-              <Link href="/login" className="btn btn-primary btn-block">
-                Actually, start here
-              </Link>
-            </div>
-            <div className="price-card">
-              <div className="price-name">Enterprise</div>
-              <div className="price-amount">Talk to us</div>
-              <div className="price-caption">We need the logo for the deck. Please.</div>
-              <ul className="price-features">
-                <li>Everything in Pro</li>
-                <li>A Slack channel we&apos;ll actually watch</li>
-                <li>Your name in our next fundraise</li>
-              </ul>
-              <a href="mailto:hello@thelyceum.app" className="btn btn-ghost btn-block">
-                Email us. Really.
+              <a href="#how-it-works" className="p-btn p-btn-ghost">
+                Explore the system <ArrowRight size={15} />
               </a>
             </div>
+            <span className="p-mono" style={{ fontSize: 12, color: "var(--p-text-secondary)" }}>
+              PERSONA ENGINE v0.1
+            </span>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- FOOTER ---------- */}
+      <footer className="p-footer">
+        <div className="p-wrap">
+          <div className="p-footer-top">
+            <Logo size={24} />
+            <div className="p-footer-links">
+              <a href="#engine">Product</a>
+              <a href="#founders">For Founders</a>
+              <a href="#creators">For Creators</a>
+              <a href="#how-it-works">Research</a>
+              <span style={{ color: "var(--p-text-secondary)", fontSize: 13 }}>Privacy</span>
+              <span style={{ color: "var(--p-text-secondary)", fontSize: 13 }}>Terms</span>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section className="final-cta">
-        <div className="wrap">
-          <h2>Get in before we get acqui-hired into oblivion.</h2>
-          <p>Two fields. One click. No onboarding call. We promise, mostly because we can&apos;t afford one.</p>
-          <Link href="/login" className="btn btn-primary">
-            Request Access
-          </Link>
-        </div>
-      </section>
-
-      <footer>
-        <div className="wrap footer-inner">
-          <span>© {new Date().getFullYear()} The Lyceum. Built to spec. Forgotten on schedule.</span>
-          <span>thelyceum.app</span>
+          <div className="p-footer-bottom">Built for people who refuse to sound like everyone else.</div>
         </div>
       </footer>
-    </>
+    </div>
   );
+}
+
+function SpecRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}>
+      <span style={{ color: "var(--p-text-secondary)" }}>{label}</span>
+      <span className="p-mono" style={{ color: "var(--p-text)" }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function PredictedTag({ label, value }: { label: string; value: string }) {
+  const color = value === "HIGH" ? "var(--p-success)" : value === "MEDIUM" ? "var(--p-accent-secondary)" : "var(--p-text-secondary)";
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}>
+      <span style={{ color: "var(--p-text-secondary)" }}>{label}</span>
+      <span className="p-mono" style={{ color }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ComparisonRow({
+  label,
+  left,
+  right,
+}: {
+  label: string;
+  left: "check" | "cross" | "limited";
+  right: "check" | "cross" | "limited";
+}) {
+  return (
+    <tr>
+      <td>{label}</td>
+      <td>
+        <ComparisonMark kind={left} />
+      </td>
+      <td>
+        <ComparisonMark kind={right} />
+      </td>
+    </tr>
+  );
+}
+
+function ComparisonMark({ kind }: { kind: "check" | "cross" | "limited" }) {
+  if (kind === "check") return <span className="p-check">✓</span>;
+  if (kind === "cross") return <span className="p-cross">✕</span>;
+  return <span className="p-limited">limited</span>;
 }

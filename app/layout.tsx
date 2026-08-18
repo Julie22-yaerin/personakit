@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "The Lyceum",
-  description: "The AI workspace every investor asked for and nobody will remember.",
+  title: "PERSONA — Founder Persona Intelligence",
+  description: "Your persona is not a document. Measure, test, and improve the identity behind your content.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
