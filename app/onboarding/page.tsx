@@ -1,7 +1,7 @@
 "use client";
 
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { scanFace, type FaceScanResult } from "../../lib/face-scan";
@@ -81,9 +81,26 @@ export default function OnboardingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => onAuthStateChanged(auth, (u) => {
+  // Onboarding is a one-time gate. /app already bounces incomplete users
+  // here; this is the mirror image — anyone who lands on /onboarding
+  // (stale link, browser back button after finishing, a race on the
+  // post-login redirect) after already completing it gets sent straight
+  // to the dashboard instead of silently restarting the whole interview
+  // from zero, which is what made it feel like the app "remembered
+  // nothing" between sessions.
+  useEffect(() => onAuthStateChanged(auth, async (u) => {
+    if (!u) {
+      setUser(null);
+      router.replace("/login");
+      return;
+    }
+    const snap = await getDoc(doc(db, "users", u.uid));
+    if (snap.exists() && snap.data().onboardingCompletedAt) {
+      // Already done — redirect without ever showing the onboarding UI.
+      router.replace("/app");
+      return;
+    }
     setUser(u);
-    if (!u) router.replace("/login");
   }), [router]);
 
   useEffect(() => {
@@ -141,6 +158,11 @@ export default function OnboardingPage() {
 
   async function processImageSource(source: HTMLVideoElement | HTMLImageElement) {
     stopCamera();
+    // Show the "verifying" card immediately — there's a gap of a second
+    // or two before this while scanFace() runs and the frame is still
+    // frozen from stopCamera(), which read as "nothing happened" when
+    // the loading state only appeared after that gap.
+    setStep("verifying");
     const canvas = drawToCanvas(source);
 
     let features: FaceScanResult | null = null;
@@ -150,7 +172,6 @@ export default function OnboardingPage() {
       features = null;
     }
 
-    setStep("verifying");
     const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8);
 
     try {
@@ -365,13 +386,15 @@ export default function OnboardingPage() {
 
         {step === "verifying" && (
           <div className="auth-card" style={{ textAlign: "center" }}>
+            <div className="spinner" />
             <p style={{ color: "var(--muted)" }}>Checking your photo...</p>
           </div>
         )}
 
         {step === "processing" && (
           <div className="auth-card" style={{ textAlign: "center" }}>
-            <p style={{ color: "var(--muted)" }}>Building your baseline...</p>
+            <div className="spinner" />
+            <p style={{ color: "var(--muted)" }}>Building your baseline — this can take a moment.</p>
           </div>
         )}
 
