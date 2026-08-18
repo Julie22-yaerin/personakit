@@ -12,7 +12,7 @@ import {
   type InterviewAnswers,
 } from "./founder-identity";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 
 export interface IdentityExtractionResult {
   candidates: IdentityCandidate[];
@@ -195,13 +195,13 @@ const TOP_LEVEL_JSON_SCHEMA = {
   additionalProperties: false as const,
 };
 
-async function extractWithGoogleAI(answers: InterviewAnswers): Promise<IdentityExtractionResult> {
+async function extractWithNvidia(answers: InterviewAnswers): Promise<IdentityExtractionResult> {
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(TOP_LEVEL_JSON_SCHEMA)}`;
   const attempt = async (correction?: string): Promise<IdentityExtractionResult> => {
-    const result = await generateGoogleAIJSON({
-      kind: "primary",
-      systemInstruction: SYSTEM_PROMPT,
+    const result = await generateNvidiaJSON({
+      role: "extractor",
+      systemInstruction: `${SYSTEM_PROMPT}\n\n${shapeHint}`,
       prompt: correction ? `${buildUserPrompt(answers)}\n\n${correction}` : buildUserPrompt(answers),
-      schema: toGeminiSchema(TOP_LEVEL_JSON_SCHEMA),
     });
     return withIds(RAW_RESULT_SCHEMA.parse(result));
   };
@@ -269,9 +269,9 @@ async function extractWithOpenAI(answers: InterviewAnswers): Promise<IdentityExt
 export async function extractIdentityCandidates(
   answers: InterviewAnswers,
 ): Promise<IdentityExtractionResult> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("extractor")) {
     try {
-      return await extractWithGoogleAI(answers);
+      return await extractWithNvidia(answers);
     } catch (err) {
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
     }
@@ -283,6 +283,6 @@ export async function extractIdentityCandidates(
   if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(answers);
 
   throw new Error(
-    "Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Identity extraction needs one of them.",
+    "Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Identity extraction needs one of them.",
   );
 }

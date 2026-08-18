@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 import {
   PERSONA_DIMENSIONS,
   PersonaVectorSchema,
@@ -148,14 +148,14 @@ const TOP_LEVEL_JSON_SCHEMA = {
   additionalProperties: false as const,
 };
 
-async function synthesizeWithGoogleAI(
+async function synthesizeWithNvidia(
   input: OnboardingSynthesisInput,
 ): Promise<OnboardingSynthesisResult> {
-  const result = (await generateGoogleAIJSON({
-    kind: "primary",
-    systemInstruction: SYSTEM_PROMPT,
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(TOP_LEVEL_JSON_SCHEMA)}`;
+  const result = (await generateNvidiaJSON({
+    role: "stylist",
+    systemInstruction: `${SYSTEM_PROMPT}\n\n${shapeHint}`,
     prompt: buildUserPrompt(input),
-    schema: toGeminiSchema(TOP_LEVEL_JSON_SCHEMA),
   })) as OnboardingSynthesisResult;
 
   return {
@@ -214,17 +214,19 @@ async function synthesizeWithOpenAI(
 }
 
 /**
- * Google AI Studio direct is the default synthesis provider now
- * (OpenRouter's per-token markup was burning credit too fast); Anthropic
- * and OpenRouter remain as fallbacks so onboarding still works end-to-end
- * if the Google AI key isn't set.
+ * NVIDIA's "stylist" role (bé 2, thinkingmachines/inkling) is the
+ * default synthesis provider now — it's the one that actually produces
+ * persona/style/voice output, receiving bé 1's (extractor) raw analysis
+ * as input upstream in the onboarding flow. Anthropic and OpenRouter
+ * remain as fallbacks so onboarding still works end-to-end if the
+ * NVIDIA key isn't set.
  */
 export async function synthesizeOnboarding(
   input: OnboardingSynthesisInput,
 ): Promise<OnboardingSynthesisResult> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("stylist")) {
     try {
-      return await synthesizeWithGoogleAI(input);
+      return await synthesizeWithNvidia(input);
     } catch (err) {
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
     }
@@ -236,6 +238,6 @@ export async function synthesizeOnboarding(
   if (process.env.OPENROUTER_API_KEY) return synthesizeWithOpenAI(input);
 
   throw new Error(
-    "Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Onboarding analysis needs one of them.",
+    "Neither NVIDIA_STYLIST_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Onboarding analysis needs one of them.",
   );
 }

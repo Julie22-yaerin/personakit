@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type { CompanyContext } from "./company-context";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, Type } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured } from "./nvidia";
 import { RED_LINE_ZONES } from "./redline-scoring";
 
 const RedLineExtractionSchema = z.object({
@@ -168,45 +168,18 @@ async function extractWithAnthropic(
   }
 }
 
-const GOOGLE_AI_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    flags: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          zone: { type: Type.STRING, enum: [...RED_LINE_ZONES] },
-          quote: { type: Type.STRING },
-          reason: { type: Type.STRING },
-        },
-        required: ["zone", "quote", "reason"],
-      },
-    },
-    cccs: {
-      type: Type.OBJECT,
-      properties: {
-        productAccuracy: { type: Type.NUMBER },
-        claimAccuracy: { type: Type.NUMBER },
-        brandAlignment: { type: Type.NUMBER },
-        positioningAlignment: { type: Type.NUMBER },
-        evidence: { type: Type.NUMBER },
-      },
-      required: ["productAccuracy", "claimAccuracy", "brandAlignment", "positioningAlignment", "evidence"],
-    },
-  },
-  required: ["flags", "cccs"],
-};
+const NVIDIA_SHAPE_HINT = `Respond with JSON shaped exactly like:
+{"flags": [{"zone": "${RED_LINE_ZONES[0]}", "quote": "<verbatim quote>", "reason": "<why>"}], "cccs": {"productAccuracy": <0-100>, "claimAccuracy": <0-100>, "brandAlignment": <0-100>, "positioningAlignment": <0-100>, "evidence": <0-100>}}
+zone must be one of: ${RED_LINE_ZONES.join(", ")}. flags may be an empty array.`;
 
-async function extractWithGoogleAI(content: string, companyContext?: CompanyContext): Promise<RedLineExtraction> {
+async function extractWithNvidia(content: string, companyContext?: CompanyContext): Promise<RedLineExtraction> {
   const attempt = async (correction?: string): Promise<RedLineExtraction> => {
-    const result = await generateGoogleAIJSON({
-      kind: "primary",
-      systemInstruction: SYSTEM_PROMPT,
+    const result = await generateNvidiaJSON({
+      role: "extractor",
+      systemInstruction: `${SYSTEM_PROMPT}\n\n${NVIDIA_SHAPE_HINT}`,
       prompt: correction
         ? `${buildUserPrompt(content, companyContext)}\n\n${correction}`
         : buildUserPrompt(content, companyContext),
-      schema: GOOGLE_AI_SCHEMA,
     });
     return RedLineExtractionSchema.parse(result);
   };
@@ -262,9 +235,9 @@ export async function extractRedLineAssessment(
   content: string,
   companyContext?: CompanyContext,
 ): Promise<RedLineExtraction> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("extractor")) {
     try {
-      return await extractWithGoogleAI(content, companyContext);
+      return await extractWithNvidia(content, companyContext);
     } catch (err) {
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
     }
@@ -272,5 +245,5 @@ export async function extractRedLineAssessment(
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, content, companyContext);
   if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(content, companyContext);
-  throw new Error("Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Redline assessment needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Redline assessment needs one of them.");
 }

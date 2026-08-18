@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type { CommunicationProfile, FounderOrigin, IdentityCategory } from "./founder-identity";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 
 export interface IdentitySummary {
   /** Confirmed/modified candidates only — the caller filters out "pending"/"rejected" before this ever reaches the LLM. */
@@ -231,15 +231,15 @@ async function extractWithAnthropic(
   }
 }
 
-async function extractWithGoogleAI(content: string, identity: IdentitySummary): Promise<ContentExtractionResult> {
+async function extractWithNvidia(content: string, identity: IdentitySummary): Promise<ContentExtractionResult> {
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(TOP_LEVEL_JSON_SCHEMA)}`;
   const attempt = async (correction?: string): Promise<ContentExtractionResult> => {
-    const result = await generateGoogleAIJSON({
-      kind: "primary",
-      systemInstruction: SYSTEM_PROMPT,
+    const result = await generateNvidiaJSON({
+      role: "extractor",
+      systemInstruction: `${SYSTEM_PROMPT}\n\n${shapeHint}`,
       prompt: correction
         ? `${buildUserPrompt(content, identity)}\n\n${correction}`
         : buildUserPrompt(content, identity),
-      schema: toGeminiSchema(TOP_LEVEL_JSON_SCHEMA),
     });
     return RAW_RESULT_SCHEMA.parse(result);
   };
@@ -295,9 +295,9 @@ export async function extractContentScoring(
   content: string,
   identity: IdentitySummary,
 ): Promise<ContentExtractionResult> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("extractor")) {
     try {
-      return await extractWithGoogleAI(content, identity);
+      return await extractWithNvidia(content, identity);
     } catch (err) {
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
     }
@@ -309,6 +309,6 @@ export async function extractContentScoring(
   if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(content, identity);
 
   throw new Error(
-    "Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Content scoring needs one of them.",
+    "Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Content scoring needs one of them.",
   );
 }

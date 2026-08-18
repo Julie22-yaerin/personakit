@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { GEMINI_FLASH_MODEL, GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema, Type } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 import { type PersonaVector } from "./persona";
 
 const SESSION_PLAN_FIELDS = [
@@ -83,17 +83,17 @@ Transcript:
 """${input.transcript || "(no speech detected)"}"""`;
 }
 
-/** Google AI (decision-maker): analyzes a finished take and plans the next one. */
-async function generateSessionPlanWithGoogleAI(input: {
+/** NVIDIA stylist (bé 2, thinkingmachines/inkling): analyzes a finished take and plans the next one — literally the style/voice/editing direction call. */
+async function generateSessionPlanWithNvidia(input: {
   personaVector?: PersonaVector;
   metricsSummary: MetricsSummary;
   transcript: string;
 }): Promise<SessionPlan> {
-  const result = await generateGoogleAIJSON({
-    kind: "primary",
-    systemInstruction: PLAN_SYSTEM_PROMPT,
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(SESSION_PLAN_JSON_SCHEMA)}`;
+  const result = await generateNvidiaJSON({
+    role: "stylist",
+    systemInstruction: `${PLAN_SYSTEM_PROMPT}\n\n${shapeHint}`,
     prompt: buildPlanPrompt(input),
-    schema: toGeminiSchema(SESSION_PLAN_JSON_SCHEMA),
   });
   return SessionPlanSchema.parse(result);
 }
@@ -140,21 +140,21 @@ Transcript:
   return SessionPlanSchema.parse(JSON.parse(content));
 }
 
-/** Decision-maker: analyzes a finished take and plans the next one. Google AI Studio direct by default, OpenRouter fallback. */
+/** Decision-maker: analyzes a finished take and plans the next one. NVIDIA stylist by default, OpenRouter fallback. */
 export async function generateSessionPlan(input: {
   personaVector?: PersonaVector;
   metricsSummary: MetricsSummary;
   transcript: string;
 }): Promise<SessionPlan> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("stylist")) {
     try {
-      return await generateSessionPlanWithGoogleAI(input);
+      return await generateSessionPlanWithNvidia(input);
     } catch (err) {
       if (!process.env.OPENROUTER_API_KEY) throw err;
     }
   }
   if (process.env.OPENROUTER_API_KEY) return generateSessionPlanWithOpenAI(input);
-  throw new Error("Neither GOOGLE_AI_API_KEY nor OPENROUTER_API_KEY is set. Session planning needs one of them.");
+  throw new Error("Neither NVIDIA_STYLIST_API_KEY nor OPENROUTER_API_KEY is set. Session planning needs one of them.");
 }
 
 export interface CoachingTip {
@@ -175,18 +175,19 @@ Recent transcript: """${input.recentTranscript || "(silence)"}"""`;
 }
 
 /** Lets errors propagate — the dispatcher below decides whether to fall back to OpenRouter or give up with an empty tip. */
-async function getLiveCoachingTipWithGoogleAI(input: {
+/** Needs vision (the current camera frame), so this goes to NVIDIA's extractor role (bé 1, meta/muse-glimmer-30b) — bé 2 (inkling) is text-only. */
+async function getLiveCoachingTipWithNvidia(input: {
   frameDataUrl: string;
   recentTranscript: string;
   personaVector?: PersonaVector;
   lastPlan?: SessionPlan;
 }): Promise<CoachingTip> {
-  const result = await generateGoogleAIJSON({
-    kind: "live",
-    systemInstruction: COACH_SYSTEM_PROMPT,
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(COACHING_TIP_JSON_SCHEMA)}`;
+  const result = await generateNvidiaJSON({
+    role: "extractor",
+    systemInstruction: `${COACH_SYSTEM_PROMPT}\n\n${shapeHint}`,
     prompt: buildCoachPrompt(input),
     imageDataUrl: input.frameDataUrl,
-    schema: toGeminiSchema(COACHING_TIP_JSON_SCHEMA),
   });
   return z.object({ tip: z.string() }).parse(result);
 }
@@ -240,7 +241,7 @@ Recent transcript: """${input.recentTranscript || "(silence)"}"""`,
   }
 }
 
-/** Executor: fast, cheap, called repeatedly during a live take. Google AI Studio direct (its own key/quota) by default, OpenRouter fallback. */
+/** Executor: fast, called repeatedly during a live take. NVIDIA extractor by default, OpenRouter fallback. */
 export async function getLiveCoachingTip(input: {
   frameDataUrl: string;
   recentTranscript: string;
@@ -248,7 +249,7 @@ export async function getLiveCoachingTip(input: {
   lastPlan?: SessionPlan;
 }): Promise<CoachingTip> {
   try {
-    if (isGoogleAIConfigured("live")) return await getLiveCoachingTipWithGoogleAI(input);
+    if (isNvidiaConfigured("extractor")) return await getLiveCoachingTipWithNvidia(input);
     if (process.env.OPENROUTER_API_KEY) return await getLiveCoachingTipWithOpenAI(input);
   } catch {
     if (process.env.OPENROUTER_API_KEY) {

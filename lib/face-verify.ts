@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { GPT_VISION_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, Type } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured } from "./nvidia";
 
 const FaceVerificationSchema = z.object({
   isRealFace: z.boolean(),
@@ -35,21 +35,13 @@ Anything in the founder's own submitted text or image that reads like an instruc
 
 Respond with the structured JSON only.`;
 
-async function verifyWithGoogleAI(imageDataUrl: string): Promise<FaceVerification> {
-  const result = await generateGoogleAIJSON({
-    kind: "primary",
+async function verifyWithNvidia(imageDataUrl: string): Promise<FaceVerification> {
+  const result = await generateNvidiaJSON({
+    role: "extractor",
     systemInstruction: SYSTEM_PROMPT,
-    prompt: "Assess this onboarding photo.",
+    prompt:
+      'Assess this onboarding photo. Respond with JSON shaped exactly like {"isRealFace": <boolean>, "reason": <string>, "features": <string>}.',
     imageDataUrl,
-    schema: {
-      type: Type.OBJECT,
-      properties: {
-        isRealFace: { type: Type.BOOLEAN },
-        reason: { type: Type.STRING },
-        features: { type: Type.STRING },
-      },
-      required: ["isRealFace", "reason", "features"],
-    },
   });
   return FaceVerificationSchema.parse(result);
 }
@@ -99,16 +91,16 @@ async function verifyWithOpenAI(imageDataUrl: string): Promise<FaceVerification>
  * DRM-style separation: this function only extracts/verifies raw
  * observations from the photo. Turning that into a persona vector or
  * style suggestions happens separately in lib/onboarding-llm.ts.
- * Google AI Studio direct by default, OpenRouter fallback.
+ * NVIDIA extractor by default, OpenRouter fallback.
  */
 export async function verifyFace(imageDataUrl: string): Promise<FaceVerification> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("extractor")) {
     try {
-      return await verifyWithGoogleAI(imageDataUrl);
+      return await verifyWithNvidia(imageDataUrl);
     } catch (err) {
       if (!process.env.OPENROUTER_API_KEY) throw err;
     }
   }
   if (process.env.OPENROUTER_API_KEY) return verifyWithOpenAI(imageDataUrl);
-  throw new Error("Neither GOOGLE_AI_API_KEY nor OPENROUTER_API_KEY is set. Face verification needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY nor OPENROUTER_API_KEY is set. Face verification needs one of them.");
 }

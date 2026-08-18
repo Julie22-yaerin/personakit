@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { z } from "zod";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
-import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
+import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 import { SCRIPT_NODE_TYPES, type DriftSegment, type ScriptGraph, type ScriptNodeCoverage } from "./script";
 
 // --- Decomposition: founder's script/topic -> the 7-node graph. ---
@@ -99,15 +99,15 @@ async function decomposeWithAnthropic(apiKey: string, sourceText: string): Promi
   }
 }
 
-async function decomposeWithGoogleAI(sourceText: string): Promise<ScriptGraphExtraction> {
+async function decomposeWithNvidia(sourceText: string): Promise<ScriptGraphExtraction> {
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(SCRIPT_GRAPH_JSON_SCHEMA)}`;
   const attempt = async (correction?: string): Promise<ScriptGraphExtraction> => {
-    const result = await generateGoogleAIJSON({
-      kind: "primary",
-      systemInstruction: DECOMPOSE_SYSTEM_PROMPT,
+    const result = await generateNvidiaJSON({
+      role: "extractor",
+      systemInstruction: `${DECOMPOSE_SYSTEM_PROMPT}\n\n${shapeHint}`,
       prompt: correction
         ? `Founder's script/topic:\n"""${sourceText}"""\n\n${correction}`
         : `Founder's script/topic:\n"""${sourceText}"""`,
-      schema: toGeminiSchema(SCRIPT_GRAPH_JSON_SCHEMA),
     });
     return ScriptGraphExtractionSchema.parse(result);
   };
@@ -155,16 +155,16 @@ async function decomposeWithOpenAI(sourceText: string): Promise<ScriptGraphExtra
 }
 
 async function decomposeWithFallback(sourceText: string): Promise<ScriptGraphExtraction> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("extractor")) {
     try {
-      return await decomposeWithGoogleAI(sourceText);
+      return await decomposeWithNvidia(sourceText);
     } catch (err) {
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
     }
   }
   if (process.env.ANTHROPIC_API_KEY) return decomposeWithAnthropic(process.env.ANTHROPIC_API_KEY, sourceText);
   if (process.env.OPENROUTER_API_KEY) return decomposeWithOpenAI(sourceText);
-  throw new Error("Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Script decomposition needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Script decomposition needs one of them.");
 }
 
 export async function decomposeScript(sourceText: string): Promise<ScriptGraph> {
@@ -303,15 +303,15 @@ async function analyzeWithAnthropic(apiKey: string, graph: ScriptGraph, transcri
   }
 }
 
-async function analyzeWithGoogleAI(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
+async function analyzeWithNvidia(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(ANALYSIS_JSON_SCHEMA)}`;
   const attempt = async (correction?: string): Promise<DeliveryAnalysis> => {
-    const result = await generateGoogleAIJSON({
-      kind: "primary",
-      systemInstruction: ANALYSIS_SYSTEM_PROMPT,
+    const result = await generateNvidiaJSON({
+      role: "extractor",
+      systemInstruction: `${ANALYSIS_SYSTEM_PROMPT}\n\n${shapeHint}`,
       prompt: correction
         ? `${buildAnalysisPrompt(graph, transcript)}\n\n${correction}`
         : buildAnalysisPrompt(graph, transcript),
-      schema: toGeminiSchema(ANALYSIS_JSON_SCHEMA),
     });
     return DeliveryAnalysisSchema.parse(result);
   };
@@ -359,9 +359,9 @@ async function analyzeWithOpenAI(graph: ScriptGraph, transcript: string): Promis
 }
 
 export async function analyzeScriptDelivery(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
-  if (isGoogleAIConfigured("primary")) {
+  if (isNvidiaConfigured("extractor")) {
     try {
-      return await analyzeWithGoogleAI(graph, transcript);
+      return await analyzeWithNvidia(graph, transcript);
     } catch (err) {
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
     }
@@ -369,5 +369,5 @@ export async function analyzeScriptDelivery(graph: ScriptGraph, transcript: stri
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return analyzeWithAnthropic(anthropicKey, graph, transcript);
   if (process.env.OPENROUTER_API_KEY) return analyzeWithOpenAI(graph, transcript);
-  throw new Error("Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Delivery analysis needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Delivery analysis needs one of them.");
 }
