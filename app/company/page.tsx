@@ -162,7 +162,7 @@ export default function CompanyPage() {
           >
             {saving ? "Saving..." : "Save"}
           </button>
-          {saved && <p style={{ fontSize: 13, color: "var(--accent)", marginTop: 10 }}>Saved.</p>}
+          {saved && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>Saved.</p>}
           {error && <p className="error">{error}</p>}
 
           <Link href="/content" className="btn btn-ghost btn-block" style={{ marginTop: 12 }}>

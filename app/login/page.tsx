@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { auth, db, googleProvider } from "../../lib/firebase";
+import { Logo } from "../../components/landing/Logo";
 
 type Mode = "signup" | "signin";
 
@@ -26,14 +27,30 @@ async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/app"> 
   return snap.exists() && snap.data().onboardingCompletedAt ? "/app" : "/onboarding";
 }
 
+// Sign-in errors deliberately don't distinguish "no account" from "wrong
+// password" — confirming which emails have an account here is a classic
+// enumeration vector (an attacker with a leaked email list could probe
+// each one to see which have accounts on this app). Signup's
+// "email-already-in-use" is a narrower, widely-accepted trade-off: it's
+// the standard UX every major sign-up flow uses, and fixing it properly
+// (a "check your email to continue" flow that doesn't confirm account
+// existence either way) is a real feature change, not a one-line fix.
 function friendlyError(message: string): string {
   if (message.includes("auth/email-already-in-use")) return "That email already has an account. Try signing in instead.";
-  if (message.includes("auth/invalid-credential") || message.includes("auth/wrong-password")) return "Wrong email or password.";
-  if (message.includes("auth/user-not-found")) return "No account with that email yet. Try signing up.";
+  if (
+    message.includes("auth/invalid-credential") ||
+    message.includes("auth/wrong-password") ||
+    message.includes("auth/user-not-found")
+  ) {
+    return "Wrong email or password.";
+  }
   if (message.includes("auth/weak-password")) return "Password needs at least 6 characters.";
   if (message.includes("auth/popup-closed-by-user")) return "Google sign-in was closed before finishing.";
   return "Something went wrong. Try again.";
 }
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MS = 30_000;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,6 +59,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Client-side lockout on repeated failed sign-in attempts. This is a
+  // belt-and-suspenders UX layer, not the primary defense — Firebase's
+  // Identity Platform already throttles/blocks repeated failed sign-ins
+  // server-side per account, so a determined attacker can't bypass this
+  // by just reloading the page. It exists to slow down casual credential
+  // guessing without a page reload.
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const locked = lockedUntil !== null && Date.now() < lockedUntil;
 
   async function handleGoogle() {
     setLoading(true);
@@ -59,6 +85,7 @@ export default function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (locked) return;
     setLoading(true);
     setError(null);
     try {
@@ -66,10 +93,26 @@ export default function LoginPage() {
         mode === "signup"
           ? await createUserWithEmailAndPassword(auth, email, password)
           : await signInWithEmailAndPassword(auth, email, password);
+      setFailedAttempts(0);
+      setLockedUntil(null);
       await ensureUserDoc(cred.user.uid, cred.user.email);
       router.push(await nextRouteAfterAuth(cred.user.uid));
     } catch (err) {
-      setError(friendlyError(err instanceof Error ? err.message : ""));
+      const message = err instanceof Error ? err.message : "";
+      setError(friendlyError(message));
+      if (
+        mode === "signin" &&
+        (message.includes("auth/invalid-credential") ||
+          message.includes("auth/wrong-password") ||
+          message.includes("auth/user-not-found"))
+      ) {
+        const next = failedAttempts + 1;
+        setFailedAttempts(next);
+        if (next >= MAX_FAILED_ATTEMPTS) {
+          setLockedUntil(Date.now() + LOCKOUT_MS);
+          setFailedAttempts(0);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -79,7 +122,7 @@ export default function LoginPage() {
     <div className="auth-shell">
       <div className="auth-card">
         <Link href="/" className="wordmark">
-          THE LYCEUM
+          <Logo size={26} />
         </Link>
         <p className="auth-caption">
           {mode === "signup" ? "Two fields. One click. In." : "Welcome back. We kept the lights on."}
@@ -102,7 +145,11 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {error && <div className="auth-error">{error}</div>}
+        {locked ? (
+          <div className="auth-error">Too many failed attempts. Try again in a few seconds.</div>
+        ) : (
+          error && <div className="auth-error">{error}</div>
+        )}
 
         <button
           type="button"
@@ -142,7 +189,7 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
-          <button type="submit" disabled={loading} className="btn btn-primary btn-block">
+          <button type="submit" disabled={loading || locked} className="btn btn-primary btn-block">
             {loading ? "One sec..." : mode === "signup" ? "Create account" : "Log in"}
           </button>
         </form>

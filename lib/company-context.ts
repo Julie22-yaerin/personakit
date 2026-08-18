@@ -8,11 +8,11 @@ import { z } from "zod";
  * the exact thing this feature exists to catch.
  */
 export const CompanyContextSchema = z.object({
-  productDescription: z.string().min(1),
-  accurateClaims: z.array(z.string().min(1)),
-  falseClaims: z.array(z.string().min(1)),
-  brandVoice: z.string(),
-  positioning: z.string(),
+  productDescription: z.string().min(1).max(3000),
+  accurateClaims: z.array(z.string().min(1).max(500)).max(50),
+  falseClaims: z.array(z.string().min(1).max(500)).max(50),
+  brandVoice: z.string().max(500),
+  positioning: z.string().max(500),
 });
 export type CompanyContext = z.infer<typeof CompanyContextSchema>;
 

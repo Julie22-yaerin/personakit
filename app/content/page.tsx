@@ -9,6 +9,7 @@ import { auth, db } from "../../lib/firebase";
 import { isContentSubstantive } from "../../lib/content-scoring";
 import type { CommunicationProfile, FounderOrigin, IdentityCandidate } from "../../lib/founder-identity";
 import { EMPTY_COMPANY_CONTEXT, type CompanyContext } from "../../lib/company-context";
+import { authedFetch } from "../../lib/api-client";
 
 interface PersonaStabilityResult {
   score: number;
@@ -68,7 +69,7 @@ interface HistoryEntry {
 
 const MAX_HISTORY = 20;
 
-const GOOD_COLOR = "var(--accent)";
+const GOOD_COLOR = "var(--success)";
 const WARN_COLOR = "var(--warn)";
 const BAD_COLOR = "var(--bad)";
 
@@ -145,16 +146,12 @@ export default function ContentLabPage() {
     setError(null);
     setResult(null);
     try {
-      const res = await fetch("/api/content/score", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content,
-          candidates: confirmedCandidates.map((c) => ({ category: c.category, text: c.text })),
-          communicationProfile,
-          founderOrigin,
-          companyContext: companyContext.productDescription.trim() ? companyContext : undefined,
-        }),
+      const res = await authedFetch("/api/content/score", {
+        content,
+        candidates: confirmedCandidates.map((c) => ({ category: c.category, text: c.text })),
+        communicationProfile,
+        founderOrigin,
+        companyContext: companyContext.productDescription.trim() ? companyContext : undefined,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Scoring failed");

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { CommunicationProfileSchema, FounderOriginSchema, IdentityCategorySchema } from "../../../../lib/founder-identity";
 import { extractContentScoring } from "../../../../lib/content-llm";
 import { CompanyContextSchema } from "../../../../lib/company-context";
+import { requireAuth } from "../../../../lib/auth-guard";
+import { enforceRateLimit } from "../../../../lib/rate-limit";
 import { extractRedLineAssessment } from "../../../../lib/redline-llm";
 import {
   classifyCCCS,
@@ -28,8 +30,8 @@ import {
 export const runtime = "nodejs";
 
 const RequestSchema = z.object({
-  content: z.string().min(1),
-  candidates: z.array(z.object({ category: IdentityCategorySchema, text: z.string().min(1) })),
+  content: z.string().min(1).max(8000),
+  candidates: z.array(z.object({ category: IdentityCategorySchema, text: z.string().min(1).max(2000) })).max(30),
   communicationProfile: CommunicationProfileSchema.optional(),
   founderOrigin: FounderOriginSchema.optional(),
   companyContext: CompanyContextSchema.optional(),
@@ -41,6 +43,11 @@ const RequestSchema = z.object({
  * function of those components (lib/content-scoring.ts).
  */
 export async function POST(request: Request) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+  const limited = enforceRateLimit(auth.uid, "content/score");
+  if (limited) return limited;
+
   const body = await request.json().catch(() => null);
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {

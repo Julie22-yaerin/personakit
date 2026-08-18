@@ -1,14 +1,25 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyFace } from "../../../../lib/face-verify";
+import { contentLengthExceeds, ImageDataUrlSchema, MAX_IMAGE_REQUEST_BYTES } from "../../../../lib/image-validation";
+import { requireAuth } from "../../../../lib/auth-guard";
+import { enforceRateLimit } from "../../../../lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const RequestSchema = z.object({
-  imageDataUrl: z.string().startsWith("data:image/"),
+  imageDataUrl: ImageDataUrlSchema,
 });
 
 export async function POST(request: Request) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+  const limited = enforceRateLimit(auth.uid, "onboarding/verify-face");
+  if (limited) return limited;
+  if (contentLengthExceeds(request, MAX_IMAGE_REQUEST_BYTES)) {
+    return NextResponse.json({ error: "Request too large." }, { status: 413 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {

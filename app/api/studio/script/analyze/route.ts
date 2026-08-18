@@ -9,17 +9,19 @@ import {
   mostOffTopicSegment,
 } from "../../../../../lib/script-scoring";
 import { SCRIPT_NODE_TYPES } from "../../../../../lib/script";
+import { requireAuth } from "../../../../../lib/auth-guard";
+import { enforceRateLimit } from "../../../../../lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const RequestSchema = z.object({
   graph: z.object({
-    sourceText: z.string().min(1),
-    nodes: z.array(z.object({ type: z.enum(SCRIPT_NODE_TYPES), concept: z.string().min(1) })).length(
-      SCRIPT_NODE_TYPES.length,
-    ),
+    sourceText: z.string().min(1).max(4000),
+    nodes: z
+      .array(z.object({ type: z.enum(SCRIPT_NODE_TYPES), concept: z.string().min(1).max(1000) }))
+      .length(SCRIPT_NODE_TYPES.length),
   }),
-  transcript: z.string().min(1),
+  transcript: z.string().min(1).max(20000),
 });
 
 /**
@@ -28,6 +30,11 @@ const RequestSchema = z.object({
  * functions of that extraction (lib/script-scoring.ts).
  */
 export async function POST(request: Request) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+  const limited = enforceRateLimit(auth.uid, "studio/script/analyze");
+  if (limited) return limited;
+
   const body = await request.json().catch(() => null);
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {

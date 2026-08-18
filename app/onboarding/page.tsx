@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { scanFace, type FaceScanResult } from "../../lib/face-scan";
 import { PERSONA_DIMENSIONS, classifyRivalry, type PersonaVector, type StyleSuggestions } from "../../lib/persona";
 import { auth, db } from "../../lib/firebase";
+import { authedFetch } from "../../lib/api-client";
 
 type Step = "personality" | "scan" | "verifying" | "rejected" | "processing" | "results" | "error";
 
@@ -96,11 +97,7 @@ export default function OnboardingPage() {
     const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8);
 
     try {
-      const res = await fetch("/api/onboarding/verify-face", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl }),
-      });
+      const res = await authedFetch("/api/onboarding/verify-face", { imageDataUrl });
       const data = await res.json();
 
       if (!res.ok) {
@@ -162,16 +159,12 @@ export default function OnboardingPage() {
     setStep("processing");
     setErrorMessage(null);
     try {
-      const res = await fetch("/api/onboarding/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          personality: { strengths, struggles },
-          faceFeatures: capturedFace
-            ? { blendshapes: capturedFace.blendshapes, capturedAt: new Date().toISOString() }
-            : undefined,
-          faceDescription: description,
-        }),
+      const res = await authedFetch("/api/onboarding/analyze", {
+        personality: { strengths, struggles },
+        faceFeatures: capturedFace
+          ? { blendshapes: capturedFace.blendshapes, capturedAt: new Date().toISOString() }
+          : undefined,
+        faceDescription: description,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Analysis failed");
@@ -362,7 +355,7 @@ export default function OnboardingPage() {
               <SuggestionBlock label="Voice" text={styleSuggestions.voice} />
               <SuggestionBlock label="Content" text={styleSuggestions.content} />
               <button className="btn btn-primary btn-block" onClick={() => router.push("/app")} style={{ marginTop: 16 }}>
-                Enter The Lyceum
+                Enter PERSONA
               </button>
             </div>
           </>

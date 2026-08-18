@@ -14,7 +14,7 @@ export function getOpenRouterClient(): OpenAI {
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
         "HTTP-Referer": "https://personakit-production.up.railway.app",
-        "X-Title": "The Lyceum",
+        "X-Title": "PERSONA",
       },
     });
   }

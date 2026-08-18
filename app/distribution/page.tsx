@@ -40,7 +40,7 @@ function emptyFormValues(): Record<string, string> {
 }
 
 function fdsColor(label: string): string {
-  if (label === "significantly outperforming" || label === "above your average") return "var(--accent)";
+  if (label === "significantly outperforming" || label === "above your average") return "var(--success)";
   if (label === "at your average") return "var(--warn)";
   return "var(--bad)";
 }

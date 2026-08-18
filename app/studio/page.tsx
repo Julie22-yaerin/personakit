@@ -5,6 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { auth, db } from "../../lib/firebase";
+import { authedFetch } from "../../lib/api-client";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
@@ -297,11 +298,7 @@ export default function StudioPage() {
 
     let sceneFailed = false;
     try {
-      const res = await fetch("/api/studio/visual-scene", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: frameToDataUrl(video) }),
-      });
+      const res = await authedFetch("/api/studio/visual-scene", { imageDataUrl: frameToDataUrl(video) });
       const data = await res.json();
       if (res.ok) {
         targets.lighting = { target: data.lighting, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
@@ -334,11 +331,7 @@ export default function StudioPage() {
     setScriptLoading(true);
     setScriptError(null);
     try {
-      const res = await fetch("/api/studio/script/decompose", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceText: scriptText }),
-      });
+      const res = await authedFetch("/api/studio/script/decompose", { sourceText: scriptText });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Script decomposition failed");
       setScriptGraph(data);
@@ -367,13 +360,9 @@ export default function StudioPage() {
       const signals: DeliverySignal[] = [];
       if (scriptGraph) {
         try {
-          const res = await fetch("/api/studio/live-drift", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              topic: scriptGraph.sourceText,
-              recentTranscript: transcriptRef.current.slice(-600),
-            }),
+          const res = await authedFetch("/api/studio/live-drift", {
+            topic: scriptGraph.sourceText,
+            recentTranscript: transcriptRef.current.slice(-600),
           });
           const data = await res.json();
           if (res.ok) {
@@ -406,15 +395,11 @@ export default function StudioPage() {
       }
 
       try {
-        const res = await fetch("/api/studio/coach", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            frameDataUrl: frameToDataUrl(video),
-            recentTranscript: transcriptRef.current.slice(-600),
-            personaVector,
-            lastPlan,
-          }),
+        const res = await authedFetch("/api/studio/coach", {
+          frameDataUrl: frameToDataUrl(video),
+          recentTranscript: transcriptRef.current.slice(-600),
+          personaVector,
+          lastPlan,
         });
         const data = await res.json();
         if (res.ok && data.tip) showTip(data.tip);
@@ -515,11 +500,7 @@ export default function StudioPage() {
       setDeliveryLoading(true);
       setDeliveryError(null);
       try {
-        const res = await fetch("/api/studio/script/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ graph: scriptGraph, transcript }),
-        });
+        const res = await authedFetch("/api/studio/script/analyze", { graph: scriptGraph, transcript });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Delivery analysis failed");
         setDeliveryReport(data);
@@ -541,11 +522,7 @@ export default function StudioPage() {
     if (!visualTargets || !video) return;
     const measured: VisualMeasurements = { ...visualAccumulatorRef.current.summarize() };
     try {
-      const res = await fetch("/api/studio/visual-scene", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: frameToDataUrl(video) }),
-      });
+      const res = await authedFetch("/api/studio/visual-scene", { imageDataUrl: frameToDataUrl(video) });
       const data = await res.json();
       if (res.ok) {
         measured.lighting = data.lighting;
@@ -591,19 +568,15 @@ export default function StudioPage() {
       samples.length ? samples.reduce((sum, s) => sum + s[key], 0) / samples.length : 0;
 
     try {
-      const res = await fetch("/api/studio/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          personaVector,
-          transcript,
-          metricsSummary: {
-            avgSmile: avg("smile"),
-            avgEyeContact: avg("eyeContact"),
-            avgExpressiveness: avg("expressiveness"),
-            durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
-          },
-        }),
+      const res = await authedFetch("/api/studio/plan", {
+        personaVector,
+        transcript,
+        metricsSummary: {
+          avgSmile: avg("smile"),
+          avgEyeContact: avg("eyeContact"),
+          avgExpressiveness: avg("expressiveness"),
+          durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+        },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Session planning failed");
@@ -924,7 +897,7 @@ export default function StudioPage() {
 }
 
 function vcsColor(label: string): string {
-  if (label === "on signature" || label === "close") return "var(--accent)";
+  if (label === "on signature" || label === "close") return "var(--success)";
   if (label === "drifting") return "var(--warn)";
   return "var(--bad)";
 }

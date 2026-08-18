@@ -107,7 +107,14 @@ export function isAnswerSubstantive(answer: string | undefined): boolean {
   return (answer ?? "").trim().split(/\s+/).filter(Boolean).length >= MIN_ANSWER_WORDS;
 }
 
-export const InterviewAnswersSchema = z.record(z.string(), z.string());
+// Bounded on both axes: a fixed max key count (there are only 8 real
+// questions, but this validates the raw record before that's checked)
+// and a max length per answer, so a caller can't send an unbounded
+// payload that gets forwarded straight into an LLM call.
+export const InterviewAnswersSchema = z.record(z.string().max(64), z.string().max(4000)).refine(
+  (answers) => Object.keys(answers).length <= 32,
+  { message: "Too many answers." },
+);
 export type InterviewAnswers = z.infer<typeof InterviewAnswersSchema>;
 
 /** DRM §2 — the persisted Founder Identity Vector (P0 scope). */

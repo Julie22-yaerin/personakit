@@ -5,6 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
+import { authedFetch } from "../../lib/api-client";
 import {
   CATEGORY_LABELS,
   INTERVIEW_QUESTIONS,
@@ -151,11 +152,7 @@ export default function IdentityPage() {
     setStep("extracting");
     setErrorMessage(null);
     try {
-      const res = await fetch("/api/identity/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
-      });
+      const res = await authedFetch("/api/identity/extract", { answers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Extraction failed");
 
@@ -372,7 +369,7 @@ export default function IdentityPage() {
                               style={{
                                 padding: "4px 12px",
                                 fontSize: 11,
-                                background: c.state === "confirmed" ? "var(--accent)" : "transparent",
+                                background: c.state === "confirmed" ? "var(--success)" : "transparent",
                                 color: c.state === "confirmed" ? "#0a1400" : "var(--text)",
                                 border: "1px solid var(--border)",
                               }}
