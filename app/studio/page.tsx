@@ -610,8 +610,8 @@ export default function StudioPage() {
   if (!user) return null;
 
   return (
-    <AppShell userEmail={user.email}>
-      <div className="app-main-inner">
+    <AppShell userEmail={user.email} uid={user.uid}>
+      <div className="app-main-inner-wide studio-page">
         <p className="onboarding-step-label">Studio · live filming</p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
@@ -654,9 +654,9 @@ export default function StudioPage() {
                   <MetricBar label="Smile" value={liveMetrics.smile} />
                   <MetricBar label="Expressiveness" value={liveMetrics.expressiveness} />
                   <MetricBar label="Volume" value={liveVolume} />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#fff", marginTop: 4 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#fff", marginTop: 3 }}>
                     <span>{Math.round(liveWpm)} wpm</span>
-                    <span>{liveFillerRate.toFixed(1)} fillers/100w</span>
+                    <span>{liveFillerRate.toFixed(1)}/100w</span>
                   </div>
                 </div>
               )}
@@ -922,13 +922,13 @@ function ComponentBar({ label, value }: { label: string; value: number }) {
 
 function MetricBar({ label, value }: { label: string; value: number }) {
   return (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#fff", marginBottom: 2 }}>
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#fff", marginBottom: 1 }}>
         <span>{label}</span>
         <span>{Math.round(value * 100)}%</span>
       </div>
-      <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 4, height: 4 }}>
-        <div style={{ width: `${value * 100}%`, background: "var(--accent)", height: 4, borderRadius: 4 }} />
+      <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 3, height: 3 }}>
+        <div style={{ width: `${value * 100}%`, background: "var(--accent)", height: 3, borderRadius: 3 }} />
       </div>
     </div>
   );

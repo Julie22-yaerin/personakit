@@ -90,7 +90,7 @@ export default function CompanyPage() {
   if (!user) return null;
 
   return (
-    <AppShell userEmail={user.email}>
+    <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Company Context</p>
 

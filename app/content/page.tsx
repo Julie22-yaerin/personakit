@@ -195,7 +195,7 @@ export default function ContentLabPage() {
 
   if (confirmedCandidates.length === 0) {
     return (
-      <AppShell userEmail={user.email}>
+      <AppShell userEmail={user.email} uid={user.uid}>
         <div className="app-main-inner">
           <h1>No confirmed identity yet.</h1>
           <p>
@@ -211,7 +211,7 @@ export default function ContentLabPage() {
   }
 
   return (
-    <AppShell userEmail={user.email}>
+    <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Content Lab</p>
 

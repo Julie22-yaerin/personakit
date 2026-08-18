@@ -7,9 +7,16 @@
  * "pixel art" at a small size, and echoes the Logo mark's red-iris
  * motif: a light silhouette with red eyes, not a generic mascot color.
  */
-export function PixelCat({ size = 48 }: { size?: number }) {
+export function PixelCat({ size = 48, onClick, title }: { size?: number; onClick?: () => void; title?: string }) {
   return (
-    <div className="pixel-cat" style={{ width: size, height: size }} aria-hidden="true">
+    <button
+      type="button"
+      className="pixel-cat"
+      style={{ width: size, height: size }}
+      onClick={onClick}
+      aria-label={title ?? "PERSONA mascot"}
+      title={title}
+    >
       <svg viewBox="0 0 64 64" width="100%" height="100%" shapeRendering="crispEdges">
         <g className="pixel-cat-body">
           {/* ears */}
@@ -32,6 +39,6 @@ export function PixelCat({ size = 48 }: { size?: number }) {
           <rect x="58" y="32" width="6" height="6" fill="var(--text)" />
         </g>
       </svg>
-    </div>
+    </button>
   );
 }

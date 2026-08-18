@@ -225,7 +225,7 @@ export default function IdentityPage() {
   }, {});
 
   return (
-    <AppShell userEmail={user.email}>
+    <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Founder Identity</p>
 

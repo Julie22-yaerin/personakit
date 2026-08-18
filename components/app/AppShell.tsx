@@ -3,10 +3,11 @@
 import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { auth } from "../../lib/firebase";
 import { Logo } from "../landing/Logo";
 import { PixelCat } from "./PixelCat";
+import { PersonaDrawer } from "./PersonaDrawer";
 
 interface NavItem {
   href: string;
@@ -48,8 +49,17 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-export function AppShell({ children, userEmail }: { children: ReactNode; userEmail?: string | null }) {
+export function AppShell({
+  children,
+  userEmail,
+  uid,
+}: {
+  children: ReactNode;
+  userEmail?: string | null;
+  uid?: string | null;
+}) {
   const pathname = usePathname();
+  const [personaOpen, setPersonaOpen] = useState(false);
 
   return (
     <div className="app-layout">
@@ -80,7 +90,7 @@ export function AppShell({ children, userEmail }: { children: ReactNode; userEma
         </nav>
 
         <div className="app-sidebar-footer">
-          <PixelCat size={44} />
+          <PixelCat size={44} onClick={() => setPersonaOpen(true)} title="View your saved persona" />
           <div className="app-sidebar-user">
             {userEmail && <span className="app-sidebar-email">{userEmail}</span>}
             <button className="app-sidebar-signout" onClick={() => signOut(auth)}>
@@ -91,6 +101,8 @@ export function AppShell({ children, userEmail }: { children: ReactNode; userEma
       </aside>
 
       <main className="app-main">{children}</main>
+
+      <PersonaDrawer open={personaOpen} onClose={() => setPersonaOpen(false)} uid={uid ?? null} />
     </div>
   );
 }
