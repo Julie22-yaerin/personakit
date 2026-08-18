@@ -41,31 +41,82 @@ export function selectPriorityIssue(signals: DeliverySignal[]): DeliverySignal |
   return null;
 }
 
-/** DRM §11-14 — drift only becomes an actionable signal once it clears "noticeable" (>=35), not at the first sign of any tangent. */
-export function buildDriftSignal(driftScore: number): DeliverySignal | null {
-  if (driftScore < 35) return null;
-  return { category: "drift", severity: driftScore, message: "Bring it back to the main idea." };
+/**
+ * Picks a message so the same live coaching line doesn't repeat back to
+ * back — a sustained issue (drift that doesn't resolve for 30s, a filler
+ * spike through a whole ramble) used to show the exact same fixed
+ * string on every tick, which read as robotic/canned. Deliberately
+ * still deterministic (no LLM call per tick — DRM §11-14's whole point),
+ * just picked from a small pool instead of a single hardcoded line.
+ */
+function pickMessage(variants: readonly string[], avoid?: string): string {
+  const pool = variants.length > 1 ? variants.filter((v) => v !== avoid) : variants;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
+const DRIFT_MESSAGES_MILD = [
+  "You're drifting a little — reel it back in.",
+  "Steer this back toward your main point.",
+  "Bring the thread back to your core idea.",
+] as const;
+
+const DRIFT_MESSAGES_SEVERE = [
+  "You're off topic — bring it back to the main idea.",
+  "This has wandered pretty far — cut back to your point.",
+  "Refocus — you've drifted from what you set out to say.",
+] as const;
+
+/** DRM §11-14 — drift only becomes an actionable signal once it clears "noticeable" (>=35), not at the first sign of any tangent. */
+export function buildDriftSignal(driftScore: number, previousMessage?: string): DeliverySignal | null {
+  if (driftScore < 35) return null;
+  const variants = driftScore >= 65 ? DRIFT_MESSAGES_SEVERE : DRIFT_MESSAGES_MILD;
+  return { category: "drift", severity: driftScore, message: pickMessage(variants, previousMessage) };
+}
+
+const PACING_RUSHED_MESSAGES = [
+  "Slow down a touch.",
+  "Ease off the pace a little.",
+  "Take a breath and slow it down.",
+] as const;
+
+const PACING_SLOW_MESSAGES = [
+  "You can pick up the pace a little.",
+  "Add a bit more energy to the pace.",
+  "Push the pace up slightly.",
+] as const;
+
 /** Uses the same speech-rate bands the post-session report shows (lib/speech-analysis.ts) so live and post-session feedback never disagree. */
-export function buildPacingSignal(wpm: number): DeliverySignal | null {
+export function buildPacingSignal(wpm: number, previousMessage?: string): DeliverySignal | null {
   const label = classifySpeechRate(wpm);
-  if (label === "rushed") return { category: "pacing", severity: 70, message: "Slow down a touch." };
-  if (label === "slow") return { category: "pacing", severity: 55, message: "You can pick up the pace a little." };
+  if (label === "rushed") return { category: "pacing", severity: 70, message: pickMessage(PACING_RUSHED_MESSAGES, previousMessage) };
+  if (label === "slow") return { category: "pacing", severity: 55, message: pickMessage(PACING_SLOW_MESSAGES, previousMessage) };
   return null;
 }
 
 /** `deviationScore` is a single visual category's live attributeScore (0-100, 100 = on signature) — see lib/visual-signature.ts. */
-export function buildFramingSignal(deviationScore: number, categoryLabel: string): DeliverySignal | null {
+export function buildFramingSignal(deviationScore: number, categoryLabel: string, previousMessage?: string): DeliverySignal | null {
   if (deviationScore >= 60) return null;
-  return {
-    category: "framing",
-    severity: 100 - deviationScore,
-    message: `Adjust back toward your usual ${categoryLabel.toLowerCase()}.`,
-  };
+  const label = categoryLabel.toLowerCase();
+  const variants = [
+    `Adjust back toward your usual ${label}.`,
+    `Your ${label} has drifted from your signature — bring it back.`,
+    `Check your ${label} — it's off from where you usually land.`,
+  ] as const;
+  return { category: "framing", severity: 100 - deviationScore, message: pickMessage(variants, previousMessage) };
 }
 
 const FILLER_ACTIONABLE_THRESHOLD = 8;
+
+const FILLER_MESSAGES_MILD = [
+  "Take a breath instead of filling the pause.",
+  "Let the pause sit — skip the filler word.",
+  "Pause silently instead of reaching for a filler.",
+] as const;
+
+const FILLER_MESSAGES_SEVERE = [
+  "You're leaning hard on filler words — let silence work instead.",
+  "Cut the fillers — a clean pause reads stronger.",
+] as const;
 
 /**
  * Catch-all lower-priority signal, e.g. a filler-word spike — DRM's
@@ -75,10 +126,11 @@ const FILLER_ACTIONABLE_THRESHOLD = 8;
  * single digits to ~20) would otherwise read as trivially low severity
  * next to them despite being equally "actionable."
  */
-export function buildFillerSignal(fillerRate: number): DeliverySignal | null {
+export function buildFillerSignal(fillerRate: number, previousMessage?: string): DeliverySignal | null {
   if (fillerRate < FILLER_ACTIONABLE_THRESHOLD) return null;
   const severity = clamp(50 + (fillerRate - FILLER_ACTIONABLE_THRESHOLD) * 5, 50, 100);
-  return { category: "other", severity, message: "Take a breath instead of filling the pause." };
+  const variants = severity >= 75 ? FILLER_MESSAGES_SEVERE : FILLER_MESSAGES_MILD;
+  return { category: "other", severity, message: pickMessage(variants, previousMessage) };
 }
 
 export interface DeliveryLoadInputs {

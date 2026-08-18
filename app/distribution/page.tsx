@@ -5,6 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
+import { AppShell } from "../../components/app/AppShell";
 import {
   classifyFDS,
   computeEDS,
@@ -133,8 +134,8 @@ export default function DistributionPage() {
   const edsTotal = computeEDSTotal(entries, weights);
 
   return (
-    <div className="app-shell" style={{ alignItems: "flex-start", paddingTop: 40 }}>
-      <div style={{ width: "100%", maxWidth: 640 }}>
+    <AppShell userEmail={user.email}>
+      <div className="app-main-inner">
         <p className="onboarding-step-label">Distribution</p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
@@ -265,7 +266,7 @@ export default function DistributionPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }
 

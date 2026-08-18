@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
+import { AppShell } from "../../components/app/AppShell";
 import {
   CATEGORY_LABELS,
   INTERVIEW_QUESTIONS,
@@ -224,8 +225,8 @@ export default function IdentityPage() {
   }, {});
 
   return (
-    <div className="app-shell" style={{ alignItems: "flex-start", paddingTop: 40 }}>
-      <div style={{ width: "100%", maxWidth: 640 }}>
+    <AppShell userEmail={user.email}>
+      <div className="app-main-inner">
         <p className="onboarding-step-label">Founder Identity</p>
 
         {step === "interview" && (
@@ -411,6 +412,6 @@ export default function IdentityPage() {
           </>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }

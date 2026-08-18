@@ -10,6 +10,7 @@ import { isContentSubstantive } from "../../lib/content-scoring";
 import type { CommunicationProfile, FounderOrigin, IdentityCandidate } from "../../lib/founder-identity";
 import { EMPTY_COMPANY_CONTEXT, type CompanyContext } from "../../lib/company-context";
 import { authedFetch } from "../../lib/api-client";
+import { AppShell } from "../../components/app/AppShell";
 
 interface PersonaStabilityResult {
   score: number;
@@ -194,8 +195,8 @@ export default function ContentLabPage() {
 
   if (confirmedCandidates.length === 0) {
     return (
-      <div className="app-shell">
-        <div>
+      <AppShell userEmail={user.email}>
+        <div className="app-main-inner">
           <h1>No confirmed identity yet.</h1>
           <p>
             Content Lab scores what you write against who you actually said you are. Confirm at
@@ -205,13 +206,13 @@ export default function ContentLabPage() {
             Go to Founder Identity
           </Link>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="app-shell" style={{ alignItems: "flex-start", paddingTop: 40 }}>
-      <div style={{ width: "100%", maxWidth: 640 }}>
+    <AppShell userEmail={user.email}>
+      <div className="app-main-inner">
         <p className="onboarding-step-label">Content Lab</p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
@@ -388,7 +389,7 @@ export default function ContentLabPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }
 

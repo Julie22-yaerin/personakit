@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
+import { AppShell } from "../../components/app/AppShell";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
@@ -138,6 +139,8 @@ export default function StudioPage() {
   const livePacingSignalRef = useRef<DeliverySignal | null>(null);
   const liveFramingSignalRef = useRef<DeliverySignal | null>(null);
   const liveFillerSignalRef = useRef<DeliverySignal | null>(null);
+  /** Last message actually shown, so a sustained issue picks a different phrasing instead of repeating the same line every tick. */
+  const lastCoachMessageRef = useRef<string | undefined>(undefined);
   const liveFillerRateRef = useRef(0);
   const liveVisualAlertCountRef = useRef(0);
 
@@ -208,6 +211,7 @@ export default function StudioPage() {
   function showTip(tip: string) {
     if (!tip) return;
     setCoachingTip(tip);
+    lastCoachMessageRef.current = tip;
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     toastTimeoutRef.current = setTimeout(() => setCoachingTip(null), TOAST_DURATION_MS);
   }
@@ -235,8 +239,8 @@ export default function StudioPage() {
       setLiveFillerRate(fillerRate);
       liveFillerRateRef.current = fillerRate;
 
-      livePacingSignalRef.current = buildPacingSignal(wpm);
-      liveFillerSignalRef.current = buildFillerSignal(fillerRate);
+      livePacingSignalRef.current = buildPacingSignal(wpm, lastCoachMessageRef.current);
+      liveFillerSignalRef.current = buildFillerSignal(fillerRate, lastCoachMessageRef.current);
 
       liveFramingSignalRef.current = null;
       liveVisualAlertCountRef.current = 0;
@@ -252,7 +256,7 @@ export default function StudioPage() {
           const measurable = weakestVisualCategories(liveVcs.categories);
           liveVisualAlertCountRef.current = measurable.filter((c) => c.score < 60).length;
           const worst = measurable[0];
-          if (worst) liveFramingSignalRef.current = buildFramingSignal(worst.score, worst.label);
+          if (worst) liveFramingSignalRef.current = buildFramingSignal(worst.score, worst.label, lastCoachMessageRef.current);
         }
       }
     }, METRICS_INTERVAL_MS);
@@ -366,7 +370,7 @@ export default function StudioPage() {
           });
           const data = await res.json();
           if (res.ok) {
-            const driftSignal = buildDriftSignal(100 - data.relevance);
+            const driftSignal = buildDriftSignal(100 - data.relevance, lastCoachMessageRef.current);
             if (driftSignal) signals.push(driftSignal);
           }
         } catch {
@@ -606,8 +610,8 @@ export default function StudioPage() {
   if (!user) return null;
 
   return (
-    <div className="app-shell" style={{ alignItems: "flex-start", paddingTop: 40 }}>
-      <div style={{ width: "100%", maxWidth: 640 }}>
+    <AppShell userEmail={user.email}>
+      <div className="app-main-inner">
         <p className="onboarding-step-label">Studio · live filming</p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
@@ -805,7 +809,7 @@ export default function StudioPage() {
         )}
 
         {vcsResult && (
-          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+          <div id="visual-signature" className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
             {vcsResult.score === null || vcsResult.label === null ? (
               <p style={{ color: "var(--muted)", margin: 0 }}>
                 No face was detected during this take, so visual consistency couldn&apos;t be measured.
@@ -858,7 +862,7 @@ export default function StudioPage() {
         )}
 
         {editSuggestions.length > 0 && (
-          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+          <div id="edit-suggestions" className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
             <div className="price-name" style={{ marginBottom: 10 }}>
               Edit Suggestions ({editSuggestions.length})
             </div>
@@ -892,7 +896,7 @@ export default function StudioPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }
 

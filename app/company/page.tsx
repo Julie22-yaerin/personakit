@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { EMPTY_COMPANY_CONTEXT, isCompanyContextSubstantive, type CompanyContext } from "../../lib/company-context";
+import { AppShell } from "../../components/app/AppShell";
 
 function linesToClaims(text: string): string[] {
   return text
@@ -89,8 +90,8 @@ export default function CompanyPage() {
   if (!user) return null;
 
   return (
-    <div className="app-shell" style={{ alignItems: "flex-start", paddingTop: 40 }}>
-      <div style={{ width: "100%", maxWidth: 640 }}>
+    <AppShell userEmail={user.email}>
+      <div className="app-main-inner">
         <p className="onboarding-step-label">Company Context</p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
@@ -170,6 +171,6 @@ export default function CompanyPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

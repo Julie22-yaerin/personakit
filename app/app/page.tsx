@@ -1,11 +1,64 @@
 "use client";
 
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
+import { AppShell } from "../../components/app/AppShell";
+
+interface DashboardCard {
+  href: string;
+  title: string;
+  description: string;
+  group: string;
+}
+
+const CARDS: DashboardCard[] = [
+  {
+    group: "Write",
+    href: "/content",
+    title: "Content Lab",
+    description: "Paste a post or script and score it against your confirmed identity — Persona Stability, Genericity, Provocation, Red Line.",
+  },
+  {
+    group: "Film",
+    href: "/studio",
+    title: "Studio",
+    description: "Live filming with real-time coaching — script alignment, pacing, framing, and drift feedback while you're on camera.",
+  },
+  {
+    group: "After the take",
+    href: "/studio#edit-suggestions",
+    title: "Edit Suggestions",
+    description: "Deterministic pointers on what to cut, keep, or re-cut — generated automatically at the end of every Studio session.",
+  },
+  {
+    group: "After the take",
+    href: "/studio#visual-signature",
+    title: "Visual Suggestions",
+    description: "How this take's lighting, framing, and background compared to your calibrated visual signature.",
+  },
+  {
+    group: "Identity & Brand",
+    href: "/identity",
+    title: "Founder Identity",
+    description: "The confirmed beliefs, stories, and communication style everything else here measures content against.",
+  },
+  {
+    group: "Identity & Brand",
+    href: "/company",
+    title: "Company Context",
+    description: "Product facts and confirmed/false claims — the boundary Content Lab checks new content against.",
+  },
+  {
+    group: "Analytics",
+    href: "/distribution",
+    title: "Distribution",
+    description: "Founder Distribution Score and Economic Distribution Score, logged over time.",
+  },
+];
 
 export default function AppHome() {
   const router = useRouter();
@@ -39,37 +92,23 @@ export default function AppHome() {
   if (!user) return null;
 
   return (
-    <div className="app-shell">
-      <div>
-        <h1>You&apos;re in, {user.email ?? "stranger"}.</h1>
-        <p>
-          The console is still mostly roadmap. Three real things here: the
-          identity interview, content scoring, and the filming studio.
+    <AppShell userEmail={user.email}>
+      <div className="app-main-inner-wide">
+        <h1 className="dash-title">You&apos;re in, {(user.email ?? "stranger").split("@")[0]}.</h1>
+        <p className="dash-subtitle">
+          Writing, filming, editing, and visual feedback each live in their own place — pick where you're headed.
         </p>
-        <Link href="/identity" className="btn btn-primary" style={{ marginBottom: 12 }}>
-          Founder Identity
-        </Link>
-        <br />
-        <Link href="/content" className="btn btn-ghost" style={{ marginBottom: 12 }}>
-          Content Lab
-        </Link>
-        <br />
-        <Link href="/company" className="btn btn-ghost" style={{ marginBottom: 12 }}>
-          Company Context
-        </Link>
-        <br />
-        <Link href="/distribution" className="btn btn-ghost" style={{ marginBottom: 12 }}>
-          Distribution
-        </Link>
-        <br />
-        <Link href="/studio" className="btn btn-ghost" style={{ marginBottom: 12 }}>
-          Open Studio
-        </Link>
-        <br />
-        <button className="btn btn-ghost" onClick={() => signOut(auth)}>
-          Sign out
-        </button>
+
+        <div className="dash-grid">
+          {CARDS.map((card) => (
+            <Link key={card.href} href={card.href} className="dash-card">
+              <span className="dash-card-group">{card.group}</span>
+              <span className="dash-card-title">{card.title}</span>
+              <span className="dash-card-desc">{card.description}</span>
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
