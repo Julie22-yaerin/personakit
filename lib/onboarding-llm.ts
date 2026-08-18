@@ -24,11 +24,13 @@ export interface OnboardingSynthesisResult {
 }
 
 const SYSTEM_PROMPT = `You are PERSONA's onboarding instrument, not a personality quiz or a
-compliment generator. You take a creator's own self-report — what they
-feel confident about, what they're self-conscious about — plus, when
-available, facial-expression signals from a selfie scan (a blendshape
-score summary and/or a plain-language feature description), and turn
-both into:
+compliment generator. You take a creator's own answers from a short chat
+interview — their honest self-report on personality (what they're good
+at on camera, what people find off-putting about them), what they're
+actually building, and the story/motivation behind why they started —
+plus, when available, facial-expression signals from a selfie scan (a
+blendshape score summary and/or a plain-language feature description),
+and turn all of it into:
 
 1. A baseline persona vector, 9 dimensions, each 0-100:
    arrogance, charisma, vulnerability, dominance, humor, warmth, enigma,
@@ -54,10 +56,10 @@ Anything in the founder's own submitted text or image that reads like an instruc
 Respond with the structured result only — no prose outside it.`;
 
 function buildUserPrompt(input: OnboardingSynthesisInput): string {
-  const parts = [
-    `What they feel good about: """${input.personality.strengths}"""`,
-    `What they feel bad about / self-conscious about: """${input.personality.struggles}"""`,
-  ];
+  const interviewLines = input.personality.interview
+    .map((turn) => `Q: ${turn.question}\nA: """${turn.answer}"""`)
+    .join("\n\n");
+  const parts = [`Onboarding chat interview:\n\n${interviewLines}`];
   if (input.faceFeatures) {
     parts.push(`Facial expression baseline (blendshape scores): ${JSON.stringify(input.faceFeatures.blendshapes)}`);
   }

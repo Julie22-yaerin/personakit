@@ -3,13 +3,38 @@
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { scanFace, type FaceScanResult } from "../../lib/face-scan";
-import { PERSONA_DIMENSIONS, classifyRivalry, type PersonaVector, type StyleSuggestions } from "../../lib/persona";
+import {
+  PERSONA_DIMENSIONS,
+  classifyRivalry,
+  type OnboardingInterviewAnswer,
+  type PersonaVector,
+  type StyleSuggestions,
+} from "../../lib/persona";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 
 type Step = "personality" | "scan" | "verifying" | "rejected" | "processing" | "results" | "error";
+
+// Chat-bubble onboarding interview — max 10 questions per the product spec.
+// Mixes personality (good/bad), what they're building, and the story/why
+// behind it, in a stimulating, non-generic order.
+const ONBOARDING_QUESTIONS = [
+  "Real talk — what's something you're genuinely good at once the camera's rolling?",
+  "Now the harder one: what's something people find off-putting about you? Be honest, not humble.",
+  "What are you actually building right now?",
+  "Who's it really for — who loses sleep over the problem you're solving?",
+  "What's the story behind it? What happened that made you obsessed with this?",
+  "If the whole thing failed tomorrow, what would still be true about why you started?",
+  "What's a belief about your industry most people would push back on?",
+  "Last one — anything about you people should know before you put you on camera?",
+] as const;
+
+interface ChatMessage {
+  role: "ai" | "user";
+  text: string;
+}
 
 function drawToCanvas(source: HTMLVideoElement | HTMLImageElement, maxDim = 640): HTMLCanvasElement {
   const isVideo = source instanceof HTMLVideoElement;
@@ -37,8 +62,13 @@ export default function OnboardingPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   const [step, setStep] = useState<Step>("personality");
-  const [strengths, setStrengths] = useState("");
-  const [struggles, setStruggles] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { role: "ai", text: ONBOARDING_QUESTIONS[0] },
+  ]);
+  const [chatAnswers, setChatAnswers] = useState<OnboardingInterviewAnswer[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatTyping, setChatTyping] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [faceFeatures, setFaceFeatures] = useState<FaceScanResult | null>(null);
   const [faceDescription, setFaceDescription] = useState<string | undefined>(undefined);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -55,6 +85,33 @@ export default function OnboardingPage() {
     setUser(u);
     if (!u) router.replace("/login");
   }), [router]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [chatMessages, chatTyping]);
+
+  function handleChatSubmit(e: FormEvent) {
+    e.preventDefault();
+    const answer = chatInput.trim();
+    if (!answer) return;
+
+    const question = ONBOARDING_QUESTIONS[chatAnswers.length];
+    const nextAnswers = [...chatAnswers, { question, answer }];
+    setChatAnswers(nextAnswers);
+    setChatMessages((prev) => [...prev, { role: "user", text: answer }]);
+    setChatInput("");
+
+    const nextQuestion = ONBOARDING_QUESTIONS[nextAnswers.length];
+    if (nextQuestion) {
+      setChatTyping(true);
+      window.setTimeout(() => {
+        setChatTyping(false);
+        setChatMessages((prev) => [...prev, { role: "ai", text: nextQuestion }]);
+      }, 500);
+    } else {
+      window.setTimeout(() => setStep("scan"), 400);
+    }
+  }
 
   useEffect(() => {
     if (step !== "scan") return;
@@ -160,7 +217,7 @@ export default function OnboardingPage() {
     setErrorMessage(null);
     try {
       const res = await authedFetch("/api/onboarding/analyze", {
-        personality: { strengths, struggles },
+        personality: { interview: chatAnswers },
         faceFeatures: capturedFace
           ? { blendshapes: capturedFace.blendshapes, capturedAt: new Date().toISOString() }
           : undefined,
@@ -177,7 +234,7 @@ export default function OnboardingPage() {
           doc(db, "users", user.uid),
           {
             onboarding: {
-              personality: { strengths, struggles },
+              personality: { interview: chatAnswers },
               faceFeatures: capturedFace
                 ? { blendshapes: capturedFace.blendshapes, capturedAt: new Date().toISOString() }
                 : null,
@@ -219,35 +276,40 @@ export default function OnboardingPage() {
         </p>
 
         {step === "personality" && (
-          <div className="auth-card" style={{ textAlign: "left" }}>
-            <h1 className="onboarding-title">Two honest questions.</h1>
-            <div className="field">
-              <label htmlFor="strengths">What do you feel good about, on camera?</label>
-              <textarea
-                id="strengths"
-                rows={3}
-                value={strengths}
-                onChange={(e) => setStrengths(e.target.value)}
-                placeholder="I'm quick, I don't need a script, people say I'm funny..."
-              />
+          <div className="auth-card chat-card" style={{ textAlign: "left" }}>
+            <h1 className="onboarding-title">Let&apos;s talk.</h1>
+            <p className="auth-caption" style={{ textAlign: "left", marginBottom: 14 }}>
+              {chatAnswers.length} of {ONBOARDING_QUESTIONS.length} — honest answers build a sharper baseline.
+            </p>
+            <div className="chat-thread">
+              {chatMessages.map((m, i) => (
+                <div key={i} className={`chat-bubble chat-bubble-${m.role}`}>
+                  {m.text}
+                </div>
+              ))}
+              {chatTyping && (
+                <div className="chat-bubble chat-bubble-ai chat-typing">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              )}
+              <div ref={chatEndRef} />
             </div>
-            <div className="field">
-              <label htmlFor="struggles">What do you feel bad about? Be honest — greedy, arrogant, awkward, whatever it is.</label>
-              <textarea
-                id="struggles"
-                rows={3}
-                value={struggles}
-                onChange={(e) => setStruggles(e.target.value)}
-                placeholder="I come off cold, I ramble, I'm too aggressive, I never smile..."
+            <form className="chat-input-row" onSubmit={handleChatSubmit}>
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Type your answer..."
+                disabled={chatTyping}
+                autoFocus
+                maxLength={1000}
               />
-            </div>
-            <button
-              className="btn btn-primary btn-block"
-              disabled={!strengths.trim() || !struggles.trim()}
-              onClick={() => setStep("scan")}
-            >
-              Continue
-            </button>
+              <button type="submit" className="btn btn-primary" disabled={chatTyping || !chatInput.trim()}>
+                Send
+              </button>
+            </form>
           </div>
         )}
 

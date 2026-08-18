@@ -48,10 +48,16 @@ export function classifyRivalry(rivalry: number): string {
   return RIVALRY_BANDS.find((band) => rivalry <= band.max)?.label ?? "confrontational";
 }
 
-/** Onboarding's self-reported personality input (docs/REALTIME_ENGINE.md-style intake). */
+/** One turn of the onboarding chat interview — a fixed AI question and the creator's own answer. */
+export const OnboardingInterviewAnswerSchema = z.object({
+  question: z.string().min(1).max(300),
+  answer: z.string().min(1).max(1000),
+});
+export type OnboardingInterviewAnswer = z.infer<typeof OnboardingInterviewAnswerSchema>;
+
+/** Onboarding's self-reported personality input — a short chat-bubble interview (max 10 turns), not a static form. */
 export const PersonalityAnswersSchema = z.object({
-  strengths: z.string().min(1).max(1000),
-  struggles: z.string().min(1).max(1000),
+  interview: z.array(OnboardingInterviewAnswerSchema).min(1).max(10),
 });
 export type PersonalityAnswers = z.infer<typeof PersonalityAnswersSchema>;
 
