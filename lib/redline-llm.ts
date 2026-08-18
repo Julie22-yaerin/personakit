@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type { CompanyContext } from "./company-context";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
+import { generateGoogleAIJSON, isGoogleAIConfigured, Type } from "./google-ai";
 import { RED_LINE_ZONES } from "./redline-scoring";
 
 const RedLineExtractionSchema = z.object({
@@ -167,6 +168,59 @@ async function extractWithAnthropic(
   }
 }
 
+const GOOGLE_AI_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    flags: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          zone: { type: Type.STRING, enum: [...RED_LINE_ZONES] },
+          quote: { type: Type.STRING },
+          reason: { type: Type.STRING },
+        },
+        required: ["zone", "quote", "reason"],
+      },
+    },
+    cccs: {
+      type: Type.OBJECT,
+      properties: {
+        productAccuracy: { type: Type.NUMBER },
+        claimAccuracy: { type: Type.NUMBER },
+        brandAlignment: { type: Type.NUMBER },
+        positioningAlignment: { type: Type.NUMBER },
+        evidence: { type: Type.NUMBER },
+      },
+      required: ["productAccuracy", "claimAccuracy", "brandAlignment", "positioningAlignment", "evidence"],
+    },
+  },
+  required: ["flags", "cccs"],
+};
+
+async function extractWithGoogleAI(content: string, companyContext?: CompanyContext): Promise<RedLineExtraction> {
+  const attempt = async (correction?: string): Promise<RedLineExtraction> => {
+    const result = await generateGoogleAIJSON({
+      kind: "primary",
+      systemInstruction: SYSTEM_PROMPT,
+      prompt: correction
+        ? `${buildUserPrompt(content, companyContext)}\n\n${correction}`
+        : buildUserPrompt(content, companyContext),
+      schema: GOOGLE_AI_SCHEMA,
+    });
+    return RedLineExtractionSchema.parse(result);
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(
+      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present.`,
+    );
+  }
+}
+
 async function extractWithOpenAI(content: string, companyContext?: CompanyContext): Promise<RedLineExtraction> {
   const client = getOpenRouterClient();
 
@@ -208,8 +262,15 @@ export async function extractRedLineAssessment(
   content: string,
   companyContext?: CompanyContext,
 ): Promise<RedLineExtraction> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await extractWithGoogleAI(content, companyContext);
+    } catch (err) {
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, content, companyContext);
   if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(content, companyContext);
-  throw new Error("Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Redline assessment needs one of them.");
+  throw new Error("Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Redline assessment needs one of them.");
 }

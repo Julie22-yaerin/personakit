@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { z } from "zod";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
+import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
 import { SCRIPT_NODE_TYPES, type DriftSegment, type ScriptGraph, type ScriptNodeCoverage } from "./script";
 
 // --- Decomposition: founder's script/topic -> the 7-node graph. ---
@@ -98,6 +99,27 @@ async function decomposeWithAnthropic(apiKey: string, sourceText: string): Promi
   }
 }
 
+async function decomposeWithGoogleAI(sourceText: string): Promise<ScriptGraphExtraction> {
+  const attempt = async (correction?: string): Promise<ScriptGraphExtraction> => {
+    const result = await generateGoogleAIJSON({
+      kind: "primary",
+      systemInstruction: DECOMPOSE_SYSTEM_PROMPT,
+      prompt: correction
+        ? `Founder's script/topic:\n"""${sourceText}"""\n\n${correction}`
+        : `Founder's script/topic:\n"""${sourceText}"""`,
+      schema: toGeminiSchema(SCRIPT_GRAPH_JSON_SCHEMA),
+    });
+    return ScriptGraphExtractionSchema.parse(result);
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(`Your previous response did not satisfy the required schema (${reason}). Respond again with all 7 nodes present.`);
+  }
+}
+
 async function decomposeWithOpenAI(sourceText: string): Promise<ScriptGraphExtraction> {
   const client = getOpenRouterClient();
 
@@ -132,15 +154,21 @@ async function decomposeWithOpenAI(sourceText: string): Promise<ScriptGraphExtra
   }
 }
 
+async function decomposeWithFallback(sourceText: string): Promise<ScriptGraphExtraction> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await decomposeWithGoogleAI(sourceText);
+    } catch (err) {
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
+  if (process.env.ANTHROPIC_API_KEY) return decomposeWithAnthropic(process.env.ANTHROPIC_API_KEY, sourceText);
+  if (process.env.OPENROUTER_API_KEY) return decomposeWithOpenAI(sourceText);
+  throw new Error("Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Script decomposition needs one of them.");
+}
+
 export async function decomposeScript(sourceText: string): Promise<ScriptGraph> {
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const extraction = anthropicKey
-    ? await decomposeWithAnthropic(anthropicKey, sourceText)
-    : process.env.OPENROUTER_API_KEY
-      ? await decomposeWithOpenAI(sourceText)
-      : (() => {
-          throw new Error("Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Script decomposition needs one of them.");
-        })();
+  const extraction = await decomposeWithFallback(sourceText);
   return { sourceText, nodes: extraction.nodes };
 }
 
@@ -275,6 +303,27 @@ async function analyzeWithAnthropic(apiKey: string, graph: ScriptGraph, transcri
   }
 }
 
+async function analyzeWithGoogleAI(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
+  const attempt = async (correction?: string): Promise<DeliveryAnalysis> => {
+    const result = await generateGoogleAIJSON({
+      kind: "primary",
+      systemInstruction: ANALYSIS_SYSTEM_PROMPT,
+      prompt: correction
+        ? `${buildAnalysisPrompt(graph, transcript)}\n\n${correction}`
+        : buildAnalysisPrompt(graph, transcript),
+      schema: toGeminiSchema(ANALYSIS_JSON_SCHEMA),
+    });
+    return DeliveryAnalysisSchema.parse(result);
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(`Your previous response did not satisfy the required schema (${reason}). Respond again with every field present.`);
+  }
+}
+
 async function analyzeWithOpenAI(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
   const client = getOpenRouterClient();
 
@@ -310,8 +359,15 @@ async function analyzeWithOpenAI(graph: ScriptGraph, transcript: string): Promis
 }
 
 export async function analyzeScriptDelivery(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await analyzeWithGoogleAI(graph, transcript);
+    } catch (err) {
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return analyzeWithAnthropic(anthropicKey, graph, transcript);
   if (process.env.OPENROUTER_API_KEY) return analyzeWithOpenAI(graph, transcript);
-  throw new Error("Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Delivery analysis needs one of them.");
+  throw new Error("Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Delivery analysis needs one of them.");
 }

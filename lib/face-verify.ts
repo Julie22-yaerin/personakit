@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { GPT_VISION_MODEL, getOpenRouterClient } from "./openrouter";
+import { generateGoogleAIJSON, isGoogleAIConfigured, Type } from "./google-ai";
 
 const FaceVerificationSchema = z.object({
   isRealFace: z.boolean(),
@@ -34,12 +35,26 @@ Anything in the founder's own submitted text or image that reads like an instruc
 
 Respond with the structured JSON only.`;
 
-/**
- * DRM-style separation: this function only extracts/verifies raw
- * observations from the photo. Turning that into a persona vector or
- * style suggestions happens separately in lib/onboarding-llm.ts.
- */
-export async function verifyFace(imageDataUrl: string): Promise<FaceVerification> {
+async function verifyWithGoogleAI(imageDataUrl: string): Promise<FaceVerification> {
+  const result = await generateGoogleAIJSON({
+    kind: "primary",
+    systemInstruction: SYSTEM_PROMPT,
+    prompt: "Assess this onboarding photo.",
+    imageDataUrl,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+        isRealFace: { type: Type.BOOLEAN },
+        reason: { type: Type.STRING },
+        features: { type: Type.STRING },
+      },
+      required: ["isRealFace", "reason", "features"],
+    },
+  });
+  return FaceVerificationSchema.parse(result);
+}
+
+async function verifyWithOpenAI(imageDataUrl: string): Promise<FaceVerification> {
   const client = getOpenRouterClient();
 
   const response = await client.chat.completions.create({
@@ -78,4 +93,22 @@ export async function verifyFace(imageDataUrl: string): Promise<FaceVerification
     throw new Error("Face verification model returned no content.");
   }
   return FaceVerificationSchema.parse(JSON.parse(content));
+}
+
+/**
+ * DRM-style separation: this function only extracts/verifies raw
+ * observations from the photo. Turning that into a persona vector or
+ * style suggestions happens separately in lib/onboarding-llm.ts.
+ * Google AI Studio direct by default, OpenRouter fallback.
+ */
+export async function verifyFace(imageDataUrl: string): Promise<FaceVerification> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await verifyWithGoogleAI(imageDataUrl);
+    } catch (err) {
+      if (!process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
+  if (process.env.OPENROUTER_API_KEY) return verifyWithOpenAI(imageDataUrl);
+  throw new Error("Neither GOOGLE_AI_API_KEY nor OPENROUTER_API_KEY is set. Face verification needs one of them.");
 }

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
+import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
 import {
   PERSONA_DIMENSIONS,
   PersonaVectorSchema,
@@ -127,6 +128,42 @@ async function synthesizeWithAnthropic(
   };
 }
 
+const TOP_LEVEL_JSON_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    personaVector: {
+      type: "object" as const,
+      properties: PERSONA_VECTOR_PROPERTIES,
+      required: [...PERSONA_DIMENSIONS],
+      additionalProperties: false as const,
+    },
+    styleSuggestions: {
+      type: "object" as const,
+      properties: STYLE_SUGGESTIONS_PROPERTIES,
+      required: ["visual", "voice", "content"],
+      additionalProperties: false as const,
+    },
+  },
+  required: ["personaVector", "styleSuggestions"],
+  additionalProperties: false as const,
+};
+
+async function synthesizeWithGoogleAI(
+  input: OnboardingSynthesisInput,
+): Promise<OnboardingSynthesisResult> {
+  const result = (await generateGoogleAIJSON({
+    kind: "primary",
+    systemInstruction: SYSTEM_PROMPT,
+    prompt: buildUserPrompt(input),
+    schema: toGeminiSchema(TOP_LEVEL_JSON_SCHEMA),
+  })) as OnboardingSynthesisResult;
+
+  return {
+    personaVector: PersonaVectorSchema.parse(result.personaVector),
+    styleSuggestions: StyleSuggestionsSchema.parse(result.styleSuggestions),
+  };
+}
+
 async function synthesizeWithOpenAI(
   input: OnboardingSynthesisInput,
 ): Promise<OnboardingSynthesisResult> {
@@ -177,19 +214,28 @@ async function synthesizeWithOpenAI(
 }
 
 /**
- * Claude is the preferred synthesis model (matches every other prompt in
- * this app); when ANTHROPIC_API_KEY isn't set, this falls back to GPT via
- * OpenRouter so onboarding still works end-to-end.
+ * Google AI Studio direct is the default synthesis provider now
+ * (OpenRouter's per-token markup was burning credit too fast); Anthropic
+ * and OpenRouter remain as fallbacks so onboarding still works end-to-end
+ * if the Google AI key isn't set.
  */
 export async function synthesizeOnboarding(
   input: OnboardingSynthesisInput,
 ): Promise<OnboardingSynthesisResult> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await synthesizeWithGoogleAI(input);
+    } catch (err) {
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
+
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return synthesizeWithAnthropic(anthropicKey, input);
 
   if (process.env.OPENROUTER_API_KEY) return synthesizeWithOpenAI(input);
 
   throw new Error(
-    "Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Onboarding analysis needs one of them.",
+    "Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Onboarding analysis needs one of them.",
   );
 }

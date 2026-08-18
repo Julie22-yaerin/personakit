@@ -12,6 +12,7 @@ import {
   type InterviewAnswers,
 } from "./founder-identity";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
+import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
 
 export interface IdentityExtractionResult {
   candidates: IdentityCandidate[];
@@ -183,6 +184,38 @@ async function extractWithAnthropic(
   }
 }
 
+const TOP_LEVEL_JSON_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    candidates: { type: "array" as const, items: CANDIDATE_ITEM_SCHEMA },
+    communicationProfile: COMMUNICATION_PROFILE_SCHEMA,
+    founderOrigin: FOUNDER_ORIGIN_SCHEMA,
+  },
+  required: ["candidates", "communicationProfile", "founderOrigin"],
+  additionalProperties: false as const,
+};
+
+async function extractWithGoogleAI(answers: InterviewAnswers): Promise<IdentityExtractionResult> {
+  const attempt = async (correction?: string): Promise<IdentityExtractionResult> => {
+    const result = await generateGoogleAIJSON({
+      kind: "primary",
+      systemInstruction: SYSTEM_PROMPT,
+      prompt: correction ? `${buildUserPrompt(answers)}\n\n${correction}` : buildUserPrompt(answers),
+      schema: toGeminiSchema(TOP_LEVEL_JSON_SCHEMA),
+    });
+    return withIds(RAW_RESULT_SCHEMA.parse(result));
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(
+      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present, and evidenceQuote copied verbatim from the answers above.`,
+    );
+  }
+}
+
 async function extractWithOpenAI(answers: InterviewAnswers): Promise<IdentityExtractionResult> {
   const client = getOpenRouterClient();
 
@@ -236,12 +269,20 @@ async function extractWithOpenAI(answers: InterviewAnswers): Promise<IdentityExt
 export async function extractIdentityCandidates(
   answers: InterviewAnswers,
 ): Promise<IdentityExtractionResult> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await extractWithGoogleAI(answers);
+    } catch (err) {
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
+
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, answers);
 
   if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(answers);
 
   throw new Error(
-    "Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Identity extraction needs one of them.",
+    "Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Identity extraction needs one of them.",
   );
 }

@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type { CommunicationProfile, FounderOrigin, IdentityCategory } from "./founder-identity";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
+import { generateGoogleAIJSON, isGoogleAIConfigured, toGeminiSchema } from "./google-ai";
 
 export interface IdentitySummary {
   /** Confirmed/modified candidates only — the caller filters out "pending"/"rejected" before this ever reaches the LLM. */
@@ -230,6 +231,29 @@ async function extractWithAnthropic(
   }
 }
 
+async function extractWithGoogleAI(content: string, identity: IdentitySummary): Promise<ContentExtractionResult> {
+  const attempt = async (correction?: string): Promise<ContentExtractionResult> => {
+    const result = await generateGoogleAIJSON({
+      kind: "primary",
+      systemInstruction: SYSTEM_PROMPT,
+      prompt: correction
+        ? `${buildUserPrompt(content, identity)}\n\n${correction}`
+        : buildUserPrompt(content, identity),
+      schema: toGeminiSchema(TOP_LEVEL_JSON_SCHEMA),
+    });
+    return RAW_RESULT_SCHEMA.parse(result);
+  };
+
+  try {
+    return await attempt();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return attempt(
+      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present.`,
+    );
+  }
+}
+
 async function extractWithOpenAI(content: string, identity: IdentitySummary): Promise<ContentExtractionResult> {
   const client = getOpenRouterClient();
 
@@ -271,12 +295,20 @@ export async function extractContentScoring(
   content: string,
   identity: IdentitySummary,
 ): Promise<ContentExtractionResult> {
+  if (isGoogleAIConfigured("primary")) {
+    try {
+      return await extractWithGoogleAI(content, identity);
+    } catch (err) {
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+    }
+  }
+
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, content, identity);
 
   if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(content, identity);
 
   throw new Error(
-    "Neither ANTHROPIC_API_KEY nor OPENROUTER_API_KEY is set. Content scoring needs one of them.",
+    "Neither GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Content scoring needs one of them.",
   );
 }
