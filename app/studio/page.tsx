@@ -43,6 +43,7 @@ import {
   type VisualSignatureTargets,
 } from "../../lib/visual-signature";
 
+const SCRIPT_DRAFT_KEY = "personakit:studioScriptDraft";
 const METRICS_INTERVAL_MS = 400;
 const COACH_INTERVAL_MS = 15000;
 const TOAST_DURATION_MS = 6000;
@@ -151,6 +152,12 @@ export default function StudioPage() {
     transcriptRef.current = transcript;
   }, [transcript]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (scriptText) window.localStorage.setItem(SCRIPT_DRAFT_KEY, scriptText);
+    else window.localStorage.removeItem(SCRIPT_DRAFT_KEY);
+  }, [scriptText]);
+
   // Auth + onboarding gate, and pull the persona baseline / last session plan.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -171,8 +178,13 @@ export default function StudioPage() {
       setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
       // A script generated in the dashboard chat lands here waiting to be
       // used — load it straight into pre-filming rather than making the
-      // founder re-paste it.
-      if (data.pendingScript) {
+      // founder re-paste it. A local draft (unsaved typing from before a
+      // tab switch) is presumably more recent activity, so it wins over
+      // either the pending script or a blank field.
+      const scriptDraft = typeof window !== "undefined" ? window.localStorage.getItem(SCRIPT_DRAFT_KEY) : null;
+      if (scriptDraft) {
+        setScriptText(scriptDraft);
+      } else if (data.pendingScript) {
         setScriptGraph(data.pendingScript as ScriptGraph);
         setScriptText((data.pendingScript as ScriptGraph).sourceText ?? "");
       }

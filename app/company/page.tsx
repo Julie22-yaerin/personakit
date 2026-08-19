@@ -9,6 +9,8 @@ import { auth, db } from "../../lib/firebase";
 import { EMPTY_COMPANY_CONTEXT, isCompanyContextSubstantive, type CompanyContext } from "../../lib/company-context";
 import { AppShell } from "../../components/app/AppShell";
 
+const DRAFT_KEY = "personakit:companyDraft";
+
 function linesToClaims(text: string): string[] {
   return text
     .split("\n")
@@ -50,15 +52,34 @@ export default function CompanyPage() {
         return;
       }
       const ctx: CompanyContext = data.companyContext ?? EMPTY_COMPANY_CONTEXT;
-      setProductDescription(ctx.productDescription);
-      setAccurateClaimsText(ctx.accurateClaims.join("\n"));
-      setFalseClaimsText(ctx.falseClaims.join("\n"));
-      setBrandVoice(ctx.brandVoice);
-      setPositioning(ctx.positioning);
+      // A local draft (unsaved typing from before a tab switch) wins over
+      // whatever's already saved — it's presumably more recent.
+      const draftRaw = typeof window !== "undefined" ? window.localStorage.getItem(DRAFT_KEY) : null;
+      let draft: Record<string, string> | null = null;
+      if (draftRaw) {
+        try {
+          draft = JSON.parse(draftRaw);
+        } catch {
+          // corrupt/stale draft — fall back to saved data below
+        }
+      }
+      setProductDescription(draft?.productDescription ?? ctx.productDescription);
+      setAccurateClaimsText(draft?.accurateClaimsText ?? ctx.accurateClaims.join("\n"));
+      setFalseClaimsText(draft?.falseClaimsText ?? ctx.falseClaims.join("\n"));
+      setBrandVoice(draft?.brandVoice ?? ctx.brandVoice);
+      setPositioning(draft?.positioning ?? ctx.positioning);
       setUser(u);
     });
     return unsubscribe;
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || user === undefined) return;
+    window.localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ productDescription, accurateClaimsText, falseClaimsText, brandVoice, positioning }),
+    );
+  }, [productDescription, accurateClaimsText, falseClaimsText, brandVoice, positioning, user]);
 
   async function handleSave() {
     if (!user) return;
@@ -83,6 +104,7 @@ export default function CompanyPage() {
         { merge: true },
       );
       setSaved(true);
+      if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
       if (setupMode) {
         router.push("/app");
         return;

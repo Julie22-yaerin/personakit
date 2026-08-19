@@ -2,6 +2,7 @@
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { auth, db } from "../../lib/firebase";
@@ -53,6 +54,8 @@ export default function AppHome() {
   const [styleSuggestions, setStyleSuggestions] = useState<StyleSuggestions | undefined>();
   const [distributionLog, setDistributionLog] = useState<DistributionEntry[]>([]);
   const [edsWeights, setEdsWeights] = useState<EDSWeights>(DEFAULT_EDS_WEIGHTS);
+  const [needsIdentity, setNeedsIdentity] = useState(false);
+  const [needsCompany, setNeedsCompany] = useState(false);
 
   const [messages, setMessages] = useState<AssistantMessage[]>([{ role: "ai", text: WELCOME_TEXT }]);
   const [input, setInput] = useState("");
@@ -74,11 +77,24 @@ export default function AppHome() {
       }
       // Founder Identity + Company Context are a mandatory one-time setup
       // the first time someone reaches the dashboard — after that they're
-      // archive pages, reachable only by clicking the cat.
+      // archive pages, reachable only by clicking the cat. Founders who
+      // already had identity/company data from before this gate existed
+      // must never be sent back through the interview — backfill the
+      // flag instead of asking again.
+      const hasIdentity = ((data.founderIdentity?.candidates ?? []) as IdentityCandidate[]).some(
+        (c) => c.state === "confirmed" || c.state === "modified",
+      );
+      const hasCompany = !!data.companyContext?.productDescription?.trim();
       if (!data?.founderSetupCompletedAt) {
-        router.replace("/identity?setup=1");
-        return;
+        if (hasIdentity || hasCompany) {
+          await setDoc(doc(db, "users", u.uid), { founderSetupCompletedAt: serverTimestamp() }, { merge: true });
+        } else {
+          router.replace("/identity?setup=1");
+          return;
+        }
       }
+      setNeedsIdentity(!hasIdentity);
+      setNeedsCompany(!hasCompany);
       const identity = data.founderIdentity;
       if (identity) {
         setConfirmedCandidates(
@@ -260,6 +276,7 @@ Economic Distribution Score (total): ${Math.round(edsTotal)}`,
       angle: item.angle,
       format: item.format,
       suggestedDay: item.suggestedDay,
+      productFocusPercent: item.productFocusPercent,
       status: "planned" as const,
       createdAt: now,
     }));
@@ -417,6 +434,32 @@ Economic Distribution Score (total): ${Math.round(edsTotal)}`,
   return (
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="assistant-shell">
+        {(needsIdentity || needsCompany) && (
+          <div className="setup-reminder">
+            <span>
+              {needsIdentity && needsCompany
+                ? "Founder Identity and Company Context aren't set yet."
+                : needsIdentity
+                  ? "Founder Identity isn't set yet."
+                  : "Company Context isn't set yet."}{" "}
+              Click the cat to open {needsIdentity && "Founder Identity"}
+              {needsIdentity && needsCompany && " and "}
+              {needsCompany && "Company Context"}, or use the links below.
+            </span>
+            <span style={{ display: "flex", gap: 8 }}>
+              {needsIdentity && (
+                <Link href="/identity" className="btn btn-ghost" style={{ padding: "5px 12px", fontSize: 12 }}>
+                  Set up Identity
+                </Link>
+              )}
+              {needsCompany && (
+                <Link href="/company" className="btn btn-ghost" style={{ padding: "5px 12px", fontSize: 12 }}>
+                  Set up Company Context
+                </Link>
+              )}
+            </span>
+          </div>
+        )}
         <div className="assistant-thread">
           {messages.map((m, i) => (
             <div key={i} className={`assistant-bubble assistant-bubble-${m.role}`}>

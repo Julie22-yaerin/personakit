@@ -107,7 +107,17 @@ export default function RoadmapPage() {
               </span>
             </div>
             <h2 style={{ fontSize: 17, margin: "6px 0 6px" }}>{item.title}</h2>
-            <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.55, margin: "0 0 12px" }}>{item.angle}</p>
+            <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.55, margin: "0 0 8px" }}>{item.angle}</p>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "var(--muted)", marginBottom: 3 }}>
+                <span>Founder</span>
+                <span>Product</span>
+              </div>
+              <div style={{ background: "var(--border)", borderRadius: 4, height: 5, display: "flex", overflow: "hidden" }}>
+                <div style={{ width: `${100 - item.productFocusPercent}%`, background: "var(--text)", opacity: 0.5 }} />
+                <div style={{ width: `${item.productFocusPercent}%`, background: "var(--accent)" }} />
+              </div>
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
               {item.status !== "posted" && (
                 <button className="btn btn-ghost" style={{ padding: "6px 14px", fontSize: 12 }} onClick={() => advanceStatus(item.id)}>

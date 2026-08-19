@@ -69,6 +69,7 @@ interface HistoryEntry {
 }
 
 const MAX_HISTORY = 20;
+const DRAFT_KEY = "personakit:contentDraft";
 
 const GOOD_COLOR = "var(--success)";
 const WARN_COLOR = "var(--warn)";
@@ -112,6 +113,21 @@ export default function ContentLabPage() {
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore whatever was mid-typing before a tab switch unmounted this
+  // page — nothing here is saved until "Score This," so without this the
+  // draft would just vanish.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const draft = window.localStorage.getItem(DRAFT_KEY);
+    if (draft) setContent(draft);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (content) window.localStorage.setItem(DRAFT_KEY, content);
+    else window.localStorage.removeItem(DRAFT_KEY);
+  }, [content]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {

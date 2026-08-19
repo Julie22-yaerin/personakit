@@ -7,6 +7,8 @@ export const RoadmapItemSchema = z.object({
   angle: z.string().min(1).max(400),
   format: z.string().min(1).max(100),
   suggestedDay: z.number().min(0).max(90),
+  /** 0 = pure founder story/persona, 100 = pure product pitch — the roadmap should trend upward across the sequence. */
+  productFocusPercent: z.number().min(0).max(100),
   status: z.enum(["planned", "filmed", "posted"]),
   createdAt: z.string().min(1),
 });
