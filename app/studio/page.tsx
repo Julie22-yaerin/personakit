@@ -43,6 +43,7 @@ import {
   type VisualSignatureTargets,
 } from "../../lib/visual-signature";
 
+const SCRIPT_DRAFT_KEY = "personakit:studioScriptDraft";
 const METRICS_INTERVAL_MS = 400;
 const COACH_INTERVAL_MS = 15000;
 const TOAST_DURATION_MS = 6000;
@@ -151,6 +152,12 @@ export default function StudioPage() {
     transcriptRef.current = transcript;
   }, [transcript]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (scriptText) window.localStorage.setItem(SCRIPT_DRAFT_KEY, scriptText);
+    else window.localStorage.removeItem(SCRIPT_DRAFT_KEY);
+  }, [scriptText]);
+
   // Auth + onboarding gate, and pull the persona baseline / last session plan.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -169,6 +176,18 @@ export default function StudioPage() {
       setLastPlan(data.studio?.latestPlan);
       setVisualTargets(data.visualSignature?.targets ?? null);
       setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
+      // A script generated in the dashboard chat lands here waiting to be
+      // used — load it straight into pre-filming rather than making the
+      // founder re-paste it. A local draft (unsaved typing from before a
+      // tab switch) is presumably more recent activity, so it wins over
+      // either the pending script or a blank field.
+      const scriptDraft = typeof window !== "undefined" ? window.localStorage.getItem(SCRIPT_DRAFT_KEY) : null;
+      if (scriptDraft) {
+        setScriptText(scriptDraft);
+      } else if (data.pendingScript) {
+        setScriptGraph(data.pendingScript as ScriptGraph);
+        setScriptText((data.pendingScript as ScriptGraph).sourceText ?? "");
+      }
       setUser(u);
     });
     return unsubscribe;
@@ -612,35 +631,52 @@ export default function StudioPage() {
   return (
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner-wide studio-page">
-        <p className="onboarding-step-label">Studio · live filming</p>
+        <p className="onboarding-step-label">Studio · {isRecording ? "filming" : "pre-filming"}</p>
 
-        <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
-          <div className="price-name" style={{ marginBottom: 8 }}>Script (optional)</div>
-          <p className="auth-caption" style={{ textAlign: "left", marginBottom: 10 }}>
-            Paste your talking points or topic — never memorize it. We&apos;ll check afterward whether your
-            delivery covered the ground it needed to, not whether you said it word for word.
-          </p>
-          <textarea
-            rows={4}
-            value={scriptText}
-            onChange={(e) => setScriptText(e.target.value)}
-            placeholder="What's this take about?"
-            disabled={isRecording}
-          />
-          <button
-            className="btn btn-ghost btn-block"
-            onClick={handlePrepareScript}
-            disabled={scriptLoading || isRecording || !scriptText.trim()}
-          >
-            {scriptLoading ? "Structuring..." : scriptGraph ? "Re-structure Script" : "Prepare Script"}
-          </button>
-          {scriptError && <p className="error" style={{ marginTop: 8 }}>{scriptError}</p>}
-          {scriptGraph && (
-            <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-              Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
-            </div>
-          )}
-        </div>
+        {!isRecording && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 8 }}>Script (optional)</div>
+            <p className="auth-caption" style={{ textAlign: "left", marginBottom: 10 }}>
+              Paste your talking points or topic — never memorize it. We&apos;ll check afterward whether your
+              delivery covered the ground it needed to, not whether you said it word for word. Ask the
+              dashboard chat to write one for you and it'll show up here automatically.
+            </p>
+            <textarea
+              rows={4}
+              value={scriptText}
+              onChange={(e) => setScriptText(e.target.value)}
+              placeholder="What's this take about?"
+            />
+            <button
+              className="btn btn-ghost btn-block"
+              onClick={handlePrepareScript}
+              disabled={scriptLoading || !scriptText.trim()}
+            >
+              {scriptLoading ? "Structuring..." : scriptGraph ? "Re-structure Script" : "Prepare Script"}
+            </button>
+            {scriptError && <p className="error" style={{ marginTop: 8 }}>{scriptError}</p>}
+            {scriptGraph && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+                Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isRecording && scriptGraph && (
+          <div className="auth-card studio-teleprompter" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 8 }}>Live script</div>
+            {scriptGraph.nodes.map((n) => (
+              <p key={n.type} style={{ fontSize: 14, lineHeight: 1.6, margin: "0 0 10px" }}>
+                <span style={{ color: "var(--accent)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {SCRIPT_NODE_LABELS[n.type]}
+                </span>
+                <br />
+                {n.concept}
+              </p>
+            ))}
+          </div>
+        )}
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           {cameraError ? (

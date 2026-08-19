@@ -18,34 +18,28 @@ interface NavItem {
 // Explicit grouping so it's clear at a glance where each capability
 // lives — writing vs. filming vs. the edit/visual suggestions that live
 // inside a finished Studio session, not as separate pages of their own.
+// Founder Identity / Company Context are deliberately absent here: they're
+// a one-time setup, not ongoing nav — reachable afterward only via the cat.
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
+    title: "Plan",
+    items: [{ href: "/roadmap", label: "Roadmap", hint: "archive: posting & filming plan" }],
+  },
+  {
     title: "Write",
-    items: [{ href: "/content", label: "Content Lab", hint: "score & refine a piece" }],
+    items: [{ href: "/content", label: "Content Lab", hint: "archive: score & refine a piece" }],
   },
   {
     title: "Film",
     items: [
       { href: "/studio", label: "Studio", hint: "live filming + real-time coaching" },
-    ],
-  },
-  {
-    title: "After the take",
-    items: [
-      { href: "/studio#edit-suggestions", label: "Edit Suggestions", hint: "in Studio's session report" },
-      { href: "/studio#visual-signature", label: "Visual Suggestions", hint: "in Studio's session report" },
-    ],
-  },
-  {
-    title: "Identity & Brand",
-    items: [
-      { href: "/identity", label: "Founder Identity", hint: "who you are" },
-      { href: "/company", label: "Company Context", hint: "red lines" },
+      { href: "/studio#edit-suggestions", label: "Edit Suggestions", hint: "in your last session report" },
+      { href: "/studio#visual-signature", label: "Visual Suggestions", hint: "in your last session report" },
     ],
   },
   {
     title: "Analytics",
-    items: [{ href: "/distribution", label: "Distribution", hint: "reach & impact" }],
+    items: [{ href: "/distribution", label: "Distribution", hint: "archive: reach & impact" }],
   },
 ];
 

@@ -9,6 +9,8 @@ import { auth, db } from "../../lib/firebase";
 import { EMPTY_COMPANY_CONTEXT, isCompanyContextSubstantive, type CompanyContext } from "../../lib/company-context";
 import { AppShell } from "../../components/app/AppShell";
 
+const DRAFT_KEY = "personakit:companyDraft";
+
 function linesToClaims(text: string): string[] {
   return text
     .split("\n")
@@ -30,6 +32,12 @@ export default function CompanyPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [setupMode, setSetupMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
@@ -44,15 +52,34 @@ export default function CompanyPage() {
         return;
       }
       const ctx: CompanyContext = data.companyContext ?? EMPTY_COMPANY_CONTEXT;
-      setProductDescription(ctx.productDescription);
-      setAccurateClaimsText(ctx.accurateClaims.join("\n"));
-      setFalseClaimsText(ctx.falseClaims.join("\n"));
-      setBrandVoice(ctx.brandVoice);
-      setPositioning(ctx.positioning);
+      // A local draft (unsaved typing from before a tab switch) wins over
+      // whatever's already saved — it's presumably more recent.
+      const draftRaw = typeof window !== "undefined" ? window.localStorage.getItem(DRAFT_KEY) : null;
+      let draft: Record<string, string> | null = null;
+      if (draftRaw) {
+        try {
+          draft = JSON.parse(draftRaw);
+        } catch {
+          // corrupt/stale draft — fall back to saved data below
+        }
+      }
+      setProductDescription(draft?.productDescription ?? ctx.productDescription);
+      setAccurateClaimsText(draft?.accurateClaimsText ?? ctx.accurateClaims.join("\n"));
+      setFalseClaimsText(draft?.falseClaimsText ?? ctx.falseClaims.join("\n"));
+      setBrandVoice(draft?.brandVoice ?? ctx.brandVoice);
+      setPositioning(draft?.positioning ?? ctx.positioning);
       setUser(u);
     });
     return unsubscribe;
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || user === undefined) return;
+    window.localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ productDescription, accurateClaimsText, falseClaimsText, brandVoice, positioning }),
+    );
+  }, [productDescription, accurateClaimsText, falseClaimsText, brandVoice, positioning, user]);
 
   async function handleSave() {
     if (!user) return;
@@ -69,10 +96,19 @@ export default function CompanyPage() {
       };
       await setDoc(
         doc(db, "users", user.uid),
-        { companyContext: context, companyContextUpdatedAt: serverTimestamp() },
+        {
+          companyContext: context,
+          companyContextUpdatedAt: serverTimestamp(),
+          ...(setupMode ? { founderSetupCompletedAt: serverTimestamp() } : {}),
+        },
         { merge: true },
       );
       setSaved(true);
+      if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+      if (setupMode) {
+        router.push("/app");
+        return;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save.");
     } finally {
@@ -93,6 +129,11 @@ export default function CompanyPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Company Context</p>
+        {setupMode && (
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+            One-time setup, step 2 of 2. After this you'll only come back here by clicking the cat.
+          </p>
+        )}
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           <h1 className="onboarding-title">The founder is free. The product must be clear.</h1>
@@ -161,14 +202,16 @@ export default function CompanyPage() {
             onClick={handleSave}
             disabled={saving || !isCompanyContextSubstantive(productDescription)}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : setupMode ? "Finish setup" : "Save"}
           </button>
-          {saved && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>Saved.</p>}
+          {saved && !setupMode && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>Saved.</p>}
           {error && <p className="error">{error}</p>}
 
-          <Link href="/content" className="btn btn-ghost btn-block" style={{ marginTop: 12 }}>
-            Go to Content Lab
-          </Link>
+          {!setupMode && (
+            <Link href="/content" className="btn btn-ghost btn-block" style={{ marginTop: 12 }}>
+              Go to Content Lab
+            </Link>
+          )}
         </div>
       </div>
     </AppShell>

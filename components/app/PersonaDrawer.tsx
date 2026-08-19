@@ -11,6 +11,7 @@ interface PersonaSnapshot {
   personaVector?: PersonaVector;
   styleSuggestions?: StyleSuggestions;
   confirmedCount: number;
+  productDescription?: string;
 }
 
 /**
@@ -35,6 +36,7 @@ export function PersonaDrawer({ open, onClose, uid }: { open: boolean; onClose: 
           personaVector: data?.onboarding?.personaVector,
           styleSuggestions: data?.onboarding?.styleSuggestions,
           confirmedCount: candidates.filter((c) => c.state === "confirmed" || c.state === "modified").length,
+          productDescription: data?.companyContext?.productDescription || undefined,
         });
       })
       .finally(() => setLoading(false));
@@ -105,8 +107,19 @@ export function PersonaDrawer({ open, onClose, uid }: { open: boolean; onClose: 
           </p>
         )}
 
+        {!loading && (
+          <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
+            {snapshot?.productDescription
+              ? `Company context saved: "${snapshot.productDescription.slice(0, 80)}${snapshot.productDescription.length > 80 ? "..." : ""}"`
+              : "No company context saved yet."}
+          </p>
+        )}
+
         <Link href="/identity" className="btn btn-ghost btn-block" style={{ marginBottom: 8 }} onClick={onClose}>
-          Edit in Founder Identity
+          Edit Founder Identity
+        </Link>
+        <Link href="/company" className="btn btn-ghost btn-block" style={{ marginBottom: 8 }} onClick={onClose}>
+          Edit Company Context
         </Link>
         <Link href="/studio" className="btn btn-ghost btn-block" onClick={onClose}>
           Edit visual style in Studio

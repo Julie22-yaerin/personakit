@@ -9,6 +9,7 @@ import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysi
 import { PersonaTimeline } from "../components/landing/PersonaTimeline";
 import { PerformanceChart } from "../components/landing/PerformanceChart";
 import { Reveal } from "../components/landing/Reveal";
+import { PixelCat } from "../components/app/PixelCat";
 import "./persona-landing.css";
 
 const grotesk = Geist({ subsets: ["latin"], variable: "--font-grotesk" });
@@ -575,6 +576,10 @@ export default function LandingPage() {
           <div className="p-footer-bottom">Built for people who refuse to sound like everyone else.</div>
         </div>
       </footer>
+
+      <Link href="/login" className="p-mascot-float" aria-label="Build your persona">
+        <PixelCat size={56} title="Build your persona" />
+      </Link>
     </div>
   );
 }

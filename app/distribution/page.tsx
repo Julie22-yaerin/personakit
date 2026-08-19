@@ -1,11 +1,13 @@
 "use client";
 
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { AppShell } from "../../components/app/AppShell";
+import { TrendLine } from "../../components/app/TrendLine";
 import {
   classifyFDS,
   computeEDS,
@@ -16,15 +18,6 @@ import {
   type EDSWeights,
 } from "../../lib/distribution";
 
-const MAX_ENTRIES = 50;
-
-const REACH_FIELDS: { key: keyof DistributionEntry; label: string }[] = [
-  { key: "reach", label: "Reach (views/impressions)" },
-  { key: "engagement", label: "Engagement (likes+comments+shares)" },
-  { key: "profileVisits", label: "Profile visits" },
-  { key: "follows", label: "New follows" },
-];
-
 const OUTCOME_FIELDS: { key: keyof DistributionEntry; label: string }[] = [
   { key: "qualifiedLeads", label: "Qualified leads" },
   { key: "productSignups", label: "Product signups" },
@@ -33,12 +26,6 @@ const OUTCOME_FIELDS: { key: keyof DistributionEntry; label: string }[] = [
   { key: "investorInbound", label: "Investor inbound" },
   { key: "partnershipInbound", label: "Partnership inbound" },
 ];
-
-function emptyFormValues(): Record<string, string> {
-  const values: Record<string, string> = { label: "" };
-  for (const f of [...REACH_FIELDS, ...OUTCOME_FIELDS]) values[f.key] = "0";
-  return values;
-}
 
 function fdsColor(label: string): string {
   if (label === "significantly outperforming" || label === "above your average") return "var(--success)";
@@ -51,9 +38,6 @@ export default function DistributionPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [entries, setEntries] = useState<DistributionEntry[]>([]);
   const [weights, setWeights] = useState<EDSWeights>(DEFAULT_EDS_WEIGHTS);
-  const [form, setForm] = useState<Record<string, string>>(emptyFormValues());
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -74,40 +58,6 @@ export default function DistributionPage() {
     });
     return unsubscribe;
   }, [router]);
-
-  async function handleLogEntry() {
-    if (!user || !form.label.trim()) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const entry: DistributionEntry = {
-        loggedAt: new Date().toISOString(),
-        label: form.label.trim(),
-        reach: Number(form.reach) || 0,
-        engagement: Number(form.engagement) || 0,
-        profileVisits: Number(form.profileVisits) || 0,
-        follows: Number(form.follows) || 0,
-        qualifiedLeads: Number(form.qualifiedLeads) || 0,
-        productSignups: Number(form.productSignups) || 0,
-        customerConversions: Number(form.customerConversions) || 0,
-        hiringInbound: Number(form.hiringInbound) || 0,
-        investorInbound: Number(form.investorInbound) || 0,
-        partnershipInbound: Number(form.partnershipInbound) || 0,
-      };
-      const nextEntries = [...entries, entry].slice(-MAX_ENTRIES);
-      await setDoc(
-        doc(db, "users", user.uid),
-        { distributionLog: nextEntries, distributionLogUpdatedAt: serverTimestamp() },
-        { merge: true },
-      );
-      setEntries(nextEntries);
-      setForm(emptyFormValues());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleSaveWeights(next: EDSWeights) {
     setWeights(next);
@@ -137,63 +87,37 @@ export default function DistributionPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Distribution</p>
+        <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+          Nothing to type here — this fills itself in. Paste a link in the{" "}
+          <Link href="/app" style={{ color: "var(--accent)" }}>dashboard chat</Link> and PERSONA reads its numbers
+          straight into the graph below.
+        </p>
 
-        <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
-          <h1 className="onboarding-title">The economic metric, not views.</h1>
-          <p className="auth-caption" style={{ textAlign: "left", marginBottom: 18 }}>
-            No platform is connected here — log the numbers yourself after you publish. Everything below
-            is scored against your own trailing average, not an absolute scale.
-          </p>
+        {entries.length === 0 && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <h1 className="onboarding-title">The economic metric, not views.</h1>
+            <p className="auth-caption" style={{ textAlign: "left" }}>
+              No platform is connected here, and there's no manual entry — paste a published link in the{" "}
+              <Link href="/app" style={{ color: "var(--accent)" }}>dashboard chat</Link> and it lands here
+              automatically. Once something&apos;s logged, everything below is scored against your own trailing
+              average, not an absolute scale.
+            </p>
+          </div>
+        )}
 
-          <label style={{ fontSize: 13, color: "var(--muted)", display: "block", marginBottom: 6 }}>
-            What did you publish?
-          </label>
-          <input
-            type="text"
-            value={form.label}
-            onChange={(e) => setForm({ ...form, label: e.target.value })}
-            placeholder="e.g. IG reel about pricing"
-            style={{ marginBottom: 14 }}
-          />
-
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>Reach & engagement</div>
-          {REACH_FIELDS.map((f) => (
-            <div key={f.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <label style={{ fontSize: 13 }}>{f.label}</label>
-              <input
-                type="number"
-                min={0}
-                value={form[f.key]}
-                onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                style={{ width: 100 }}
-              />
-            </div>
-          ))}
-
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8, marginTop: 10 }}>Outcomes</div>
-          {OUTCOME_FIELDS.map((f) => (
-            <div key={f.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <label style={{ fontSize: 13 }}>{f.label}</label>
-              <input
-                type="number"
-                min={0}
-                value={form[f.key]}
-                onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                style={{ width: 100 }}
-              />
-            </div>
-          ))}
-
-          <button
-            className="btn btn-primary btn-block"
-            onClick={handleLogEntry}
-            disabled={saving || !form.label.trim()}
-            style={{ marginTop: 10 }}
-          >
-            {saving ? "Logging..." : "Log This"}
-          </button>
-          {error && <p className="error">{error}</p>}
-        </div>
+        {entries.length > 1 && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 12 }}>Growth</div>
+            <TrendLine
+              title="Reach"
+              points={entries.map((e) => ({ label: new Date(e.loggedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }), value: e.reach }))}
+            />
+            <TrendLine
+              title="Engagement"
+              points={entries.map((e) => ({ label: new Date(e.loggedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }), value: e.engagement }))}
+            />
+          </div>
+        )}
 
         {fds && (
           <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>

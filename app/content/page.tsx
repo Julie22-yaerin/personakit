@@ -69,6 +69,7 @@ interface HistoryEntry {
 }
 
 const MAX_HISTORY = 20;
+const DRAFT_KEY = "personakit:contentDraft";
 
 const GOOD_COLOR = "var(--success)";
 const WARN_COLOR = "var(--warn)";
@@ -112,6 +113,21 @@ export default function ContentLabPage() {
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore whatever was mid-typing before a tab switch unmounted this
+  // page — nothing here is saved until "Score This," so without this the
+  // draft would just vanish.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const draft = window.localStorage.getItem(DRAFT_KEY);
+    if (draft) setContent(draft);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (content) window.localStorage.setItem(DRAFT_KEY, content);
+    else window.localStorage.removeItem(DRAFT_KEY);
+  }, [content]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -214,6 +230,10 @@ export default function ContentLabPage() {
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner">
         <p className="onboarding-step-label">Content Lab</p>
+        <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 16 }}>
+          The archive of every piece you've scored. For a new score, it's usually faster to just paste it in the{" "}
+          <Link href="/app" style={{ color: "var(--accent)" }}>dashboard chat</Link>.
+        </p>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           <h1 className="onboarding-title">Does this actually sound like you?</h1>

@@ -612,15 +612,28 @@ footer {
   border: 1px solid var(--border);
 }
 
-/* Recording screen should dominate the viewport, not sit in a
-   mobile-width card — the studio page opts into the wide app-main
-   layout, and this caps the frame at a sane max height on very wide
-   monitors instead of stretching it edge to edge. */
+/* .auth-card's default max-width:380px was silently capping every card
+   on this page, including the one wrapping the camera frame — the wide
+   app-main-inner-wide layout never actually had room to matter. This is
+   the real fix; the frame's own max-width below is just the ceiling on
+   very wide monitors once it's actually free to grow. */
+.studio-page .auth-card {
+  max-width: none;
+}
+
 .studio-page .camera-frame {
-  max-width: 1180px;
-  max-height: 78vh;
+  max-width: 1560px;
+  max-height: 88vh;
   margin-left: auto;
   margin-right: auto;
+}
+
+.studio-teleprompter {
+  max-width: 1560px !important;
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .camera-frame video {
@@ -784,7 +797,67 @@ footer {
   }
 }
 
+/* ---------- cookie consent banner ---------- */
+
+.cookie-banner {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 80;
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.cookie-banner-text {
+  flex: 1 1 320px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cookie-banner-actions .btn {
+  padding: 8px 14px;
+  font-size: 12.5px;
+  width: auto;
+}
+
+@media (max-width: 560px) {
+  .cookie-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cookie-banner-actions {
+    justify-content: flex-end;
+  }
+}
+
 /* ---------- pixel cat mascot ---------- */
+
+.p-mascot-float {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: block;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45));
+}
 
 .pixel-cat {
   display: inline-block;
@@ -984,6 +1057,16 @@ footer {
   max-width: 1400px;
 }
 
+/* Studio's recording view should use as much of the viewport as it can
+   get — this widens its container beyond the normal page cap and trims
+   the side padding, rather than just enlarging the frame inside a
+   still-narrow column. */
+.app-main:has(.studio-page) {
+  max-width: none;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
 .app-main-inner {
   width: 100%;
   max-width: 880px;
@@ -1070,6 +1153,21 @@ footer {
   flex-direction: column;
   height: calc(100vh - 104px);
   max-width: 760px;
+}
+
+.setup-reminder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
 }
 
 .assistant-thread {
