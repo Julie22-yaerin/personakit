@@ -12,6 +12,8 @@ import type { CommunicationProfile, FounderOrigin, IdentityCandidate } from "../
 import { EMPTY_COMPANY_CONTEXT, type CompanyContext } from "../../lib/company-context";
 import type { PersonaVector, StyleSuggestions } from "../../lib/persona";
 import { SCRIPT_NODE_LABELS, type ScriptGraph } from "../../lib/script";
+import type { RoadmapItem } from "../../lib/roadmap";
+import type { GeneratedRoadmapItem } from "../../lib/roadmap-generate";
 import {
   DEFAULT_EDS_WEIGHTS,
   classifyFDS,
@@ -30,13 +32,14 @@ interface AssistantMessage {
 const STARTER_PROMPTS = [
   "Score this post for me",
   "Write me a script about...",
+  "Build me a content roadmap",
   "What should I wear on camera?",
   "How's my distribution looking?",
   "Founders with a similar style to me?",
 ];
 
 const WELCOME_TEXT =
-  "Hey — I'm your PERSONA assistant. Paste something to score, ask me to write a script, ask for a visual/style suggestion, paste a link to check its numbers, tell me something about yourself, or ask for a case study. One box, everything routes from here.";
+  "Hey — I'm your PERSONA assistant. Paste something to score, ask me to write a script or plan out a roadmap, ask for a visual/style suggestion, paste a link to check its numbers, tell me something about yourself, or ask for a case study. One box, everything routes from here.";
 
 export default function AppHome() {
   const router = useRouter();
@@ -224,7 +227,59 @@ Economic Distribution Score (total): ${Math.round(edsTotal)}`,
     }
     const graph = data as ScriptGraph;
     const text = graph.nodes.map((n) => `${SCRIPT_NODE_LABELS[n.type].toUpperCase()}\n${n.concept}`).join("\n\n");
-    pushAssistant(text, { label: "Open Studio to film it", url: "/studio" });
+
+    if (user) {
+      await setDoc(
+        doc(db, "users", user.uid),
+        { pendingScript: graph, pendingScriptUpdatedAt: serverTimestamp() },
+        { merge: true },
+      );
+    }
+
+    pushAssistant(text, { label: "Open Studio — it's already loaded there", url: "/studio" });
+  }
+
+  async function handleGenerateRoadmap(goal: string) {
+    const res = await authedFetch("/api/assistant/generate-roadmap", {
+      goal,
+      candidates: confirmedCandidates.map((c) => ({ category: c.category, text: c.text })),
+      communicationProfile,
+      founderOrigin,
+      companyContext: companyContext.productDescription.trim() ? companyContext : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      pushAssistant(data.error ?? "Couldn't build that roadmap.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const newItems: RoadmapItem[] = (data.items as GeneratedRoadmapItem[]).map((item, i) => ({
+      id: `${Date.now()}-${i}`,
+      title: item.title,
+      angle: item.angle,
+      format: item.format,
+      suggestedDay: item.suggestedDay,
+      status: "planned" as const,
+      createdAt: now,
+    }));
+
+    if (user) {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const existing = (snap.data()?.roadmap ?? []) as RoadmapItem[];
+      const nextRoadmap = [...existing, ...newItems];
+      await setDoc(
+        doc(db, "users", user.uid),
+        { roadmap: nextRoadmap, roadmapUpdatedAt: serverTimestamp() },
+        { merge: true },
+      );
+    }
+
+    const preview = newItems.slice(0, 3).map((i) => `Day ${i.suggestedDay}: ${i.title}`).join("\n");
+    pushAssistant(
+      `Built a ${newItems.length}-post roadmap:\n\n${preview}${newItems.length > 3 ? "\n..." : ""}`,
+      { label: "See the full plan in Roadmap", url: "/roadmap" },
+    );
   }
 
   async function handleAnalyzeLink(url: string) {
@@ -330,6 +385,9 @@ Economic Distribution Score (total): ${Math.round(edsTotal)}`,
           break;
         case "analyze_link":
           await handleAnalyzeLink(data.url || text);
+          break;
+        case "generate_roadmap":
+          await handleGenerateRoadmap(data.roadmapGoal || text);
           break;
         default:
           pushAssistant(data.reply);

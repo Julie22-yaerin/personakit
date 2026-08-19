@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { AppShell } from "../../components/app/AppShell";
+import { TrendLine } from "../../components/app/TrendLine";
 import {
   classifyFDS,
   computeEDS,
@@ -199,6 +200,20 @@ export default function DistributionPage() {
           </button>
           {error && <p className="error">{error}</p>}
         </div>
+
+        {entries.length > 1 && (
+          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+            <div className="price-name" style={{ marginBottom: 12 }}>Growth</div>
+            <TrendLine
+              title="Reach"
+              points={entries.map((e) => ({ label: new Date(e.loggedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }), value: e.reach }))}
+            />
+            <TrendLine
+              title="Engagement"
+              points={entries.map((e) => ({ label: new Date(e.loggedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }), value: e.engagement }))}
+            />
+          </div>
+        )}
 
         {fds && (
           <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>

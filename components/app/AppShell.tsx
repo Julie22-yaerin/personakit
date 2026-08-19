@@ -22,6 +22,10 @@ interface NavItem {
 // a one-time setup, not ongoing nav — reachable afterward only via the cat.
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
+    title: "Plan",
+    items: [{ href: "/roadmap", label: "Roadmap", hint: "archive: posting & filming plan" }],
+  },
+  {
     title: "Write",
     items: [{ href: "/content", label: "Content Lab", hint: "archive: score & refine a piece" }],
   },

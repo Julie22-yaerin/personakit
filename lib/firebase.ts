@@ -2,7 +2,7 @@
 
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
-import { GoogleAuthProvider, getAuth } from "firebase/auth";
+import { GoogleAuthProvider, browserLocalPersistence, getAuth, setPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -19,6 +19,15 @@ export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseC
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 export const googleProvider = new GoogleAuthProvider();
+
+// Explicit rather than relying on the SDK default — a returning founder
+// should land signed in, not have to re-enter credentials every visit.
+if (typeof window !== "undefined") {
+  setPersistence(auth, browserLocalPersistence).catch(() => {
+    // best-effort — a persistence-setting failure (e.g. storage blocked)
+    // just means auth falls back to the SDK's own default behavior
+  });
+}
 
 let analyticsPromise: Promise<Analytics | null> | null = null;
 
