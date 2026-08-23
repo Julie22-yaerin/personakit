@@ -9,6 +9,7 @@ import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysi
 import { PersonaTimeline } from "../components/landing/PersonaTimeline";
 import { PerformanceChart } from "../components/landing/PerformanceChart";
 import { Reveal } from "../components/landing/Reveal";
+import { AnimationBackground } from "@/components/ui/bloim-animation-background";
 import "./persona-landing.css";
 
 const grotesk = Geist({ subsets: ["latin"], variable: "--font-grotesk" });
@@ -16,7 +17,9 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variab
 
 export default function LandingPage() {
   return (
-    <div className={`p-page ${grotesk.variable} ${mono.variable}`}>
+    <>
+      <AnimationBackground />
+      <div className={`p-page ${grotesk.variable} ${mono.variable}`}>
       {/* ---------- NAV ---------- */}
       <nav className="p-nav">
         <div className="p-nav-inner">
@@ -575,7 +578,8 @@ export default function LandingPage() {
           <div className="p-footer-bottom">Built for people who refuse to sound like everyone else.</div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 

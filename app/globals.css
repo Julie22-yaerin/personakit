@@ -1,15 +1,28 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-background-raised: var(--bg-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+}
+
 :root {
   /* PERSONA brand tokens — kept in sync with app/persona-landing.css's
      --p-* palette so the whole product reads as one system, not just
-     the marketing page. */
-  --bg: #070707;
-  --bg-raised: #111113;
-  --border: rgba(255, 255, 255, 0.1);
+     the marketing page. Accents follow the UnicornStudio "bloim"
+     background scene: electric blue bloom on near-black. */
+  --bg: #050508;
+  --bg-raised: #10121c;
+  --border: rgba(148, 168, 255, 0.12);
   --text: #f5f5f5;
-  --muted: #929296;
-  --accent: #ff3b30;
-  --accent-dim: #ff6b61;
-  --success: #d8ff72;
+  --muted: #9aa3b8;
+  --accent: #3356db;
+  --accent-dim: #9db8f2;
+  --success: #a8c0f0;
   --bad: #ff3b30;
   --warn: #f5a524;
   --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
