@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PERSONA — Founder Persona Intelligence",
+  metadataBase: new URL("https://thelyceum.site"),
+  title: {
+    default: "PERSONA — Founder Persona Intelligence",
+    template: "%s · PERSONA",
+  },
   description: "Your persona is not a document. Measure, test, and improve the identity behind your content.",
 };
 

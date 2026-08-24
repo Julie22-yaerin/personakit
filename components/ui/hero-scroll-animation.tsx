@@ -41,22 +41,22 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
         <div className='grid grid-cols-4 gap-4'>
           <img
             src='https://images.unsplash.com/photo-1717893777838-4e222311630b?w=1200&auto=format&fit=crop'
-            alt='img'
+            alt='Abstract gradient light trails in blue and violet'
             className='object-cover w-full rounded-md h-full'
           />
           <img
             src='https://images.unsplash.com/photo-1717618389115-88db6d7d8f77?w=500&auto=format&fit=crop'
-            alt='img'
+            alt='Soft-focus studio lighting setup against a dark backdrop'
             className='object-cover w-full rounded-md'
           />
           <img
             src='https://images.unsplash.com/photo-1717588604557-55b2888f59a6?w=500&auto=format&fit=crop'
-            alt='img'
+            alt='Close-up of a camera lens reflecting colored light'
             className='object-cover w-full rounded-md h-full'
           />
           <img
             src='https://images.unsplash.com/photo-1713417338603-1b6b72fcade2?w=500&auto=format&fit=crop'
-            alt='img'
+            alt='Minimal desk workspace with a monitor glowing in a dark room'
             className='object-cover w-full rounded-md'
           />
         </div>
