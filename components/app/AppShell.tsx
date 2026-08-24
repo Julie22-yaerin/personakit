@@ -16,10 +16,10 @@ interface NavItem {
 }
 
 // Explicit grouping so it's clear at a glance where each capability
-// lives — planning vs. writing vs. filming. Edit/visual suggestions are
-// no longer separate nav entries: they're produced inside The Board's
-// roadmap factors (and Studio's session report), so listing them here
-// would just duplicate entry points.
+// lives — planning vs. writing vs. filming. Founder Identity and
+// Company Context are NOT nav entries anymore: they live inside the
+// Profile drawer (the pixel cat) as view-what-exists + edit-if-you-
+// want, so the AI never re-asks for data that's already saved.
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: "Plan",
@@ -33,13 +33,6 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Film",
     items: [
       { href: "/studio", label: "Studio", hint: "live filming + real-time coaching" },
-    ],
-  },
-  {
-    title: "Identity & Brand",
-    items: [
-      { href: "/identity", label: "Founder Identity", hint: "who you are" },
-      { href: "/company", label: "Company Context", hint: "red lines" },
     ],
   },
   {

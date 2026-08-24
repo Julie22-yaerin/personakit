@@ -38,6 +38,25 @@ interface FloatingReply {
   seen: boolean;
 }
 
+/**
+ * Firestore rejects `undefined` field values outright — a single
+ * artifact without a day used to make every save throw and the board
+ * silently stop persisting. Strip undefined recursively before writing.
+ */
+function cleanForFirestore<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.filter((v) => v !== undefined).map((v) => cleanForFirestore(v)) as unknown as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) out[k] = cleanForFirestore(v);
+    }
+    return out as T;
+  }
+  return value;
+}
+
 const QUICK_ACTIONS: Array<{ label: string; template: string }> = [
   { label: "Script", template: "Write the full spoken script for" },
   { label: "Visual", template: "Give visual suggestions for" },
@@ -82,15 +101,35 @@ export default function BoardPage() {
         router.replace("/onboarding");
         return;
       }
-      const stored = data.contentPlan as ContentPlan | undefined;
-      if (stored) {
-        stored.days = stored.days.map((d) => ({ ...d, done: d.done ?? false }));
-      }
-      setPlan(stored ?? null);
+      setPlan(sanitizePlan(data.contentPlan as ContentPlan | undefined));
       setUser(u);
     });
     return unsubscribe;
   }, [router]);
+
+  /** Legacy or partially-written plans must never crash the render. */
+  function sanitizePlan(raw: ContentPlan | undefined | null): ContentPlan | null {
+    if (!raw || !Array.isArray(raw.days) || raw.days.length === 0 || !Array.isArray(raw.factors)) {
+      return null;
+    }
+    const factorIds = new Set(raw.factors.map((f) => f.id));
+    return {
+      ...raw,
+      strategySummary: raw.strategySummary ?? "",
+      factors: raw.factors.map((f) => ({ ...f, artifacts: Array.isArray(f.artifacts) ? f.artifacts : [] })),
+      days: raw.days
+        .filter((d) => d && typeof d.day === "number")
+        .map((d, i) => ({
+          ...d,
+          day: i + 1,
+          title: d.title ?? "Untitled",
+          task: d.task ?? "",
+          format: d.format ?? "post",
+          done: d.done ?? false,
+          factorId: d.factorId && factorIds.has(d.factorId) ? d.factorId : undefined,
+        })),
+    };
+  }
 
   const daysByFactor = useMemo(() => {
     const map = new Map<string, PlanDay[]>();
@@ -110,7 +149,9 @@ export default function BoardPage() {
 
   async function persist(next: ContentPlan) {
     setPlan(next);
-    if (user) await setDoc(doc(db, "users", user.uid), { contentPlan: next }, { merge: true });
+    if (user) {
+      await setDoc(doc(db, "users", user.uid), { contentPlan: cleanForFirestore(next) }, { merge: true });
+    }
   }
 
   function toggleDone(day: PlanDay) {
