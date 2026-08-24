@@ -7,27 +7,43 @@ import {
   type BoardArtifactDraft,
   type BoardEditRequest,
   type BoardEditResult,
+  type ClarifyQuestion,
   type ContentPlan,
+  type CraftClarifyResult,
   type CraftPlanRequest,
 } from "./content-plan";
 
 /**
  * The Board's LLM layer — two jobs:
- * 1. craftContentPlan: turn the onboarding interview (personality + plan
- *    questions), founder identity candidates and company red lines into a
- *    concrete 1-month content production plan.
+ * 1. craftOrAsk: from whatever context exists (full onboarding payload
+ *    or a one-line ask on the Board) either craft the 1-month content
+ *    plan or come back with clarifying questions (text / MCQ + Other).
  * 2. editBoardObject: take a founder request against a selected day /
- *    factor / artifact and either patch the plan or produce new material
- *    grouped under a roadmap factor.
+ *    factor / artifact and either patch the plan or produce new, clearly
+ *    labeled material grouped under a roadmap factor.
  * Same provider ladder as onboarding: NVIDIA stylist first, then
  * Anthropic, then OpenRouter.
  */
 
 const str = { type: "string" as const };
 
-const PLAN_JSON_SHAPE = {
+const CRAFT_JSON_SHAPE = {
   type: "object" as const,
   properties: {
+    mode: { type: "string" as const, enum: ["ask", "plan"] },
+    message: str,
+    questions: {
+      type: "array" as const,
+      items: {
+        type: "object" as const,
+        properties: {
+          id: str,
+          question: str,
+          type: { type: "string" as const, enum: ["text", "mcq"] },
+          options: { type: "array" as const, items: str },
+        },
+      },
+    },
     strategySummary: str,
     factors: {
       type: "array" as const,
@@ -72,6 +88,7 @@ const EDIT_JSON_SHAPE = {
           kind: { type: "string" as const, enum: [...ARTIFACT_KINDS] },
           title: str,
           content: str,
+          day: { type: "number" as const },
         },
       },
     },
@@ -101,16 +118,30 @@ function identityBlock(req: CraftPlanRequest): string | null {
 
 function craftUserPrompt(req: CraftPlanRequest): string {
   const parts: string[] = [];
-  const interview = req.interview
-    .map((t) => `Q: ${t.question}\nA: """${t.answer}"""`)
-    .join("\n\n");
-  parts.push(`Onboarding interview (who they are):\n\n${interview}`);
 
-  if (req.planInterview.length > 0) {
+  if (req.request) parts.push(`Founder's request: """${req.request}"""`);
+
+  if (req.interview && req.interview.length > 0) {
+    const interview = req.interview
+      .map((t) => `Q: ${t.question}\nA: """${t.answer}"""`)
+      .join("\n\n");
+    parts.push(`Onboarding interview (who they are):\n\n${interview}`);
+  } else {
+    parts.push("No onboarding interview available.");
+  }
+
+  if (req.planInterview && req.planInterview.length > 0) {
     const plan = req.planInterview
       .map((t) => `Q: ${t.question}\nA: """${t.answer}"""`)
       .join("\n\n");
     parts.push(`Production-plan interview (constraints & goals):\n\n${plan}`);
+  }
+
+  if (req.answers && req.answers.length > 0) {
+    const answered = req.answers
+      .map((a) => `Q: ${a.question}\nA: """${a.answer}"""`)
+      .join("\n\n");
+    parts.push(`Answers to your earlier clarifying questions:\n\n${answered}`);
   }
 
   const identity = identityBlock(req);
@@ -129,6 +160,8 @@ function craftUserPrompt(req: CraftPlanRequest): string {
     parts.push(
       `Company context / red lines: product="""${req.companyContext.productDescription}""", brandVoice=${req.companyContext.brandVoice ?? "n/a"}, positioning=${req.companyContext.positioning ?? "n/a"}. Never plan content that contradicts these.`,
     );
+  } else {
+    parts.push("No company context provided — you may need to ask about the product and its branding style.");
   }
   if (req.personaVector) {
     parts.push(`Persona vector baseline: ${JSON.stringify(req.personaVector)}`);
@@ -137,11 +170,15 @@ function craftUserPrompt(req: CraftPlanRequest): string {
   return parts.join("\n\n");
 }
 
-const CRAFT_SYSTEM_PROMPT = `You are PERSONA's content-production planner. You receive a founder's
-onboarding interview, their extra answers about production constraints
-(cadence, time available, platform, goal for the month), their confirmed
-identity traits and their company red lines. From all of it you craft ONE
-concrete 1-month (up to 30 days) sequential content production plan.
+const CRAFT_SYSTEM_PROMPT = `You are PERSONA's content-production planner. You receive whatever
+the system knows about a founder — possibly everything (full onboarding
+interview, identity traits, company red lines), possibly almost nothing
+(just a one-line request typed on the Board).
+
+You decide between two modes:
+
+MODE "plan" — you have enough to work with. Craft ONE concrete 1-month
+(up to 30 days) sequential content production plan.
 
 Rules:
 - Days are strictly sequential, labeled Day 1..N with no gaps.
@@ -158,7 +195,19 @@ Rules:
   exposes restricted claims.
 - strategySummary: 3-5 sentences explaining the arc of the month.
 
-Respond with the structured result only — no prose outside it.`;
+MODE "ask" — input is genuinely too thin to plan responsibly (e.g. no
+idea what the company/product even is, no sense of branding style, no
+cadence). Ask for ONLY what's truly missing: at most 3 questions. Each
+question is either:
+- type "text": open-ended ("Describe your company in a sentence", "What
+  does your product's branding feel like?"), or
+- type "mcq": a concrete question with 2-5 short answer options. NEVER
+  include an "Other" option — the UI adds it automatically.
+Questions must be in the SAME LANGUAGE as the founder's request (a
+Vietnamese request gets Vietnamese questions). Don't ask about things
+already covered by the provided context.
+
+Respond with JSON only.`;
 
 async function callLlmJson(system: string, prompt: string): Promise<unknown> {
   if (isNvidiaConfigured("stylist")) {
@@ -207,13 +256,49 @@ async function callLlmJson(system: string, prompt: string): Promise<unknown> {
   throw new Error("No LLM provider configured for the board.");
 }
 
-export async function craftContentPlan(req: CraftPlanRequest): Promise<ContentPlan> {
-  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(PLAN_JSON_SHAPE)}`;
+export type CraftOrAskResult = ContentPlan | CraftClarifyResult;
+
+function isClarify(obj: object): obj is CraftClarifyResult {
+  return (obj as Record<string, unknown>).mode === "ask";
+}
+
+/**
+ * The soft entry point: with a one-line request (or a full onboarding
+ * payload) the AI either crafts the plan or comes back with at most 3
+ * clarifying questions — free-form or MCQ, never blocking forever.
+ */
+export async function craftOrAsk(req: CraftPlanRequest): Promise<CraftOrAskResult> {
+  const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(CRAFT_JSON_SHAPE)}`;
   const raw = await callLlmJson(`${CRAFT_SYSTEM_PROMPT}\n\n${shapeHint}`, craftUserPrompt(req));
+  const obj = (raw ?? {}) as Record<string, unknown>;
+
+  if (isClarify(obj)) {
+    const rawQuestions = Array.isArray(obj.questions) ? obj.questions : [];
+    const questions: ClarifyQuestion[] = rawQuestions
+      .slice(0, 3)
+      .map((q, i) => {
+        const qObj = (q ?? {}) as Record<string, unknown>;
+        const isMcq = String(qObj.type) === "mcq" && Array.isArray(qObj.options) && qObj.options.length > 0;
+        return {
+          id: typeof qObj.id === "string" && qObj.id ? qObj.id : `q-${Date.now()}-${i}`,
+          question: String(qObj.question ?? ""),
+          type: isMcq ? ("mcq" as const) : ("text" as const),
+          options: isMcq
+            ? (qObj.options as unknown[]).slice(0, 6).map((o) => String(o))
+            : undefined,
+        };
+      })
+      .filter((q) => q.question.length > 0);
+    return {
+      needsInfo: true,
+      message: String(obj.message ?? "I need a bit more before I can plan this."),
+      questions,
+    };
+  }
+
   const parsed = ContentPlanSchema.parse(raw);
   // Normalize: guarantee strict sequential day labels and valid wiring.
   const days = parsed.days.map((d, i) => ({ ...d, day: i + 1 }));
-  const factorIds = new Set(parsed.factors.map((f) => f.id));
   return {
     ...parsed,
     days,
@@ -236,9 +321,11 @@ Rules:
 - Always write the founder-facing "reply" in THEIR language (match the
   language of their request — Vietnamese stays Vietnamese).
 - For creation: produce full, ready-to-use content in newArtifacts with
-  kind one of script/visual/style_edit/note, a short title, and complete
-  content (a script is a full spoken-word script with beats, not an
-  outline).
+  kind one of script/visual/style_edit/note, a CLEAR descriptive title
+  that names what it is (e.g. "Day 2 — Hook script", "Edit style ·
+  talking-head intro"), complete content (a script is a full spoken-word
+  script with beats, not an outline), and a "day" number set to the plan
+  day the artifact belongs to when the request names or implies one.
 - Attach creations to the right existing factor via targetFactorId when
   obvious (e.g. the selected day's factor); otherwise set newFactorName
   and leave targetFactorId empty — a new factor will be created.
@@ -278,6 +365,7 @@ export async function editBoardObject(req: BoardEditRequest): Promise<BoardEditR
           kind: String(a.kind),
           title: String(a.title ?? "Untitled"),
           content: String(a.content),
+          day: Number.isFinite(Number(a.day)) ? Number(a.day) : undefined,
         }))
     : [];
   const patches = Array.isArray(obj.dayPatches)

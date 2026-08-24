@@ -28,6 +28,8 @@ export const RoadmapArtifactSchema = z.object({
   kind: z.enum(ARTIFACT_KINDS),
   title: z.string().min(1).max(120),
   content: z.string().min(1).max(20000),
+  /** Plan day this artifact was produced for, when known — shown as its label. */
+  day: z.number().int().min(1).max(31).optional(),
   createdAt: z.string(),
 });
 export type RoadmapArtifact = z.infer<typeof RoadmapArtifactSchema>;
@@ -67,11 +69,46 @@ export const PlanInterviewAnswerSchema = z.object({
   answer: z.string().min(1).max(1000),
 });
 
+/**
+ * Asking the AI to craft a plan is a SOFT entry point — the founder can
+ * do it right on the Board with nothing but a one-line request. When the
+ * AI feels input is missing (no company description, unclear branding,
+ * ...) it may come back with clarifying questions instead of a plan.
+ * Each question is either free-form ("tự luận") or an MCQ; MCQs always
+ * carry an implicit "Other" option the founder fills in themselves.
+ */
+export const ClarifyQuestionSchema = z.object({
+  id: z.string().min(1),
+  question: z.string().min(1).max(300),
+  type: z.enum(["text", "mcq"]),
+  /** For mcq — "Other" is always available in the UI without listing it. */
+  options: z.array(z.string().min(1).max(120)).max(6).optional(),
+});
+export type ClarifyQuestion = z.infer<typeof ClarifyQuestionSchema>;
+
+export interface CraftClarifyResult {
+  needsInfo: true;
+  message: string;
+  questions: ClarifyQuestion[];
+}
+
+export const CraftAnswerSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  answer: z.string().min(1).max(1000),
+});
+export type CraftAnswer = z.infer<typeof CraftAnswerSchema>;
+
 export const CraftPlanRequestSchema = z.object({
-  interview: z.array(
-    z.object({ question: z.string(), answer: z.string() }).passthrough(),
-  ).max(20),
-  planInterview: z.array(PlanInterviewAnswerSchema).max(10),
+  /** Free-form ask from the Board, e.g. "craft me a 1-month plan". */
+  request: z.string().max(2000).optional(),
+  /** Answers to previous clarify questions, when continuing a conversation. */
+  answers: z.array(CraftAnswerSchema).max(10).optional(),
+  interview: z
+    .array(z.object({ question: z.string(), answer: z.string() }).passthrough())
+    .max(20)
+    .optional(),
+  planInterview: z.array(PlanInterviewAnswerSchema).max(10).optional(),
   identityCandidates: z.array(z.object({ category: z.string(), text: z.string() })).max(200),
   communicationProfile: z
     .object({
@@ -101,6 +138,8 @@ export interface BoardArtifactDraft {
   kind: ArtifactKind;
   title: string;
   content: string;
+  /** Plan day the artifact targets, when the request names one. */
+  day?: number;
 }
 
 export const BoardEditRequestSchema = z.object({

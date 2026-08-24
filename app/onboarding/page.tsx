@@ -421,6 +421,20 @@ export default function OnboardingPage() {
                 Send
               </button>
             </form>
+            {step === "planning" && (
+              <>
+                <p className="auth-caption" style={{ textAlign: "left", margin: "12px 0 0", fontSize: 12 }}>
+                  These are optional — answer what you like, or skip and tell the assistant later on The Board.
+                </p>
+                <button
+                  className="btn btn-ghost btn-block"
+                  style={{ marginTop: 10 }}
+                  onClick={() => setStep("scan")}
+                >
+                  Skip for now
+                </button>
+              </>
+            )}
           </div>
         )}
 

@@ -16,8 +16,10 @@ interface NavItem {
 }
 
 // Explicit grouping so it's clear at a glance where each capability
-// lives — writing vs. filming vs. the edit/visual suggestions that live
-// inside a finished Studio session, not as separate pages of their own.
+// lives — planning vs. writing vs. filming. Edit/visual suggestions are
+// no longer separate nav entries: they're produced inside The Board's
+// roadmap factors (and Studio's session report), so listing them here
+// would just duplicate entry points.
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: "Plan",
@@ -31,13 +33,6 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Film",
     items: [
       { href: "/studio", label: "Studio", hint: "live filming + real-time coaching" },
-    ],
-  },
-  {
-    title: "After the take",
-    items: [
-      { href: "/studio#edit-suggestions", label: "Edit Suggestions", hint: "in Studio's session report" },
-      { href: "/studio#visual-signature", label: "Visual Suggestions", hint: "in Studio's session report" },
     ],
   },
   {

@@ -10,22 +10,27 @@ import { AppShell } from "../../components/app/AppShell";
 import {
   ARTIFACT_KIND_LABELS,
   type ArtifactKind,
+  type ClarifyQuestion,
   type ContentPlan,
+  type CraftAnswer,
+  type CraftClarifyResult,
   type PlanDay,
   type RoadmapArtifact,
   type RoadmapFactor,
+  type BoardEditResult,
 } from "../../lib/content-plan";
-import type { BoardEditResult } from "../../lib/content-plan";
 
 /**
- * The Board — the 1-month roadmap crafted during onboarding, rendered
- * as a sequential Duolingo-style path on a polka-dot whiteboard. Every
- * day is a labeled node in strict order. Selecting a node opens the
- * input dock underneath where the founder asks the AI to edit that
- * object or produce material (script, visual suggestion, edit style).
- * The AI's text reply lands in a small floating frame pinned to the
- * board's top-right corner; produced material is grouped under its
- * roadmap factor instead of floating loose.
+ * The Board — the 1-month roadmap rendered as a sequential Duolingo-style
+ * path on a polka-dot whiteboard. Two ways in:
+ * - A plan crafted at the end of onboarding loads automatically.
+ * - No plan? Ask the assistant right here to craft one. It may reply
+ *   with clarifying questions (free-form or multiple-choice, always
+ *   with an "Other" field) before producing the roadmap.
+ * Selecting a day opens the dock underneath to edit that object or
+ * produce labeled material (script / visual / edit style) grouped under
+ * its roadmap factor. The AI's reply lands in a floating frame pinned
+ * top-right; every produced component carries an explicit label.
  */
 
 interface FloatingReply {
@@ -39,6 +44,13 @@ const QUICK_ACTIONS: Array<{ label: string; template: string }> = [
   { label: "Style", template: "Suggest an edit style for" },
 ];
 
+const KIND_CLASS: Record<ArtifactKind, string> = {
+  script: "board-kind-script",
+  visual: "board-kind-visual",
+  style_edit: "board-kind-style",
+  note: "board-kind-note",
+};
+
 export default function BoardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -49,6 +61,13 @@ export default function BoardPage() {
   const [sending, setSending] = useState(false);
   const [reply, setReply] = useState<FloatingReply | null>(null);
   const dockInputRef = useRef<HTMLInputElement>(null);
+
+  // Craft-on-the-board state
+  const [craftRequest, setCraftRequest] = useState("");
+  const [clarify, setClarify] = useState<CraftClarifyResult | null>(null);
+  const [mcqChoice, setMcqChoice] = useState<Record<string, string>>({});
+  const [otherText, setOtherText] = useState<Record<string, string>>({});
+  const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -65,7 +84,6 @@ export default function BoardPage() {
       }
       const stored = data.contentPlan as ContentPlan | undefined;
       if (stored) {
-        // Backfill `done` for plans stored before the field existed.
         stored.days = stored.days.map((d) => ({ ...d, done: d.done ?? false }));
       }
       setPlan(stored ?? null);
@@ -90,18 +108,66 @@ export default function BoardPage() {
     [plan],
   );
 
-  function toggleDone(day: PlanDay) {
-    if (!plan || !user) return;
-    const nextDays = plan.days.map((d) => (d.day === day.day ? { ...d, done: !d.done } : d));
-    const next = { ...plan, days: nextDays };
-    setPlan(next);
-    void setDoc(doc(db, "users", user.uid), { contentPlan: next }, { merge: true });
-  }
-
   async function persist(next: ContentPlan) {
     setPlan(next);
     if (user) await setDoc(doc(db, "users", user.uid), { contentPlan: next }, { merge: true });
   }
+
+  function toggleDone(day: PlanDay) {
+    if (!plan || !user) return;
+    void persist({ ...plan, days: plan.days.map((d) => (d.day === day.day ? { ...d, done: !d.done } : d)) });
+  }
+
+  // ---------- craft on the board ----------
+
+  async function submitCraft(answers?: CraftAnswer[]) {
+    if (sending) return;
+    setSending(true);
+    try {
+      const res = await authedFetch("/api/board/craft", {
+        request: craftRequest || undefined,
+        ...(answers ? { answers } : {}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReply({ text: data.error ?? "Crafting failed.", seen: false });
+        return;
+      }
+      if (data.needsInfo) {
+        setClarify(data as CraftClarifyResult);
+        return;
+      }
+      setClarify(null);
+      setCraftRequest("");
+      await persist(data.plan as ContentPlan);
+      setReply({ text: "Roadmap ready — every day is on the path below.", seen: false });
+    } catch (err) {
+      setReply({ text: err instanceof Error ? err.message : "Crafting failed.", seen: false });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function submitClarifyAnswers(e: FormEvent) {
+    e.preventDefault();
+    if (!clarify || sending) return;
+    const answers: CraftAnswer[] = [];
+    for (const q of clarify.questions) {
+      let answer = "";
+      if (q.type === "text") {
+        answer = (textAnswers[q.id] ?? "").trim();
+      } else {
+        const choice = mcqChoice[q.id];
+        if (choice === "__other__") answer = (otherText[q.id] ?? "").trim();
+        else answer = choice ?? "";
+      }
+      if (answer) answers.push({ id: q.id, question: q.question, answer });
+    }
+    if (answers.length === 0) return;
+    void submitCraft(answers);
+  }
+
+  // ---------- edit existing objects ----------
 
   async function sendRequest(e: FormEvent) {
     e.preventDefault();
@@ -149,14 +215,12 @@ export default function BoardPage() {
             ? nextFactors.findIndex((f) => f.id === data.targetFactorId)
             : -1;
           if (targetIdx < 0 && data.newFactorName) {
-            const maxDay = nextDays.length;
+            const maxDay = Math.max(1, nextDays.length);
+            const anchorDay = selected?.day ?? maxDay;
             nextFactors.push({
               id: `factor-${Date.now()}`,
               name: data.newFactorName,
-              dayRange: [
-                Math.min(selected?.day ?? 1, maxDay),
-                Math.min(selected?.day ?? maxDay, maxDay),
-              ],
+              dayRange: [Math.min(anchorDay, maxDay), Math.min(anchorDay, maxDay)],
               artifacts: [],
             });
             targetIdx = nextFactors.length - 1;
@@ -169,6 +233,7 @@ export default function BoardPage() {
               kind: a.kind as ArtifactKind,
               title: a.title,
               content: a.content,
+              day: a.day ?? selected?.day,
               createdAt: new Date().toISOString(),
             }));
             nextFactors[targetIdx] = {
@@ -214,7 +279,7 @@ export default function BoardPage() {
         <header className="board-head">
           <h1 className="dashboard-title">The Board</h1>
           <p className="dashboard-caption">
-            Your 30-day production roadmap — tap a day, then tell the assistant what to change or make.
+            Your production roadmap — tap a day to edit it, or ask the assistant to make something new.
           </p>
         </header>
 
@@ -233,12 +298,101 @@ export default function BoardPage() {
         {plan === undefined ? (
           <div className="spinner" />
         ) : plan === null ? (
-          <div className="dash-card">
-            <p className="dash-empty">
-              No plan yet. Finish onboarding and the assistant will craft your 1-month
-              roadmap automatically.
-            </p>
-          </div>
+          <>
+            {/* ---- no plan yet: craft one right here ---- */}
+            <div className="board-canvas board-canvas-craft">
+              <div className="board-craft-intro">
+                <h2>The board is empty.</h2>
+                <p>
+                  Tell the assistant what you want to build this month and it crafts your
+                  day-by-day roadmap here. It may ask you a couple of quick questions first —
+                  answer or skip freely.
+                </p>
+              </div>
+
+              {!clarify && (
+                <form
+                  className="chat-input-row"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (craftRequest.trim()) void submitCraft();
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={craftRequest}
+                    onChange={(e) => setCraftRequest(e.target.value)}
+                    placeholder="e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm của mình..."
+                    disabled={sending}
+                    maxLength={2000}
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={sending || !craftRequest.trim()}>
+                    {sending ? "Thinking..." : "Craft plan"}
+                  </button>
+                </form>
+              )}
+
+              {clarify && (
+                <form className="board-clarify" onSubmit={submitClarifyAnswers}>
+                  <p className="board-clarify-message">{clarify.message}</p>
+                  {clarify.questions.map((q: ClarifyQuestion, qi) => (
+                    <div key={q.id} className="board-clarify-q">
+                      <span className="board-clarify-index">{qi + 1}</span>
+                      <label>{q.question}</label>
+                      {q.type === "text" ? (
+                        <input
+                          type="text"
+                          value={textAnswers[q.id] ?? ""}
+                          onChange={(e) => setTextAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder="Type your answer..."
+                          maxLength={1000}
+                        />
+                      ) : (
+                        <div className="board-clarify-options">
+                          {(q.options ?? []).map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              className={`assistant-suggestion-chip ${mcqChoice[q.id] === opt ? "chip-active" : ""}`}
+                              onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: opt }))}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            className={`assistant-suggestion-chip chip-other ${mcqChoice[q.id] === "__other__" ? "chip-active" : ""}`}
+                            onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: "__other__" }))}
+                          >
+                            Other…
+                          </button>
+                        </div>
+                      )}
+                      {q.type === "mcq" && mcqChoice[q.id] === "__other__" && (
+                        <input
+                          type="text"
+                          value={otherText[q.id] ?? ""}
+                          onChange={(e) => setOtherText((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder="Nhập ý kiến riêng của bạn..."
+                          maxLength={1000}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  <div className="board-clarify-actions">
+                    <button type="submit" className="btn btn-primary" disabled={sending}>
+                      {sending ? "Crafting..." : "Send answers"}
+                    </button>
+                    <button type="button" className="btn btn-ghost" onClick={() => void submitCraft()}>
+                      Skip questions — just plan it
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* factors section hidden until a plan exists */}
+          </>
         ) : (
           <>
             <div className="board-canvas">
@@ -291,7 +445,7 @@ export default function BoardPage() {
                 })()}
             </div>
 
-            {/* Roadmap factors — groups everything the AI produces */}
+            {/* Roadmap factors — everything the AI produces lives here, clearly labeled */}
             <section className="board-factors">
               <h2>Roadmap factors</h2>
               <div className="board-factor-grid">
@@ -315,8 +469,13 @@ export default function BoardPage() {
                             <li key={a.id} className="board-artifact">
                               <details>
                                 <summary>
-                                  <span className="board-artifact-kind">{ARTIFACT_KIND_LABELS[a.kind] ?? a.kind}</span>
-                                  {a.title}
+                                  <span className={`board-artifact-kind ${KIND_CLASS[a.kind] ?? ""}`}>
+                                    {ARTIFACT_KIND_LABELS[a.kind] ?? a.kind}
+                                  </span>
+                                  {typeof a.day === "number" && (
+                                    <span className="board-artifact-day">Day {a.day}</span>
+                                  )}
+                                  <span className="board-artifact-title">{a.title}</span>
                                 </summary>
                                 <pre className="board-artifact-content">{a.content}</pre>
                               </details>

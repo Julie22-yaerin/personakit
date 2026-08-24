@@ -9,6 +9,8 @@ import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysi
 import { PersonaTimeline } from "../components/landing/PersonaTimeline";
 import { PerformanceChart } from "../components/landing/PerformanceChart";
 import { Reveal } from "../components/landing/Reveal";
+import { ScrollHero } from "../components/landing/ScrollHero";
+import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
 import "./persona-landing.css";
 
@@ -43,22 +45,24 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ---------- HERO ---------- */}
-      <section className="p-hero">
+      {/* ---------- HERO (pinned, scales away on scroll) ---------- */}
+      <ScrollHero>
         <div className="p-wrap">
           <div className="p-hero-grid">
             <Reveal>
               <div>
                 <p className="p-eyebrow">Founder Persona Intelligence</p>
-                <h1>
-                  Stop making content that sounds like everyone else.
-                  <br />
-                  Build a persona people remember.
-                </h1>
-                <p className="p-hero-sub">
-                  Your personality is already part of your marketing. We turn it into something you
-                  can measure, test, and improve.
-                </p>
+                <TextMotion
+                  as="h1"
+                  className="p-hero-title"
+                  text="Stop making content that sounds like everyone else. Build a persona people remember."
+                />
+                <TextMotion
+                  as="p"
+                  className="p-hero-sub"
+                  delay={0.35}
+                  text="Your personality is already part of your marketing. We turn it into something you can measure, test, and improve."
+                />
                 <div className="p-hero-ctas">
                   <Link href="/login" className="p-btn p-btn-primary">
                     Build my persona
@@ -101,15 +105,24 @@ export default function LandingPage() {
             </Reveal>
           </div>
         </div>
-      </section>
+      </ScrollHero>
 
+      {/* ---------- EVERYTHING AFTER THE HERO SLIDES OVER IT ---------- */}
+      <div className="p-after-hero">
       {/* ---------- PROBLEM ---------- */}
       <section className="p-section">
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Your content isn&apos;t boring because your product is boring.</h2>
-              <p>You&apos;re probably just presenting yourself like everyone else.</p>
+              <TextMotion
+                as="h2"
+                text="Your content isn't boring because your product is boring."
+              />
+              <TextMotion
+                as="p"
+                delay={0.25}
+                text="You're probably just presenting yourself like everyone else."
+              />
             </div>
           </Reveal>
           <div className="p-grid-3">
@@ -157,13 +170,15 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Personality is not a vibe. It is a variable.</h2>
-              <p>
-                Most creator tools optimize captions, hashtags, posting schedules, thumbnails. This
-                system studies identity, personality signals, tone, authority, warmth,
-                contrarianism, vulnerability, humor, aggression, curiosity, memorability, and visual
-                behavior — then connects those variables to actual content performance.
-              </p>
+              <TextMotion
+                as="h2"
+                text="Personality is not a vibe. It is a variable."
+              />
+              <TextMotion
+                as="p"
+                delay={0.25}
+                text="Most creator tools optimize captions, hashtags, posting schedules, thumbnails. This system studies identity, personality signals, tone, authority, warmth, contrarianism, vulnerability, humor, aggression, curiosity, memorability, and visual behavior — then connects those variables to actual content performance."
+              />
             </div>
           </Reveal>
           <Reveal delay={0.1}>
@@ -186,9 +201,11 @@ export default function LandingPage() {
           <div className="p-hero-grid">
             <Reveal>
               <div>
-                <h2 style={{ fontSize: "clamp(28px,4vw,42px)", letterSpacing: "-0.02em", margin: "0 0 16px" }}>
-                  Know exactly what you&apos;re projecting.
-                </h2>
+                <TextMotion
+                  as="h2"
+                  className="p-engine-title"
+                  text="Know exactly what you're projecting."
+                />
                 <p style={{ fontSize: 17, color: "var(--p-text-secondary)", lineHeight: 1.6, marginBottom: 20 }}>
                   Upload your profile, previous posts, scripts, videos, images, bio, and target
                   audience. The system generates a measurable persona profile.
@@ -219,8 +236,12 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Don&apos;t ask AI to write another script.</h2>
-              <p>Ask it what version of you should appear in the script.</p>
+              <TextMotion as="h2" text="Don't ask AI to write another script." />
+              <TextMotion
+                as="p"
+                delay={0.25}
+                text="Ask it what version of you should appear in the script."
+              />
             </div>
           </Reveal>
           <WorkflowSteps
@@ -268,8 +289,12 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Your persona doesn&apos;t stop at words.</h2>
-              <p>The system generates a visual direction for filming.</p>
+              <TextMotion as="h2" text="Your persona doesn't stop at words." />
+              <TextMotion
+                as="p"
+                delay={0.25}
+                text="The system generates a visual direction for filming."
+              />
             </div>
           </Reveal>
           <div className="p-hero-grid">
@@ -339,7 +364,7 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Before you post, make a hypothesis.</h2>
+              <TextMotion as="h2" text="Before you post, make a hypothesis." />
             </div>
           </Reveal>
           <div className="p-hero-grid">
@@ -379,12 +404,15 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Every post teaches the system who you actually are online.</h2>
-              <p>
-                Connect a social account or manually import performance data — views, likes,
-                comments, shares, saves, profile visits, followers gained, watch time, retention,
-                website clicks.
-              </p>
+              <TextMotion
+                as="h2"
+                text="Every post teaches the system who you actually are online."
+              />
+              <TextMotion
+                as="p"
+                delay={0.25}
+                text="Connect a social account or manually import performance data — views, likes, comments, shares, saves, profile visits, followers gained, watch time, retention, website clicks."
+              />
             </div>
           </Reveal>
           <Reveal delay={0.1}>
@@ -414,7 +442,7 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head" style={{ margin: "0 auto 56px", textAlign: "center" }}>
-              <h2>Your persona is not a document.</h2>
+              <TextMotion as="h2" text="Your persona is not a document." />
             </div>
           </Reveal>
           <Reveal delay={0.1}>
@@ -511,7 +539,7 @@ export default function LandingPage() {
         <div className="p-wrap">
           <Reveal>
             <div className="p-section-head">
-              <h2>Not another AI writer.</h2>
+              <TextMotion as="h2" text="Not another AI writer." />
             </div>
           </Reveal>
           <Reveal delay={0.1}>
@@ -544,8 +572,8 @@ export default function LandingPage() {
       <section className="p-final">
         <div className="p-wrap">
           <Reveal>
-            <h2>Be recognizable before you become famous.</h2>
-            <p>Build the version of yourself people remember.</p>
+            <TextMotion as="h2" text="Be recognizable before you become famous." />
+            <TextMotion as="p" delay={0.25} text="Build the version of yourself people remember." />
             <div className="p-final-actions">
               <Link href="/login" className="p-btn p-btn-primary">
                 Build my persona
@@ -560,6 +588,12 @@ export default function LandingPage() {
           </Reveal>
         </div>
       </section>
+
+      {/* ---------- GIANT SCROLL WORDMARK ---------- */}
+      <div className="p-wordmark-band" aria-hidden>
+        <FooterWordmark text="PERSONA" />
+        <div className="p-wordmark-arch" />
+      </div>
 
       {/* ---------- FOOTER ---------- */}
       <footer className="p-footer">
@@ -578,6 +612,7 @@ export default function LandingPage() {
           <div className="p-footer-bottom">Built for people who refuse to sound like everyone else.</div>
         </div>
       </footer>
+      </div>
       </div>
     </>
   );
