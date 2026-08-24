@@ -5,6 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { scanFace, type FaceScanResult } from "../../lib/face-scan";
+import type { IdentityCandidate } from "../../lib/founder-identity";
 import {
   PERSONA_DIMENSIONS,
   classifyRivalry,
@@ -15,7 +16,7 @@ import {
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 
-type Step = "personality" | "scan" | "verifying" | "rejected" | "processing" | "results" | "error";
+type Step = "personality" | "planning" | "scan" | "verifying" | "rejected" | "processing" | "results" | "error";
 
 // Chat-bubble onboarding interview — max 10 questions per the product spec.
 // Mixes personality (good/bad), what they're building, and the story/why
@@ -29,6 +30,17 @@ const ONBOARDING_QUESTIONS = [
   "If the whole thing failed tomorrow, what would still be true about why you started?",
   "What's a belief about your industry most people would push back on?",
   "Last one — anything about you people should know before you put you on camera?",
+] as const;
+
+// Second interview pass: these feed the 1-month content-production plan
+// the AI crafts right after onboarding (alongside founder identity and
+// company red lines). Kept separate so the personality interview stays
+// within its 10-turn budget.
+const PLAN_QUESTIONS = [
+  "Let's plan your next 30 days of content. How many posts per week can you realistically put out?",
+  "How many focused hours a week do you actually have for making content — writing, filming, editing?",
+  "Which platform is this month mainly about — TikTok, Instagram, YouTube, LinkedIn, X?",
+  "And what has to be true by day 30 — audience growth, qualified leads, or proof you can commit?",
 ] as const;
 
 interface ChatMessage {
@@ -69,6 +81,13 @@ export default function OnboardingPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatTyping, setChatTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [planMessages, setPlanMessages] = useState<ChatMessage[]>([
+    { role: "ai", text: PLAN_QUESTIONS[0] },
+  ]);
+  const [planAnswers, setPlanAnswers] = useState<Array<{ question: string; answer: string }>>([]);
+  const [crafting, setCrafting] = useState(false);
+  const [craftError, setCraftError] = useState<string | null>(null);
+  const [planReady, setPlanReady] = useState(false);
   const [faceFeatures, setFaceFeatures] = useState<FaceScanResult | null>(null);
   const [faceDescription, setFaceDescription] = useState<string | undefined>(undefined);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -105,25 +124,46 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [chatMessages, chatTyping]);
+  }, [chatMessages, chatTyping, planMessages]);
 
   function handleChatSubmit(e: FormEvent) {
     e.preventDefault();
     const answer = chatInput.trim();
     if (!answer) return;
 
-    const question = ONBOARDING_QUESTIONS[chatAnswers.length];
-    const nextAnswers = [...chatAnswers, { question, answer }];
-    setChatAnswers(nextAnswers);
-    setChatMessages((prev) => [...prev, { role: "user", text: answer }]);
+    if (step === "personality") {
+      const question = ONBOARDING_QUESTIONS[chatAnswers.length];
+      const nextAnswers = [...chatAnswers, { question, answer }];
+      setChatAnswers(nextAnswers);
+      setChatMessages((prev) => [...prev, { role: "user", text: answer }]);
+      setChatInput("");
+
+      const nextQuestion = ONBOARDING_QUESTIONS[nextAnswers.length];
+      if (nextQuestion) {
+        setChatTyping(true);
+        window.setTimeout(() => {
+          setChatTyping(false);
+          setChatMessages((prev) => [...prev, { role: "ai", text: nextQuestion }]);
+        }, 500);
+      } else {
+        window.setTimeout(() => setStep("planning"), 400);
+      }
+      return;
+    }
+
+    // planning
+    const question = PLAN_QUESTIONS[planAnswers.length];
+    const nextAnswers = [...planAnswers, { question, answer }];
+    setPlanAnswers(nextAnswers);
+    setPlanMessages((prev) => [...prev, { role: "user", text: answer }]);
     setChatInput("");
 
-    const nextQuestion = ONBOARDING_QUESTIONS[nextAnswers.length];
+    const nextQuestion = PLAN_QUESTIONS[nextAnswers.length];
     if (nextQuestion) {
       setChatTyping(true);
       window.setTimeout(() => {
         setChatTyping(false);
-        setChatMessages((prev) => [...prev, { role: "ai", text: nextQuestion }]);
+        setPlanMessages((prev) => [...prev, { role: "ai", text: nextQuestion }]);
       }, 500);
     } else {
       window.setTimeout(() => setStep("scan"), 400);
@@ -271,9 +311,56 @@ export default function OnboardingPage() {
       }
 
       setStep("results");
+      // Fire-and-forget: once the baseline is saved, immediately craft
+      // the 1-month production plan from everything collected in this
+      // onboarding — personality interview, plan questions, founder
+      // identity and company red lines.
+      void craftPlan(data.personaVector);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Analysis failed");
       setStep("error");
+    }
+  }
+
+  async function craftPlan(personaVectorValue?: PersonaVector) {
+    if (!user) return;
+    setCrafting(true);
+    setCraftError(null);
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data() ?? {};
+      const identity = (data.founderIdentity ?? {}) as Record<string, unknown>;
+      const candidates = ((identity.candidates as IdentityCandidate[]) ?? []).filter(
+        (c) => c.state === "confirmed" || c.state === "modified",
+      );
+      const res = await authedFetch("/api/board/craft", {
+        interview: chatAnswers,
+        planInterview: planAnswers,
+        identityCandidates: candidates.map((c) => ({ category: c.category, text: c.text })),
+        communicationProfile: identity.communicationProfile ?? undefined,
+        founderOrigin: identity.founderOrigin ?? undefined,
+        companyContext: data.companyContext?.productDescription
+          ? {
+              productDescription: data.companyContext.productDescription,
+              brandVoice: data.companyContext.brandVoice,
+              positioning: data.companyContext.positioning,
+            }
+          : undefined,
+        personaVector: personaVectorValue,
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error ?? "Plan crafting failed");
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        { contentPlan: result.plan, contentPlanUpdatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      setPlanReady(true);
+    } catch (err) {
+      setCraftError(err instanceof Error ? err.message : "Plan crafting failed");
+    } finally {
+      setCrafting(false);
     }
   }
 
@@ -290,20 +377,23 @@ export default function OnboardingPage() {
     <div className="app-shell" style={{ alignItems: "flex-start", paddingTop: 60 }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
         <p className="onboarding-step-label">
-          {step === "personality" && "Step 1 of 3 · who you are"}
-          {(step === "scan" || step === "rejected") && "Step 2 of 3 · face scan (optional)"}
+          {step === "personality" && "Step 1 of 4 · who you are"}
+          {step === "planning" && `Step 2 of 4 · your next 30 days (${planAnswers.length}/${PLAN_QUESTIONS.length})`}
+          {(step === "scan" || step === "rejected") && "Step 3 of 4 · face scan (optional)"}
           {(step === "verifying" || step === "processing" || step === "results" || step === "error") &&
-            "Step 3 of 3 · your baseline"}
+            "Step 4 of 4 · your baseline"}
         </p>
 
-        {step === "personality" && (
+        {(step === "personality" || step === "planning") && (
           <div className="auth-card chat-card" style={{ textAlign: "left" }}>
-            <h1 className="onboarding-title">Let&apos;s talk.</h1>
+            <h1 className="onboarding-title">{step === "personality" ? "Let's talk." : "Your next 30 days."}</h1>
             <p className="auth-caption" style={{ textAlign: "left", marginBottom: 14 }}>
-              {chatAnswers.length} of {ONBOARDING_QUESTIONS.length} — honest answers build a sharper baseline.
+              {step === "personality"
+                ? `${chatAnswers.length} of ${ONBOARDING_QUESTIONS.length} — honest answers build a sharper baseline.`
+                : `A few questions so the plan we craft fits your real schedule. ${planAnswers.length} of ${PLAN_QUESTIONS.length}.`}
             </p>
             <div className="chat-thread">
-              {chatMessages.map((m, i) => (
+              {(step === "personality" ? chatMessages : planMessages).map((m, i) => (
                 <div key={i} className={`chat-bubble chat-bubble-${m.role}`}>
                   {m.text}
                 </div>
@@ -322,7 +412,7 @@ export default function OnboardingPage() {
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type your answer..."
+                placeholder={step === "personality" ? "Type your answer..." : "e.g. 3 posts a week, ~5 hours..."}
                 disabled={chatTyping}
                 autoFocus
                 maxLength={1000}
@@ -434,6 +524,33 @@ export default function OnboardingPage() {
               ))}
             </div>
 
+            <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+              <h1 className="onboarding-title" style={{ fontSize: 20 }}>
+                {crafting ? "Crafting your 30-day plan..." : planReady ? "Your 30-day plan is ready." : "Suggested starting point."}
+              </h1>
+              {crafting && (
+                <>
+                  <div className="spinner" />
+                  <p style={{ color: "var(--muted)" }}>
+                    Turning your answers, identity and red lines into a day-by-day production roadmap.
+                  </p>
+                </>
+              )}
+              {craftError && (
+                <>
+                  <p className="auth-error">{craftError}</p>
+                  <button className="btn btn-ghost btn-block" onClick={() => void craftPlan(personaVector)}>
+                    Try crafting again
+                  </button>
+                </>
+              )}
+              {planReady && !craftError && (
+                <p style={{ color: "var(--muted)", marginBottom: 12 }}>
+                  It&apos;s on The Board — a sequential, day-labeled roadmap you can edit with the assistant.
+                </p>
+              )}
+            </div>
+
             <div className="auth-card" style={{ textAlign: "left" }}>
               <h1 className="onboarding-title" style={{ fontSize: 20 }}>Suggested starting point.</h1>
               <SuggestionBlock label="Visual" text={styleSuggestions.visual} />
@@ -442,6 +559,15 @@ export default function OnboardingPage() {
               <button className="btn btn-primary btn-block" onClick={() => router.push("/app")} style={{ marginTop: 16 }}>
                 Enter PERSONA
               </button>
+              {planReady && (
+                <button
+                  className="btn btn-ghost btn-block"
+                  style={{ marginTop: 10 }}
+                  onClick={() => router.push("/board")}
+                >
+                  Open The Board →
+                </button>
+              )}
             </div>
           </>
         )}

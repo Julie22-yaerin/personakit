@@ -20,6 +20,10 @@ interface NavItem {
 // inside a finished Studio session, not as separate pages of their own.
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
+    title: "Plan",
+    items: [{ href: "/board", label: "The Board", hint: "30-day roadmap graph" }],
+  },
+  {
     title: "Write",
     items: [{ href: "/content", label: "Content Lab", hint: "score & refine a piece" }],
   },
