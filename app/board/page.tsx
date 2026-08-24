@@ -70,6 +70,17 @@ const KIND_CLASS: Record<ArtifactKind, string> = {
   note: "board-kind-note",
 };
 
+/** API errors must always land as text — rendering a raw object crashes React (#31). */
+function asText(v: unknown): string {
+  if (typeof v === "string" && v) return v;
+  if (v == null) return "Something went wrong.";
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return "Something went wrong.";
+  }
+}
+
 export default function BoardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -171,7 +182,7 @@ export default function BoardPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setReply({ text: data.error ?? "Crafting failed.", seen: false });
+        setReply({ text: asText(data.error) || "Crafting failed.", seen: false });
         return;
       }
       if (data.needsInfo) {
@@ -232,7 +243,7 @@ export default function BoardPage() {
       });
       const data = (await res.json()) as BoardEditResult & { error?: string };
       if (!res.ok) {
-        setReply({ text: data.error ?? "The edit didn't land.", seen: false });
+        setReply({ text: asText(data.error) || "The edit didn't land.", seen: false });
         return;
       }
       setReply({ text: data.reply, seen: false });
@@ -303,6 +314,18 @@ export default function BoardPage() {
   function quickAction(template: string) {
     setRequest(`${template} ${selectedDay != null ? `day ${selectedDay}` : "the plan"}`);
     dockInputRef.current?.focus();
+  }
+
+  /**
+   * Right-click a script artifact → it lands straight in Studio's
+   * script box, ready to structure and film. No copy-pasting.
+   */
+  function sendScriptToStudio(a: RoadmapArtifact) {
+    sessionStorage.setItem(
+      "persona.studio.script",
+      JSON.stringify({ title: a.title, content: a.content }),
+    );
+    router.push("/studio");
   }
 
   if (user === undefined) {
@@ -507,7 +530,16 @@ export default function BoardPage() {
                       ) : (
                         <ul className="board-artifact-list">
                           {f.artifacts.map((a) => (
-                            <li key={a.id} className="board-artifact">
+                            <li
+                              key={a.id}
+                              className="board-artifact"
+                              onContextMenu={(e) => {
+                                if (a.kind !== "script") return;
+                                e.preventDefault();
+                                sendScriptToStudio(a);
+                              }}
+                              title={a.kind === "script" ? "Right-click → send to Studio" : undefined}
+                            >
                               <details>
                                 <summary>
                                   <span className={`board-artifact-kind ${KIND_CLASS[a.kind] ?? ""}`}>
@@ -517,6 +549,18 @@ export default function BoardPage() {
                                     <span className="board-artifact-day">Day {a.day}</span>
                                   )}
                                   <span className="board-artifact-title">{a.title}</span>
+                                  {a.kind === "script" && (
+                                    <button
+                                      type="button"
+                                      className="profile-edit-link"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        sendScriptToStudio(a);
+                                      }}
+                                    >
+                                      → Studio
+                                    </button>
+                                  )}
                                 </summary>
                                 <pre className="board-artifact-content">{a.content}</pre>
                               </details>

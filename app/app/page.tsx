@@ -208,8 +208,7 @@ function CadenceChart({
       </div>
       {data.length === 0 ? (
         <p className="dash-empty">
-          No posts scored yet — score your first piece in{" "}
-          <Link href="/content">Content Lab</Link> and it shows up here.
+          No posts scored yet — scores land here as soon as you run content through the system.
         </p>
       ) : (
         <div className="bar-chart">

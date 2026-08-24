@@ -23,7 +23,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = BoardEditRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    // String only — never a structured object the client might render.
+    return NextResponse.json({ error: "Invalid edit request." }, { status: 400 });
   }
 
   try {

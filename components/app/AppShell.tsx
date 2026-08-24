@@ -26,10 +26,6 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [{ href: "/board", label: "The Board", hint: "30-day roadmap graph" }],
   },
   {
-    title: "Write",
-    items: [{ href: "/content", label: "Content Lab", hint: "score & refine a piece" }],
-  },
-  {
     title: "Film",
     items: [
       { href: "/studio", label: "Studio", hint: "live filming + real-time coaching" },

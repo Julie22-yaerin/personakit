@@ -349,7 +349,10 @@ export default function OnboardingPage() {
         personaVector: personaVectorValue,
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error ?? "Plan crafting failed");
+      if (!res.ok)
+        throw new Error(
+          typeof result.error === "string" && result.error ? result.error : "Plan crafting failed",
+        );
 
       await setDoc(
         doc(db, "users", user.uid),

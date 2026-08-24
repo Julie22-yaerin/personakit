@@ -109,7 +109,10 @@ export const CraftPlanRequestSchema = z.object({
     .max(20)
     .optional(),
   planInterview: z.array(PlanInterviewAnswerSchema).max(10).optional(),
-  identityCandidates: z.array(z.object({ category: z.string(), text: z.string() })).max(200),
+  identityCandidates: z
+    .array(z.object({ category: z.string(), text: z.string() }))
+    .max(200)
+    .default([]),
   communicationProfile: z
     .object({
       communicationStyle: z.string(),

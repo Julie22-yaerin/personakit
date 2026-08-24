@@ -169,6 +169,21 @@ export default function StudioPage() {
       setLastPlan(data.studio?.latestPlan);
       setVisualTargets(data.visualSignature?.targets ?? null);
       setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
+      // A script sent over from The Board (right-click → Studio) lands
+      // in the script box, ready to structure and film.
+      try {
+        const handed = sessionStorage.getItem("persona.studio.script");
+        if (handed) {
+          const parsed = JSON.parse(handed) as { title?: string; content?: string };
+          if (parsed.content) {
+            setScriptText(parsed.content);
+            setScriptError(null);
+          }
+          sessionStorage.removeItem("persona.studio.script");
+        }
+      } catch {
+        // ignore malformed handoff data
+      }
       setUser(u);
     });
     return unsubscribe;
@@ -617,7 +632,8 @@ export default function StudioPage() {
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
           <div className="price-name" style={{ marginBottom: 8 }}>Script (optional)</div>
           <p className="auth-caption" style={{ textAlign: "left", marginBottom: 10 }}>
-            Paste your talking points or topic — never memorize it. We&apos;ll check afterward whether your
+            Paste your talking points or topic — never memorize it. Scripts made on The Board
+            (right-click → Studio) land here automatically. We&apos;ll check afterward whether your
             delivery covered the ground it needed to, not whether you said it word for word.
           </p>
           <textarea

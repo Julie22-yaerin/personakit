@@ -2,7 +2,6 @@
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
@@ -165,10 +164,6 @@ export default function CompanyPage() {
           </button>
           {saved && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>Saved.</p>}
           {error && <p className="error">{error}</p>}
-
-          <Link href="/content" className="btn btn-ghost btn-block" style={{ marginTop: 12 }}>
-            Go to Content Lab
-          </Link>
         </div>
       </div>
     </AppShell>

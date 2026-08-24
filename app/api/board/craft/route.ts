@@ -28,7 +28,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = CraftPlanRequestSchema.safeParse(body ?? {});
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    // Always a string — a structured Zod flatten() object leaked into the
+    // client once and got rendered as a React child (minified error #31).
+    return NextResponse.json({ error: "Invalid craft request." }, { status: 400 });
   }
 
   // Enrich with whatever is already stored for this founder.
