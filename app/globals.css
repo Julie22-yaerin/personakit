@@ -1898,3 +1898,83 @@ footer {
   line-height: 1.55;
   margin: 0 0 8px;
 }
+
+/* ---------- indeterminate progress bar ---------- */
+
+.board-progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.board-progress-bar {
+  height: 100%;
+  width: 38%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+  animation: board-progress-slide 1.15s ease-in-out infinite;
+}
+
+@keyframes board-progress-slide {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(380%); }
+}
+
+/* ---------- studio: received script + overlay toggle + big frame ---------- */
+
+.studio-received-script {
+  background-image: radial-gradient(rgba(157, 184, 242, 0.12) 1.2px, transparent 1.2px);
+  background-size: 16px 16px;
+  border: 1px dashed rgba(148, 168, 255, 0.35);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.studio-received-script-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.studio-received-script-preview {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0 0 10px;
+}
+
+.studio-overlay-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.studio-overlay-toggle:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* Recording screen should be near full-page */
+.studio-page .camera-frame {
+  max-width: none;
+  max-height: 92vh;
+}

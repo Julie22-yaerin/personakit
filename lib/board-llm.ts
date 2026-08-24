@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
+import { generateQwenJSON, isQwenConfigured } from "./qwen";
 import {
   ARTIFACT_KINDS,
   ContentPlanSchema,
@@ -195,21 +196,34 @@ Rules:
   exposes restricted claims.
 - strategySummary: 3-5 sentences explaining the arc of the month.
 
-MODE "ask" — input is genuinely too thin to plan responsibly (e.g. no
-idea what the company/product even is, no sense of branding style, no
-cadence). Ask for ONLY what's truly missing: at most 3 questions. Each
-question is either:
+MODE "ask" — input is genuinely too thin to plan responsibly. IMPORTANT:
+read the founder profile provided above FIRST (identity traits,
+communication profile, company context, persona baseline). NEVER ask
+about anything already covered there — if the profile answers it, treat
+it as known and either plan or move on. Ask at most 5 questions, and
+only for what is truly missing (e.g. the product itself, branding
+style, posting cadence). Each question is either:
 - type "text": open-ended ("Describe your company in a sentence", "What
   does your product's branding feel like?"), or
 - type "mcq": a concrete question with 2-5 short answer options. NEVER
   include an "Other" option — the UI adds it automatically.
 Questions must be in the SAME LANGUAGE as the founder's request (a
-Vietnamese request gets Vietnamese questions). Don't ask about things
-already covered by the provided context.
+Vietnamese request gets Vietnamese questions).
 
 Respond with JSON only.`;
 
 async function callLlmJson(system: string, prompt: string): Promise<unknown> {
+  // Ladder: Qwen first (fastest to iterate on), then NVIDIA stylist,
+  // then Anthropic, then OpenRouter.
+  if (isQwenConfigured()) {
+    try {
+      return await generateQwenJSON({ systemInstruction: system, prompt });
+    } catch (err) {
+      const canFallthrough = isNvidiaConfigured("stylist") || process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY;
+      if (!canFallthrough) throw err;
+    }
+  }
+
   if (isNvidiaConfigured("stylist")) {
     try {
       return await generateNvidiaJSON({
@@ -275,7 +289,7 @@ export async function craftOrAsk(req: CraftPlanRequest): Promise<CraftOrAskResul
   if (isClarify(obj)) {
     const rawQuestions = Array.isArray(obj.questions) ? obj.questions : [];
     const questions: ClarifyQuestion[] = rawQuestions
-      .slice(0, 3)
+      .slice(0, 5)
       .map((q, i) => {
         const qObj = (q ?? {}) as Record<string, unknown>;
         const isMcq = String(qObj.type) === "mcq" && Array.isArray(qObj.options) && qObj.options.length > 0;

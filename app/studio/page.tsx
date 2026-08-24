@@ -113,6 +113,11 @@ export default function StudioPage() {
   const [speechResult, setSpeechResult] = useState<SpeechResult | null>(null);
 
   const [scriptText, setScriptText] = useState("");
+  // Script handed over from The Board — waits for explicit "Use it".
+  const [receivedScript, setReceivedScript] = useState<{ title: string; content: string } | null>(null);
+  // The live-metrics overlay shows by default during recording; this
+  // small toggle only hides it.
+  const [overlayVisible, setOverlayVisible] = useState(true);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
   const [scriptLoading, setScriptLoading] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
@@ -169,15 +174,15 @@ export default function StudioPage() {
       setLastPlan(data.studio?.latestPlan);
       setVisualTargets(data.visualSignature?.targets ?? null);
       setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
-      // A script sent over from The Board (right-click → Studio) lands
-      // in the script box, ready to structure and film.
+      // A script sent over from The Board (right-click → Studio) waits
+      // at the top of the frame as a "received script" card until the
+      // founder chooses to use it.
       try {
         const handed = sessionStorage.getItem("persona.studio.script");
         if (handed) {
           const parsed = JSON.parse(handed) as { title?: string; content?: string };
           if (parsed.content) {
-            setScriptText(parsed.content);
-            setScriptError(null);
+            setReceivedScript({ title: parsed.title ?? "Script from The Board", content: parsed.content });
           }
           sessionStorage.removeItem("persona.studio.script");
         }
@@ -552,8 +557,7 @@ export default function StudioPage() {
     }
 
     const vcs = computeVisualConsistencyScore(visualTargets, measured);
-    setVcsResult({
-      score: vcs.score,
+    setVcsResult({      score: vcs.score,
       label: vcs.score !== null ? classifyVisualConsistency(vcs.score) : null,
       categories: vcs.categories,
     });
@@ -576,6 +580,12 @@ export default function StudioPage() {
         { merge: true },
       );
       setVisualHistory([...nextHistory].reverse());
+    }
+
+    // Calibration is automatic now — after the first take with no saved
+    // visual signature, calibrate silently from this take's frames.
+    if (!visualTargets && video && streamRef.current) {
+      void handleCalibrateVisualSignature();
     }
   }
 
@@ -659,12 +669,30 @@ export default function StudioPage() {
         </div>
 
         <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+          {receivedScript && (
+            <div className="studio-received-script">
+              <div className="studio-received-script-head">
+                <span className="board-artifact-kind board-kind-script">Received script</span>
+                <strong>{receivedScript.title}</strong>
+              </div>
+              <pre className="studio-received-script-preview">{receivedScript.content.slice(0, 220)}{receivedScript.content.length > 220 ? "…" : ""}</pre>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  setScriptText(receivedScript.content);
+                  setReceivedScript(null);
+                }}
+              >
+                Use it
+              </button>
+            </div>
+          )}
           {cameraError ? (
             <p className="error">{cameraError}</p>
           ) : (
             <div className="camera-frame" style={{ position: "relative", aspectRatio: "16 / 9" }}>
               <video ref={videoRef} autoPlay playsInline muted />
-              {liveMetrics && (
+              {liveMetrics && overlayVisible && (
                 <div className="studio-metrics-overlay">
                   <MetricBar label="Eye contact" value={liveMetrics.eyeContact} />
                   <MetricBar label="Smile" value={liveMetrics.smile} />
@@ -675,6 +703,16 @@ export default function StudioPage() {
                     <span>{liveFillerRate.toFixed(1)}/100w</span>
                   </div>
                 </div>
+              )}
+              {isRecording && (
+                <button
+                  type="button"
+                  className="studio-overlay-toggle"
+                  onClick={() => setOverlayVisible((v) => !v)}
+                  title={overlayVisible ? "Hide live metrics overlay" : "Show live metrics overlay"}
+                >
+                  {overlayVisible ? "Hide overlay" : "Show overlay"}
+                </button>
               )}
               {coachingTip && <div className="studio-tip-toast">{coachingTip}</div>}
             </div>
@@ -699,26 +737,15 @@ export default function StudioPage() {
           )}
 
           {!isRecording && (
-            <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                  {visualTargets ? "Visual signature calibrated" : "Visual signature not calibrated yet"}
-                </span>
-                <button
-                  className="btn btn-ghost"
-                  style={{ padding: "6px 12px", fontSize: 12 }}
-                  onClick={handleCalibrateVisualSignature}
-                  disabled={calibrating || !!cameraError}
-                >
-                  {calibrating ? "Calibrating..." : visualTargets ? "Recalibrate" : "Calibrate Visual Signature"}
-                </button>
-              </div>
-              {calibrationError && <p className="error" style={{ marginTop: 8 }}>{calibrationError}</p>}
-              {calibrationNote && (
-                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>{calibrationNote}</p>
-              )}
-            </div>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
+              {visualTargets
+                ? "Visual signature calibrated — the live overlay compares against it automatically."
+                : calibrating
+                  ? "Calibrating your visual signature from your last take..."
+                  : "Visual signature not calibrated yet — record a take and it calibrates automatically."}
+            </p>
           )}
+          {calibrationError && <p className="error" style={{ marginTop: 8 }}>{calibrationError}</p>}
         </div>
 
         {(transcript || isRecording) && (

@@ -547,7 +547,9 @@ export default function OnboardingPage() {
               </h1>
               {crafting && (
                 <>
-                  <div className="spinner" />
+                  <div className="board-progress" role="progressbar" aria-label="Crafting plan">
+                    <div className="board-progress-bar" />
+                  </div>
                   <p style={{ color: "var(--muted)" }}>
                     Turning your answers, identity and red lines into a day-by-day production roadmap.
                   </p>

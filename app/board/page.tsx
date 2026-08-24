@@ -81,6 +81,15 @@ function asText(v: unknown): string {
   }
 }
 
+/** Indeterminate progress bar — motion reads as "working", unlike static dots. */
+export function ProgressBar() {
+  return (
+    <div className="board-progress" role="progressbar" aria-label="Loading">
+      <div className="board-progress-bar" />
+    </div>
+  );
+}
+
 export default function BoardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -395,6 +404,7 @@ export default function BoardPage() {
                   </button>
                 </form>
               )}
+              {sending && <ProgressBar />}
 
               {clarify && (
                 <form className="board-clarify" onSubmit={submitClarifyAnswers}>
@@ -614,6 +624,7 @@ export default function BoardPage() {
                   {sending ? "Working..." : "Ask AI"}
                 </button>
               </div>
+              {sending && <ProgressBar />}
               <div className="board-dock-actions">
                 {QUICK_ACTIONS.map((qa) => (
                   <button
