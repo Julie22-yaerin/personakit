@@ -349,22 +349,86 @@
 /* ---------- split section (founders / creators) ---------- */
 
 .p-split-card {
-  padding: 32px;
+  position: relative;
+  height: 32rem;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--p-border);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-sm);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.p-split-card:hover {
+  transform: scale(1.03) translateY(-1.25rem);
+  box-shadow: var(--p-shadow-lg);
+}
+
+.p-split-card .p-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--p-accent);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.p-split-card h3 {
+  font-family: var(--font-serif);
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0 0 1rem;
+  letter-spacing: -0.01em;
 }
 
 .p-split-card ul {
   list-style: none;
   padding: 0;
-  margin: 20px 0 28px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
+
 .p-split-card li {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--p-text-secondary);
-  padding: 8px 0;
-  border-bottom: 1px solid var(--p-border);
+  line-height: 1.6;
+  padding: 0;
+  border: none;
 }
-.p-split-card li:last-child {
-  border-bottom: none;
+
+.p-split-card .p-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.p-split-card-image {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  height: 12rem;
+  width: 12rem;
+  transform: translate(25%, 25%);
+  pointer-events: none;
+}
+
+.p-split-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.p-split-card:hover .p-split-card-image img {
+  transform: scale(1.1);
 }
 
 /* ---------- comparison table ---------- */
