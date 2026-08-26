@@ -18,9 +18,13 @@ harness/
 │   ├── b2b-roadmap.md           # Module 1: lộ trình B2B
 │   ├── b2c-roadmap.md           # Module 2: lộ trình B2C
 │   ├── content-calendar-system.md # Module 3: lịch trình & 4 kiểu mẫu bài đăng
+│   ├── case-studies.md          # Case studies thực tế (Slayton, Selleb, PostHog, Rilla, Dex)
+│   ├── viral-vs-conversion.md   # Tranh cãi đúng cách: view ≠ khách hàng, Wrong Audience
+│   ├── production-playbook.md   # Kỹ thuật quay/chỉnh sửa + checklist
 │   └── state.schema.json        # Schema trạng thái dự án AI đọc/ghi
 ├── templates/
 │   ├── post-types.md            # 4 mẫu bài đăng + quy tắc thực thi
+│   ├── daily-checklist.md       # Workflow tuần/ngày + checklist 6 bước trước khi đăng
 │   └── calendar-template.md     # Khung lịch 14 ngày trống
 ├── examples/
 │   └── calendar-b2b-prepmf-14day.md  # Ví dụ lịch 14 ngày đã sinh

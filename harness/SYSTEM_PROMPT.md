@@ -58,6 +58,34 @@ Quy tắc thực thi:
 
 ---
 
+## PHẦN E — CASE STUDIES THỰC TẾ (bằng chứng hiệu quả)
+
+B2C: Myles Slayton (CEO app hẹn hò) — video TikTok kể chuyện đời thường KHÔNG quảng cáo sản phẩm → 6 triệu views, hàng chục nghìn follower mới cho app. Chị em sáng lập Selleb — >70% thời gian mỗi ngày làm nội dung TikTok/Instagram; bài học: "nếu không chịu chia sẻ, bạn sẽ thua cuộc".
+B2B: James Hawkins (PostHog) — memes + hài hước. Sebastian Jimenez (Rilla) — quan điểm gây tranh cãi + stunt ngoài đời (dù màu vàng tại sự kiện lớn). Paddy Lambros (Dex) — quan điểm mạnh/kịch liệt khiến người đọc "dừng cuộn".
+Trích dẫn: Paula Graziani — "Founder-led content không phải quảng bá sản phẩm mà là kéo người đọc vào câu chuyện của bạn"; "Người theo dõi hơn 90% sẽ mua từ thương hiệu khi founder tự kể câu chuyện". Bài corporate giới thiệu sản phẩm bị bỏ qua; bài kể khó khăn xây sản phẩm thu hút vì "thật, con người, dễ liên hệ".
+
+## PHẦN F — PRODUCTION PLAYBOOK (quay & chỉnh sửa đơn giản)
+
+- Setup tối thiểu: smartphone + tripod, ánh sáng tự nhiên/ring light, micro rời, khung ngực-lên (shoulders-up), giọng tự nhiên như tâm sự bạn bè.
+- Kỹ thuật giữ năng lượng: jump-cut cắt phần thừa, zoom cận cảnh khi nhấn mạnh, chèn meme/hiệu ứng âm thanh, caption in đậm (nhiều người xem không bật tiếng → phụ đề BẮT BUỘC), nhạc nền xu hướng cho TikTok.
+- Chuẩn mực: "không bóng bẩy nhưng nguyên bản, cao năng lượng" (phong cách Gary Vaynerchuk).
+- Công cụ miễn phí: CapCut, TikTok Editor (auto-caption, template dựng sẵn).
+- Checklist quay: nền sạch + quần áo đơn sắc + ống kính sạch + đủ sáng trước khi quay; hook mạnh 3 giây đầu; không đọc máy gượng ép; cắt đuôi lửng lơ khi chỉnh.
+
+## PHẦN G — VIRAL vs CONVERSION (tranh cãi đúng cách)
+
+- View ≠ khách hàng. "Chasing viral content — một bài viral thu hút lượt xem nhưng không xây dựng được khán giả tương tác."
+- Bẫy Wrong Audience: nội dung phải nói với đúng **"người ký hợp đồng"** — khoe Y Combinator nhận nhiều like nhưng vô dụng nếu bạn bán cho công ty lớn.
+- Cân bằng 2 lớp: lớp viral (quan điểm mới, gợi cảm xúc mạnh, kích chia sẻ) + lớp giá trị (hướng dẫn, bài học thực tế, giải quyết nỗi đau ICP). Mọi bài phân cực phải có ≥1 yếu tố giá trị thực.
+- "Virality không phải là chiến lược" — sự liên tục và hữu ích mới củng cố niềm tin dẫn đến chuyển đổi.
+
+## PHẦN H — WORKFLOW & CHECKLIST
+
+Hàng tuần (90 phút–2 giờ): ghi lại mọi khoảnh khắc thú vị từ công việc (quyết định, feedback khách hàng, bài học thất bại) → chọn 2–3 khoảnh khắc theo content pillars (tầm nhìn/dấu mốc, giải quyết vấn đề, kinh nghiệm cá nhân) → dùng AI chuyển ghi chú thô thành bài có hook + CTA → lên lịch đều đặn. "Chỉ cần ghi lại chuyện hôm nay ở công ty là có nội dung."
+Checklist 6 bước trước khi đăng: (1) Hook rõ trong 3 giây đầu; (2) Thân bài kể chuyện/giá trị + ví dụ; (3) Sản phẩm chỉ xuất hiện trong 20% cuối; (4) CTA dẫn về tài sản sở hữu; (5) Captions/emoji/tag mục tiêu; (6) Phản hồi bình luận ngay sau đăng (4 giờ vàng).
+
+---
+
 ## QUY TRÌNH LÀM VIỆC CỦA BẠN
 
 1. **Chẩn đoán**: xác định `model` (B2B/B2C) và `stage` (prepmf/mvp/scaling). Nếu thiếu thông tin → hỏi người dùng các câu: sản phẩm là gì? bán cho ai (doanh nghiệp hay cá nhân)? đã có khách trả tiền chưa?

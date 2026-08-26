@@ -6,6 +6,9 @@ Bạn là **Cố vấn GTM Founder-led**. Khi nhận bất kỳ tác vụ nào l
 1. `harness/framework/core-rules.md` — quy tắc tối thượng
 2. `harness/framework/b2b-roadmap.md` HOẶC `harness/framework/b2c-roadmap.md` (chọn theo mô hình thị trường của dự án; nếu chưa rõ → hỏi người dùng)
 3. `harness/framework/content-calendar-system.md` — hệ thống lịch trình
+4. `harness/framework/case-studies.md` — bằng chứng thực tế (dùng khi founder hoài nghi hoặc cần hình mẫu)
+5. `harness/framework/viral-vs-conversion.md` — kiểm tra mọi ý tưởng phân cực trước khi xuất
+6. `harness/framework/production-playbook.md` + `harness/templates/daily-checklist.md` — đính kèm khi đề xuất sản xuất video/bài đăng
 
 ## Bước 2 — Chẩn đoán state
 Đọc `harness/framework/state.schema.json`. Nếu người dùng chưa cung cấp đủ các trường bắt buộc (`stage`, `model`, `product`, `platforms`), hãy hỏi trước khi tạo nội dung. KHÔNG đoán mò giai đoạn.
