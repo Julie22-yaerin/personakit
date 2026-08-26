@@ -12,6 +12,7 @@ import { Reveal } from "../components/landing/Reveal";
 import { ScrollHero } from "../components/landing/ScrollHero";
 import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
+import { LinkCard } from "@/components/ui/link-card";
 import "./persona-landing.css";
 
 const grotesk = Geist({ subsets: ["latin"], variable: "--font-grotesk" });
@@ -487,50 +488,52 @@ export default function LandingPage() {
       {/* ---------- FOUNDERS / CREATORS ---------- */}
       <section className="p-section">
         <div className="p-wrap">
-          <div className="p-grid-2">
-            <Reveal>
-              <div className="p-card p-split-card" id="founders">
-                <span className="p-eyebrow" style={{ marginBottom: 12 }}>
-                  For Founders
-                </span>
-                <h3 style={{ fontSize: 24, margin: "0 0 8px", fontWeight: 600 }}>
-                  Turn your personality into distribution.
-                </h3>
-                <ul>
-                  <li>Founder persona</li>
-                  <li>Positioning</li>
-                  <li>Content experiments</li>
-                  <li>Audience response</li>
-                  <li>Personal brand analytics</li>
-                  <li>Founder-led growth</li>
-                </ul>
-                <Link href="/login" className="p-btn p-btn-primary">
-                  Build my founder persona
-                </Link>
-              </div>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <div className="p-card p-split-card" id="creators">
-                <span className="p-eyebrow" style={{ marginBottom: 12 }}>
-                  For Creators / Marketers
-                </span>
-                <h3 style={{ fontSize: 24, margin: "0 0 8px", fontWeight: 600 }}>
-                  Understand which identity signals actually move your audience.
-                </h3>
-                <ul>
-                  <li>Persona analysis</li>
-                  <li>Content analysis</li>
-                  <li>Visual direction</li>
-                  <li>Performance prediction</li>
-                  <li>Feedback loop</li>
-                  <li>Experimentation</li>
-                </ul>
-                <Link href="/login" className="p-btn p-btn-ghost">
-                  Analyze my content
-                </Link>
-              </div>
-            </Reveal>
-          </div>
+          <Reveal>
+            <div className="p-section-head">
+              <TextMotion as="h2" text="Where PERSONA lives." />
+              <TextMotion as="p" delay={0.25} text="Real profiles. Real results. No generic AI output." />
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <LinkCard
+                title="Founder Persona"
+                description="Turn your personality into distribution. Measure authority, contrarianism, memorability."
+                imageUrl="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=400&fit=crop"
+                href="/login"
+              />
+              <LinkCard
+                title="Content Analysis"
+                description="Upload a video or script. Get identity signal breakdown — curiosity, tension, hook strength."
+                imageUrl="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=400&fit=crop"
+                href="/login"
+              />
+              <LinkCard
+                title="Visual Direction"
+                description="Camera distance, angle, movement. Face tracking — eye contact, expression, smile frequency."
+                imageUrl="https://images.unsplash.com/photo-1492052729348-136319468996?w=400&h=400&fit=crop"
+                href="/login"
+              />
+              <LinkCard
+                title="Performance Prediction"
+                description="Before you post, make a hypothesis. Comment probability, profile intent, share potential."
+                imageUrl="https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=400&fit=crop"
+                href="/login"
+              />
+              <LinkCard
+                title="Feedback Loop"
+                description="Connect social accounts. Track actual vs predicted. The model learns from every post."
+                imageUrl="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop"
+                href="/login"
+              />
+              <LinkCard
+                title="Creator / Marketer"
+                description="Understand which identity signals actually move your audience. Persona analysis, visual direction."
+                imageUrl="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=400&fit=crop"
+                href="/login"
+              />
+            </div>
+          </Reveal>
         </div>
       </section>
 
