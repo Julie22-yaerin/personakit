@@ -575,7 +575,7 @@ export default function OnboardingPage() {
               <SuggestionBlock label="Visual" text={styleSuggestions.visual} />
               <SuggestionBlock label="Voice" text={styleSuggestions.voice} />
               <SuggestionBlock label="Content" text={styleSuggestions.content} />
-              <button className="btn btn-primary btn-block" onClick={() => router.push("/app")} style={{ marginTop: 16 }}>
+              <button className="btn btn-primary btn-block" onClick={() => router.push("/board")} style={{ marginTop: 16 }}>
                 Enter PERSONA
               </button>
               {planReady && (

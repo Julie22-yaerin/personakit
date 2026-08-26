@@ -41,13 +41,58 @@ export function AppShell({
   children,
   userEmail,
   uid,
+  variant = "default",
 }: {
   children: ReactNode;
   userEmail?: string | null;
   uid?: string | null;
+  variant?: "default" | "fullscreen";
 }) {
   const pathname = usePathname();
   const [personaOpen, setPersonaOpen] = useState(false);
+
+  if (variant === "fullscreen") {
+    return (
+      <div className="app-layout-fullscreen">
+        <header className="app-top-nav">
+          <div className="app-top-nav-left">
+            <Link href="/app" className="app-top-nav-logo">
+              <Logo size={22} />
+            </Link>
+            <nav className="app-top-nav-links">
+              <Link href="/app" className={`app-top-nav-link ${pathname === "/app" ? "active" : ""}`}>
+                Dashboard
+              </Link>
+              {NAV_GROUPS.map((group) => (
+                group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`app-top-nav-link ${pathname === item.href.split("#")[0] ? "active" : ""}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))
+              ))}
+            </nav>
+          </div>
+          <div className="app-top-nav-right">
+            <PixelCat size={32} onClick={() => setPersonaOpen(true)} title="View your saved persona" />
+            <div className="app-top-nav-user">
+              {userEmail && <span className="app-top-nav-email">{userEmail}</span>}
+              <button className="app-top-nav-signout" onClick={() => signOut(auth)}>
+                Sign out
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="app-main-fullscreen">{children}</main>
+
+        <PersonaDrawer open={personaOpen} onClose={() => setPersonaOpen(false)} uid={uid ?? null} />
+      </div>
+    );
+  }
 
   return (
     <div className="app-layout">

@@ -10,10 +10,7 @@ import { AppShell } from "../../components/app/AppShell";
 import {
   ARTIFACT_KIND_LABELS,
   type ArtifactKind,
-  type ClarifyQuestion,
   type ContentPlan,
-  type CraftAnswer,
-  type CraftClarifyResult,
   type PlanDay,
   type RoadmapArtifact,
   type RoadmapFactor,
@@ -24,9 +21,7 @@ import {
  * The Board — the 1-month roadmap rendered as a sequential Duolingo-style
  * path on a polka-dot whiteboard. Two ways in:
  * - A plan crafted at the end of onboarding loads automatically.
- * - No plan? Ask the assistant right here to craft one. It may reply
- *   with clarifying questions (free-form or multiple-choice, always
- *   with an "Other" field) before producing the roadmap.
+ * - No plan? Ask the assistant right here to craft one.
  * Selecting a day opens the dock underneath to edit that object or
  * produce labeled material (script / visual / edit style) grouped under
  * its roadmap factor. The AI's reply lands in a floating frame pinned
@@ -103,10 +98,6 @@ export default function BoardPage() {
 
   // Craft-on-the-board state
   const [craftRequest, setCraftRequest] = useState("");
-  const [clarify, setClarify] = useState<CraftClarifyResult | null>(null);
-  const [mcqChoice, setMcqChoice] = useState<Record<string, string>>({});
-  const [otherText, setOtherText] = useState<Record<string, string>>({});
-  const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -181,24 +172,18 @@ export default function BoardPage() {
 
   // ---------- craft on the board ----------
 
-  async function submitCraft(answers?: CraftAnswer[]) {
+  async function submitCraft() {
     if (sending) return;
     setSending(true);
     try {
       const res = await authedFetch("/api/board/craft", {
         request: craftRequest || undefined,
-        ...(answers ? { answers } : {}),
       });
       const data = await res.json();
       if (!res.ok) {
         setReply({ text: asText(data.error) || "Crafting failed.", seen: false });
         return;
       }
-      if (data.needsInfo) {
-        setClarify(data as CraftClarifyResult);
-        return;
-      }
-      setClarify(null);
       setCraftRequest("");
       await persist(data.plan as ContentPlan);
       setReply({ text: "Roadmap ready — every day is on the path below.", seen: false });
@@ -207,25 +192,6 @@ export default function BoardPage() {
     } finally {
       setSending(false);
     }
-  }
-
-  function submitClarifyAnswers(e: FormEvent) {
-    e.preventDefault();
-    if (!clarify || sending) return;
-    const answers: CraftAnswer[] = [];
-    for (const q of clarify.questions) {
-      let answer = "";
-      if (q.type === "text") {
-        answer = (textAnswers[q.id] ?? "").trim();
-      } else {
-        const choice = mcqChoice[q.id];
-        if (choice === "__other__") answer = (otherText[q.id] ?? "").trim();
-        else answer = choice ?? "";
-      }
-      if (answer) answers.push({ id: q.id, question: q.question, answer });
-    }
-    if (answers.length === 0) return;
-    void submitCraft(answers);
   }
 
   // ---------- edit existing objects ----------
@@ -347,7 +313,7 @@ export default function BoardPage() {
   if (!user) return null;
 
   return (
-    <AppShell userEmail={user.email} uid={user.uid}>
+    <AppShell userEmail={user.email} uid={user.uid} variant="fullscreen">
       <div className="board-wrap">
         <header className="board-head">
           <h1 className="dashboard-title">The Board</h1>
@@ -378,91 +344,30 @@ export default function BoardPage() {
                 <h2>The board is empty.</h2>
                 <p>
                   Tell the assistant what you want to build this month and it crafts your
-                  day-by-day roadmap here. It may ask you a couple of quick questions first —
-                  answer or skip freely.
+                  day-by-day roadmap here.
                 </p>
               </div>
 
-              {!clarify && (
-                <form
-                  className="chat-input-row"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (craftRequest.trim()) void submitCraft();
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={craftRequest}
-                    onChange={(e) => setCraftRequest(e.target.value)}
-                    placeholder="e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm của mình..."
-                    disabled={sending}
-                    maxLength={2000}
-                  />
-                  <button type="submit" className="btn btn-primary" disabled={sending || !craftRequest.trim()}>
-                    {sending ? "Thinking..." : "Craft plan"}
-                  </button>
-                </form>
-              )}
+              <form
+                className="chat-input-row"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (craftRequest.trim()) void submitCraft();
+                }}
+              >
+                <input
+                  type="text"
+                  value={craftRequest}
+                  onChange={(e) => setCraftRequest(e.target.value)}
+                  placeholder="e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm của mình..."
+                  disabled={sending}
+                  maxLength={2000}
+                />
+                <button type="submit" className="btn btn-primary" disabled={sending || !craftRequest.trim()}>
+                  {sending ? "Thinking..." : "Craft plan"}
+                </button>
+              </form>
               {sending && <ProgressBar />}
-
-              {clarify && (
-                <form className="board-clarify" onSubmit={submitClarifyAnswers}>
-                  <p className="board-clarify-message">{clarify.message}</p>
-                  {clarify.questions.map((q: ClarifyQuestion, qi) => (
-                    <div key={q.id} className="board-clarify-q">
-                      <span className="board-clarify-index">{qi + 1}</span>
-                      <label>{q.question}</label>
-                      {q.type === "text" ? (
-                        <input
-                          type="text"
-                          value={textAnswers[q.id] ?? ""}
-                          onChange={(e) => setTextAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Type your answer..."
-                          maxLength={1000}
-                        />
-                      ) : (
-                        <div className="board-clarify-options">
-                          {(q.options ?? []).map((opt) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              className={`assistant-suggestion-chip ${mcqChoice[q.id] === opt ? "chip-active" : ""}`}
-                              onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: opt }))}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            className={`assistant-suggestion-chip chip-other ${mcqChoice[q.id] === "__other__" ? "chip-active" : ""}`}
-                            onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: "__other__" }))}
-                          >
-                            Other…
-                          </button>
-                        </div>
-                      )}
-                      {q.type === "mcq" && mcqChoice[q.id] === "__other__" && (
-                        <input
-                          type="text"
-                          value={otherText[q.id] ?? ""}
-                          onChange={(e) => setOtherText((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Nhập ý kiến riêng của bạn..."
-                          maxLength={1000}
-                        />
-                      )}
-                    </div>
-                  ))}
-                  <div className="board-clarify-actions">
-                    <button type="submit" className="btn btn-primary" disabled={sending}>
-                      {sending ? "Crafting..." : "Send answers"}
-                    </button>
-                    <button type="button" className="btn btn-ghost" onClick={() => void submitCraft()}>
-                      Skip questions — just plan it
-                    </button>
-                  </div>
-                </form>
-              )}
             </div>
 
             {/* factors section hidden until a plan exists */}
