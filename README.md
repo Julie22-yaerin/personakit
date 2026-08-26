@@ -10,6 +10,13 @@ See [`docs/REALTIME_ENGINE.md`](./docs/REALTIME_ENGINE.md) for where this is
 headed and [`docs/REALTIME_PLAN.md`](./docs/REALTIME_PLAN.md) for the
 phased build plan.
 
+## AI GTM Harness
+
+[`harness/`](./harness/) is an API-agnostic operating system that turns any
+LLM (Claude, GPT, Gemini, ...) into a Founder-led GTM & content strategy
+advisor. Start with [`harness/SYSTEM_PROMPT.md`](./harness/SYSTEM_PROMPT.md)
+or the agent instructions in [`harness/AGENTS.md`](./harness/AGENTS.md).
+
 ## Stack
 
 - Next.js 16 (App Router) / React 19
