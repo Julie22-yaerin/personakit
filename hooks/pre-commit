@@ -1,0 +1,59 @@
+#!/bin/bash
+# Pre-commit hook to scan for secrets before committing
+# Install: cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+echo "🔍 Scanning for secrets..."
+
+# Patterns that indicate secrets
+SECRET_PATTERNS=(
+  "ghp_[A-Za-z0-9]{36}"          # GitHub PAT
+  "sk-[A-Za-z0-9]{32,}"          # OpenAI API key
+  "AKIA[A-Z0-9]{16}"             # AWS access key
+  "mongodb(\+srv)?://[^\s]+"     # MongoDB connection string
+  "postgres(ql)?://[^\s]+"       # PostgreSQL connection string
+  "mysql://[^\s]+"                # MySQL connection string
+  "redis://[^\s]+"                # Redis connection string
+  "password\s*[:=]\s*[\"'][^\s]+" # Hardcoded passwords
+  "secret\s*[:=]\s*[\"'][^\s]+"  # Hardcoded secrets
+  "api[_-]?key\s*[:=]\s*[\"'][^\s]+" # Hardcoded API keys
+)
+
+FOUND_SECRETS=0
+
+# Check staged files
+for file in $(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true); do
+  # Skip binary files and lock files
+  case "$file" in
+    *.lock|*.min.js|*.min.css|package-lock.json|node_modules/*)
+      continue
+      ;;
+  esac
+
+  for pattern in "${SECRET_PATTERNS[@]}"; do
+    if grep -qE "$pattern" "$file" 2>/dev/null; then
+      echo "❌ Potential secret found in: $file"
+      echo "   Pattern: $pattern"
+      FOUND_SECRETS=1
+    fi
+  done
+done
+
+# Check .env files
+if git diff --cached --name-only | grep -qE '\.env$|\.env\.'; then
+  echo "❌ .env file detected in staging area"
+  echo "   Use .env.example for templates"
+  FOUND_SECRETS=1
+fi
+
+if [ $FOUND_SECRETS -eq 1 ]; then
+  echo ""
+  echo "⚠️  Potential secrets detected!"
+  echo "   If these are false positives, use: git commit --no-verify"
+  echo "   Never commit real secrets to version control."
+  exit 1
+fi
+
+echo "✅ No secrets found"
+exit 0

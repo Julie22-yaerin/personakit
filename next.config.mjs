@@ -6,6 +6,30 @@
  * lockdown here, not something that needs an extra header to enforce.
  * Adding a permissive CORS header would be the actual regression.
  */
+
+/**
+ * Content-Security-Policy: defense-in-depth against XSS and data injection.
+ * - default-src 'self': everything same-origin only
+ * - script-src 'self': no inline/eval scripts (Next.js handles compilation)
+ * - style-src 'self' 'unsafe-inline': Tailwind needs unsafe-inline for <style>
+ * - img-src 'self' data: blob: Firebase uses data: URIs for avatars
+ * - connect-src: Firebase + AI providers (Anthropic, OpenRouter, NVIDIA, Qwen)
+ * - frame-ancestors 'none': same as X-Frame-Options DENY
+ * - base-uri 'self': prevents <base> tag injection
+ * - form-action 'self': prevents form hijacking
+ */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self' https://securetoken.google.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://openrouter.ai/api https://integrate.api.nvidia.com https://dashscope-intl.aliyuncs.com https://generativelanguage.googleapis.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
   // HSTS — force HTTPS for this origin and its subdomains for 2 years,
   // including on preload lists. Railway/Vercel already terminate TLS in
@@ -19,11 +43,16 @@ const securityHeaders = [
   // studio live filming both need them) but denied to any cross-origin
   // iframe.
   { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
+  // CSP — defense-in-depth against XSS
+  { key: "Content-Security-Policy", value: CSP },
 ];
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Disable source maps in production to prevent source code leakage.
+  // If you need debugging, setGENERATE_SOURCEMAP=true locally.
+  productionBrowserSourceMaps: false,
   async headers() {
     return [
       {

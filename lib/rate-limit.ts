@@ -1,66 +1,119 @@
-import { NextResponse } from "next/server";
-import { logSecurityEvent } from "./security-log";
-
 /**
- * In-memory sliding-window limiter, keyed per authenticated uid. This is
- * a real, working mitigation for this app's actual deployment (a single
- * Railway instance), not a no-op — but it's honest to say what it isn't:
- * it resets on every process restart/redeploy, and if this app is ever
- * scaled to multiple instances (or moved to a serverless platform that
- * spins up separate processes per request), each instance keeps its own
- * counters, so the effective limit multiplies by instance count. A
- * proper fix at that point is a shared store (e.g. Upstash Redis), which
- * needs new infrastructure this app doesn't have configured today.
+ * Simple in-memory rate limiter for API routes.
+ * For production, consider Redis-backed rate limiting (e.g., @upstash/ratelimit).
  */
-interface Bucket {
+
+interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
-const buckets = new Map<string, Bucket>();
-const WINDOW_MS = 60_000;
-const DEFAULT_LIMIT = 20;
+const store = new Map<string, RateLimitEntry>();
 
-function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+// Cleanup expired entries every 5 minutes
+setInterval(() => {
   const now = Date.now();
-  const bucket = buckets.get(key);
-  if (!bucket || now >= bucket.resetAt) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
+  for (const [key, entry] of store) {
+    if (now > entry.resetAt) store.delete(key);
   }
-  if (bucket.count >= limit) return false;
-  bucket.count++;
-  return true;
+}, 5 * 60 * 1000);
+
+export interface RateLimitConfig {
+  /** Max requests per window */
+  maxRequests: number;
+  /** Window duration in milliseconds (default: 60s) */
+  windowMs?: number;
 }
 
-// Best-effort cleanup so `buckets` doesn't grow forever across a long-running process.
-let cleanupTimer: ReturnType<typeof setInterval> | null = null;
-function ensureCleanup() {
-  if (cleanupTimer) return;
-  cleanupTimer = setInterval(() => {
-    const now = Date.now();
-    for (const [key, bucket] of buckets) {
-      if (now >= bucket.resetAt) buckets.delete(key);
-    }
-  }, WINDOW_MS);
-  cleanupTimer.unref?.();
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number;
 }
 
-/** Returns a ready-to-return 429 response when the caller is over budget, or null when they can proceed. */
+/**
+ * Check rate limit for a given key (typically IP or user ID).
+ * Returns whether the request is allowed and metadata for headers.
+ */
+export function checkRateLimit(
+  key: string,
+  config: RateLimitConfig,
+): RateLimitResult {
+  const { maxRequests, windowMs = 60_000 } = config;
+  const now = Date.now();
+  const entry = store.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    // New window
+    store.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
+  }
+
+  if (entry.count >= maxRequests) {
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
+}
+
+/**
+ * Extract client IP from request headers.
+ */
+export function getClientIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+/**
+ * Standard rate limit configs for different route types.
+ */
+export const RATE_LIMITS = {
+  /** Strict: auth-related endpoints */
+  auth: { maxRequests: 5, windowMs: 60_000 },
+  /** Normal: LLM-backed API routes (expensive) */
+  api: { maxRequests: 20, windowMs: 60_000 },
+  /** Relaxed: read-only endpoints */
+  read: { maxRequests: 60, windowMs: 60_000 },
+} as const;
+
+/**
+ * Enforce rate limit on an API route. Returns a NextResponse if
+ * rate limited, or null if allowed. Matches the interface used by
+ * existing API routes.
+ *
+ * @example
+ *   const limited = enforceRateLimit(auth.uid, "assistant/research");
+ *   if (limited) return limited;
+ */
 export function enforceRateLimit(
   uid: string,
-  routeName: string,
-  limit = DEFAULT_LIMIT,
-  windowMs = WINDOW_MS,
-): NextResponse | null {
-  ensureCleanup();
-  const allowed = checkRateLimit(`${routeName}:${uid}`, limit, windowMs);
-  if (!allowed) {
-    logSecurityEvent("rate_limited", { uid, route: routeName });
+  route: string,
+  maxRequests: number = 30,
+  windowMs: number = 60_000,
+): import("next/server").NextResponse | null {
+  const key = `${uid}:${route}`;
+  const result = checkRateLimit(key, { maxRequests, windowMs });
+
+  if (!result.allowed) {
+    console.warn(`[security] rate_limited`, { uid, route, resetAt: result.resetAt });
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { NextResponse } = require("next/server") as typeof import("next/server");
     return NextResponse.json(
-      { error: "Too many requests — slow down and try again in a minute." },
-      { status: 429 },
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((result.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(result.resetAt),
+        },
+      },
     );
   }
+
   return null;
 }

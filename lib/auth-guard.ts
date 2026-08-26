@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { logSecurityEvent } from "./security-log";
+import { logSecurityEvent, getRequestMeta } from "./security-log";
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
@@ -46,7 +46,12 @@ async function verifyRequestAuth(request: Request): Promise<RequestAuth | null> 
 export async function requireAuth(request: Request): Promise<RequestAuth | NextResponse> {
   const auth = await verifyRequestAuth(request);
   if (!auth) {
-    logSecurityEvent("auth_failed", { path: new URL(request.url).pathname });
+    const meta = getRequestMeta(request);
+    logSecurityEvent("auth_failed", {
+      path: meta.path,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
     return NextResponse.json({ error: "Sign in and try again." }, { status: 401 });
   }
   return auth;
