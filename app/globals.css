@@ -2073,3 +2073,253 @@ footer {
   color: var(--p-text-secondary, var(--muted));
   margin: 0 0 12px;
 }
+
+/* ----- New Board Layout Styles ----- */
+
+/* Top Navigation */
+.top-nav {
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    justify-content: space-between;
+    font-size: 14px;
+    z-index: 10;
+}
+
+.nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 20px;
+    height: 20px;
+    background-color: #eee;
+    border-radius: 4px;
+}
+
+.project-title {
+    font-weight: 500;
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #555;
+}
+.nav-btn:hover {
+    color: #000;
+}
+
+.avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #ccc;
+}
+
+/* Main App Layout */
+.main-app {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Left Context Panel */
+.context-panel {
+    width: 320px;
+    background-color: #f0f0f2;
+    border-right: 1px solid #e0e0e0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 5;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #777;
+}
+
+.update-info {
+    background-color: #fff;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.user-update-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.change-list {
+    list-style-position: inside;
+    font-size: 13px;
+    line-height: 1.5;
+    padding-left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.change-list li strong {
+    font-weight: 600;
+}
+.highlight {
+    color: #007bff;
+}
+
+.nav-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+/* Center Canvas Area */
+.canvas-area {
+    flex: 1;
+    background-color: #f5f5f7;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+}
+
+.canvas-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: transparent;
+    border-radius: 8px;
+}
+
+/* Action Suggestions */
+.suggestions {
+    margin-top: 30px;
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+}
+.suggestion-chip {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.suggestion-chip:hover {
+    background-color: #f0f0f0;
+}
+.sparkle-icon {
+    width: 16px;
+    height: 16px;
+    background-color: gold;
+    border-radius: 50%;
+}
+
+/* Input Command Bar */
+.input-bar {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 24px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    z-index: 10;
+}
+.input-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+}
+.icon-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #555;
+}
+.icon-group button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+}
+.send-btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* Right Toolbar */
+.right-toolbar {
+    width: 48px;
+    background-color: #fff;
+    border-left: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    gap: 16px;
+    position: absolute;
+    top: 60px;
+    right: 16px;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 5;
+}
+.toolbar-icon {
+    width: 24px;
+    height: 24px;
+    background-color: #eee;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.toolbar-icon.active {
+    background-color: #e0eaf5;
+    color: #4a90e2;
+}

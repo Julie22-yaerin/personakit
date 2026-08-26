@@ -78,9 +78,6 @@ export async function POST(request: Request) {
 
   try {
     const result: CraftOrAskResult = await craftOrAsk(enriched);
-    if ("needsInfo" in result && result.needsInfo) {
-      return NextResponse.json(result);
-    }
     return NextResponse.json({ plan: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Plan crafting failed.";
