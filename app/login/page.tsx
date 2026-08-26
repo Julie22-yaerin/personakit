@@ -22,9 +22,9 @@ async function ensureUserDoc(uid: string, email: string | null) {
   );
 }
 
-async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/app"> {
+async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/board"> {
   const snap = await getDoc(doc(db, "users", uid));
-  return snap.exists() && snap.data().onboardingCompletedAt ? "/app" : "/onboarding";
+  return snap.exists() && snap.data().onboardingCompletedAt ? "/board" : "/onboarding";
 }
 
 // Sign-in errors deliberately don't distinguish "no account" from "wrong

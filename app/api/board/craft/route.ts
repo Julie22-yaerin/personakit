@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import {
   CraftPlanRequestSchema,
+  type ContentPlan,
 } from "../../../../lib/content-plan";
-import { craftOrAsk, type CraftOrAskResult } from "../../../../lib/board-llm";
+import { craftOrAsk } from "../../../../lib/board-llm";
 import type { IdentityCandidate } from "../../../../lib/founder-identity";
 import { db } from "../../../../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -77,10 +78,7 @@ export async function POST(request: Request) {
   };
 
   try {
-    const result: CraftOrAskResult = await craftOrAsk(enriched);
-    if ("needsInfo" in result && result.needsInfo) {
-      return NextResponse.json(result);
-    }
+    const result: ContentPlan = await craftOrAsk(enriched);
     return NextResponse.json({ plan: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Plan crafting failed.";

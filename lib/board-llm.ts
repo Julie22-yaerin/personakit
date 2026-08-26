@@ -31,20 +31,6 @@ const str = { type: "string" as const };
 const CRAFT_JSON_SHAPE = {
   type: "object" as const,
   properties: {
-    mode: { type: "string" as const, enum: ["ask", "plan"] },
-    message: str,
-    questions: {
-      type: "array" as const,
-      items: {
-        type: "object" as const,
-        properties: {
-          id: str,
-          question: str,
-          type: { type: "string" as const, enum: ["text", "mcq"] },
-          options: { type: "array" as const, items: str },
-        },
-      },
-    },
     strategySummary: str,
     factors: {
       type: "array" as const,
@@ -172,14 +158,10 @@ function craftUserPrompt(req: CraftPlanRequest): string {
 }
 
 const CRAFT_SYSTEM_PROMPT = `You are PERSONA's content-production planner. You receive whatever
-the system knows about a founder — possibly everything (full onboarding
-interview, identity traits, company red lines), possibly almost nothing
-(just a one-line request typed on the Board).
+the system knows about a founder.
 
-You decide between two modes:
-
-MODE "plan" — you have enough to work with. Craft ONE concrete 1-month
-(up to 30 days) sequential content production plan.
+Craft ONE concrete 1-month (up to 30 days) sequential content production plan.
+If information is missing, make reasonable assumptions based on their profile to complete the plan. Do NOT ask for more information.
 
 Rules:
 - Days are strictly sequential, labeled Day 1..N with no gaps.
@@ -195,20 +177,7 @@ Rules:
 - The plan must respect company red lines: nothing that contradicts or
   exposes restricted claims.
 - strategySummary: 3-5 sentences explaining the arc of the month.
-
-MODE "ask" — input is genuinely too thin to plan responsibly. IMPORTANT:
-read the founder profile provided above FIRST (identity traits,
-communication profile, company context, persona baseline). NEVER ask
-about anything already covered there — if the profile answers it, treat
-it as known and either plan or move on. Ask at most 5 questions, and
-only for what is truly missing (e.g. the product itself, branding
-style, posting cadence). Each question is either:
-- type "text": open-ended ("Describe your company in a sentence", "What
-  does your product's branding feel like?"), or
-- type "mcq": a concrete question with 2-5 short answer options. NEVER
-  include an "Other" option — the UI adds it automatically.
-Questions must be in the SAME LANGUAGE as the founder's request (a
-Vietnamese request gets Vietnamese questions).
+- Must be in the SAME LANGUAGE as the founder's request (a Vietnamese request gets Vietnamese plan).
 
 Respond with JSON only.`;
 
@@ -270,45 +239,12 @@ async function callLlmJson(system: string, prompt: string): Promise<unknown> {
   throw new Error("No LLM provider configured for the board.");
 }
 
-export type CraftOrAskResult = ContentPlan | CraftClarifyResult;
-
-function isClarify(obj: object): obj is CraftClarifyResult {
-  return (obj as Record<string, unknown>).mode === "ask";
-}
-
 /**
- * The soft entry point: with a one-line request (or a full onboarding
- * payload) the AI either crafts the plan or comes back with at most 3
- * clarifying questions — free-form or MCQ, never blocking forever.
+ * Crafts the plan. The AI must produce a plan, using assumptions if needed.
  */
-export async function craftOrAsk(req: CraftPlanRequest): Promise<CraftOrAskResult> {
+export async function craftOrAsk(req: CraftPlanRequest): Promise<ContentPlan> {
   const shapeHint = `Respond with JSON shaped exactly like: ${describeJsonShape(CRAFT_JSON_SHAPE)}`;
   const raw = await callLlmJson(`${CRAFT_SYSTEM_PROMPT}\n\n${shapeHint}`, craftUserPrompt(req));
-  const obj = (raw ?? {}) as Record<string, unknown>;
-
-  if (isClarify(obj)) {
-    const rawQuestions = Array.isArray(obj.questions) ? obj.questions : [];
-    const questions: ClarifyQuestion[] = rawQuestions
-      .slice(0, 5)
-      .map((q, i) => {
-        const qObj = (q ?? {}) as Record<string, unknown>;
-        const isMcq = String(qObj.type) === "mcq" && Array.isArray(qObj.options) && qObj.options.length > 0;
-        return {
-          id: typeof qObj.id === "string" && qObj.id ? qObj.id : `q-${Date.now()}-${i}`,
-          question: String(qObj.question ?? ""),
-          type: isMcq ? ("mcq" as const) : ("text" as const),
-          options: isMcq
-            ? (qObj.options as unknown[]).slice(0, 6).map((o) => String(o))
-            : undefined,
-        };
-      })
-      .filter((q) => q.question.length > 0);
-    return {
-      needsInfo: true,
-      message: String(obj.message ?? "I need a bit more before I can plan this."),
-      questions,
-    };
-  }
 
   const parsed = ContentPlanSchema.parse(raw);
   // Normalize: guarantee strict sequential day labels and valid wiring.
