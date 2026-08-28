@@ -8,18 +8,17 @@ import {
   missingScriptNodes,
   mostOffTopicSegment,
 } from "../../../../../lib/script-scoring";
-import { SCRIPT_NODE_TYPES } from "../../../../../lib/script";
 import { requireAuth } from "../../../../../lib/auth-guard";
 import { enforceRateLimit } from "../../../../../lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const RequestSchema = z.object({
-  graph: z.object({
-    sourceText: z.string().min(1).max(4000),
-    nodes: z
-      .array(z.object({ type: z.enum(SCRIPT_NODE_TYPES), concept: z.string().min(1).max(1000) }))
-      .length(SCRIPT_NODE_TYPES.length),
+  segment: z.object({
+    id: z.string(),
+    title: z.string().min(1),
+    bulletPoints: z.array(z.string()).min(3).max(5),
+    estimatedDurationSeconds: z.number().min(1),
   }),
   transcript: z.string().min(1).max(20000),
 });
@@ -40,10 +39,10 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { graph, transcript } = parsed.data;
+  const { segment, transcript } = parsed.data;
 
   try {
-    const analysis = await analyzeScriptDelivery(graph, transcript);
+    const analysis = await analyzeScriptDelivery(segment, transcript);
     const sas = computeScriptAlignmentScore(analysis.coverage);
     const drift = computeDriftScore(analysis.driftSegments);
 
