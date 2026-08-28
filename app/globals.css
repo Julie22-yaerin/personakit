@@ -461,6 +461,9 @@ footer {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  position: relative;
+  z-index: 50;
+  pointer-events: auto;
 }
 
 .auth-card {
@@ -470,6 +473,9 @@ footer {
   background: var(--bg-raised);
   border-radius: 8px;
   padding: 36px 32px;
+  position: relative;
+  z-index: 60;
+  pointer-events: auto;
 }
 
 .auth-card .wordmark {

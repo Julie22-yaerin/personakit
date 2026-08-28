@@ -4,11 +4,12 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  onAuthStateChanged,
 } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { auth, db, googleProvider } from "../../lib/firebase";
 import { Logo } from "../../components/landing/Logo";
 
@@ -30,21 +31,15 @@ async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/app"> 
   try {
     const snap = await getDoc(doc(db, "users", uid));
     return snap.exists() && snap.data()?.onboardingCompletedAt ? "/app" : "/onboarding";
-  } catch {
+  } catch (err) {
+    console.warn("nextRouteAfterAuth fallback:", err);
     return "/onboarding";
   }
 }
 
-// Sign-in errors deliberately don't distinguish "no account" from "wrong
-// password" — confirming which emails have an account here is a classic
-// enumeration vector (an attacker with a leaked email list could probe
-// each one to see which have accounts on this app). Signup's
-// "email-already-in-use" is a narrower, widely-accepted trade-off: it's
-// the standard UX every major sign-up flow uses, and fixing it properly
-// (a "check your email to continue" flow that doesn't confirm account
-// existence either way) is a real feature change, not a one-line fix.
 function friendlyError(message: string): string {
-  if (message.includes("auth/email-already-in-use")) return "That email already has an account. Try signing in instead.";
+  if (!message) return "Authentication error. Please try again.";
+  if (message.includes("auth/email-already-in-use")) return "That email already has an account. Try logging in instead.";
   if (
     message.includes("auth/invalid-credential") ||
     message.includes("auth/wrong-password") ||
@@ -53,8 +48,19 @@ function friendlyError(message: string): string {
     return "Wrong email or password.";
   }
   if (message.includes("auth/weak-password")) return "Password needs at least 6 characters.";
-  if (message.includes("auth/popup-closed-by-user")) return "Google sign-in was closed before finishing.";
-  return "Something went wrong. Try again.";
+  if (message.includes("auth/popup-closed-by-user") || message.includes("auth/cancelled-popup-request")) {
+    return "Google sign-in popup was closed.";
+  }
+  if (message.includes("auth/popup-blocked")) {
+    return "Popup blocked by browser. Please allow popups for this site.";
+  }
+  if (message.includes("auth/unauthorized-domain")) {
+    return "Domain not authorized in Firebase. Please add this domain in Firebase Console -> Auth -> Settings -> Authorized Domains.";
+  }
+  if (message.includes("auth/network-request-failed")) {
+    return "Network error. Please check your connection and try again.";
+  }
+  return message.replace("Firebase: ", "").replace(/\(auth\/[^)]+\)/, "").trim() || "Something went wrong. Try again.";
 }
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -67,25 +73,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Client-side lockout on repeated failed sign-in attempts. This is a
-  // belt-and-suspenders UX layer, not the primary defense — Firebase's
-  // Identity Platform already throttles/blocks repeated failed sign-ins
-  // server-side per account, so a determined attacker can't bypass this
-  // by just reloading the page. It exists to slow down casual credential
-  // guessing without a page reload.
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const locked = lockedUntil !== null && Date.now() < lockedUntil;
 
+  // If user is already authenticated, redirect automatically
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        const next = await nextRouteAfterAuth(u.uid);
+        router.push(next);
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   async function handleGoogle() {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
       const cred = await signInWithPopup(auth, googleProvider);
-      await ensureUserDoc(cred.user.uid, cred.user.email);
-      router.push(await nextRouteAfterAuth(cred.user.uid));
-    } catch (err) {
-      setError(friendlyError(err instanceof Error ? err.message : ""));
+      if (cred?.user) {
+        await ensureUserDoc(cred.user.uid, cred.user.email);
+        const next = await nextRouteAfterAuth(cred.user.uid);
+        router.push(next);
+      }
+    } catch (err: unknown) {
+      console.error("[Login Google Auth Error]:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(friendlyError(errMsg));
     } finally {
       setLoading(false);
     }
@@ -93,20 +110,25 @@ export default function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (locked) return;
+    if (locked || loading) return;
     setLoading(true);
     setError(null);
     try {
       const cred =
         mode === "signup"
-          ? await createUserWithEmailAndPassword(auth, email, password)
-          : await signInWithEmailAndPassword(auth, email, password);
+          ? await createUserWithEmailAndPassword(auth, email.trim(), password)
+          : await signInWithEmailAndPassword(auth, email.trim(), password);
+      
       setFailedAttempts(0);
       setLockedUntil(null);
-      await ensureUserDoc(cred.user.uid, cred.user.email);
-      router.push(await nextRouteAfterAuth(cred.user.uid));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "";
+      if (cred?.user) {
+        await ensureUserDoc(cred.user.uid, cred.user.email);
+        const next = await nextRouteAfterAuth(cred.user.uid);
+        router.push(next);
+      }
+    } catch (err: unknown) {
+      console.error("[Login Email Auth Error]:", err);
+      const message = err instanceof Error ? err.message : String(err);
       setError(friendlyError(message));
       if (
         mode === "signin" &&
@@ -127,8 +149,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-card">
+    <div className="auth-shell" style={{ position: "relative", zIndex: 50, pointerEvents: "auto" }}>
+      <div className="auth-card" style={{ position: "relative", zIndex: 60, pointerEvents: "auto" }}>
         <Link href="/" className="wordmark">
           <Logo size={26} />
         </Link>
@@ -140,14 +162,16 @@ export default function LoginPage() {
           <button
             type="button"
             className={`auth-tab ${mode === "signup" ? "active" : ""}`}
-            onClick={() => setMode("signup")}
+            onClick={() => { setMode("signup"); setError(null); }}
+            style={{ cursor: "pointer", pointerEvents: "auto" }}
           >
             Sign up
           </button>
           <button
             type="button"
             className={`auth-tab ${mode === "signin" ? "active" : ""}`}
-            onClick={() => setMode("signin")}
+            onClick={() => { setMode("signin"); setError(null); }}
+            style={{ cursor: "pointer", pointerEvents: "auto" }}
           >
             Log in
           </button>
@@ -164,14 +188,14 @@ export default function LoginPage() {
           onClick={handleGoogle}
           disabled={loading}
           className="btn btn-ghost btn-block"
-          style={{ marginBottom: 4 }}
+          style={{ marginBottom: 4, cursor: loading ? "wait" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 10 }}
         >
-          <GoogleMark /> Continue with Google
+          <GoogleMark /> {loading ? "Connecting..." : "Continue with Google"}
         </button>
 
         <div className="auth-divider">or</div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{ pointerEvents: "auto" }}>
           <div className="field">
             <label htmlFor="email">Email</label>
             <input
@@ -182,6 +206,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
+              style={{ pointerEvents: "auto" }}
             />
           </div>
           <div className="field">
@@ -195,9 +220,15 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              style={{ pointerEvents: "auto" }}
             />
           </div>
-          <button type="submit" disabled={loading || locked} className="btn btn-primary btn-block">
+          <button
+            type="submit"
+            disabled={loading || locked}
+            className="btn btn-primary btn-block"
+            style={{ cursor: loading || locked ? "not-allowed" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 10 }}
+          >
             {loading ? "One sec..." : mode === "signup" ? "Create account" : "Log in"}
           </button>
         </form>
@@ -210,7 +241,7 @@ export default function LoginPage() {
 
 function GoogleMark() {
   return (
-    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true" style={{ pointerEvents: "none" }}>
       <path
         fill="#FFC107"
         d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"

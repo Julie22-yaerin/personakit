@@ -1,7 +1,7 @@
 "use client";
 
 import { useScroll, useTransform, motion, MotionValue } from "motion/react";
-import React, { useRef, type ReactNode } from "react";
+import React, { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, Flame, ScanFace } from "lucide-react";
 import { PersonaScorePanel } from "./PersonaScore";
@@ -15,7 +15,7 @@ export function HeroScrollContainer() {
   });
 
   return (
-    <div ref={container} className="relative h-[200vh] bg-transparent">
+    <div ref={container} className="relative h-[200vh] bg-black">
       {/* Section 1 — Sticky Hero: Scales 1 -> 0.8, Rotates 0 -> -5deg */}
       <Section1 scrollYProgress={scrollYProgress} />
 
@@ -36,7 +36,7 @@ const Section1: React.FC<SectionProps> = ({ scrollYProgress }) => {
   return (
     <motion.section
       style={{ scale, rotate }}
-      className="sticky top-0 h-screen flex flex-col items-center justify-center text-white px-4 overflow-hidden"
+      className="sticky top-0 h-screen bg-gradient-to-t to-[#0d1224] from-[#04060f] flex flex-col items-center justify-center text-white px-4 overflow-hidden"
     >
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,168,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,168,255,0.08)_1px,transparent_1px)] bg-[size:54px_54px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_20%,#000_70%,transparent_100%)] pointer-events-none" />
 
@@ -132,17 +132,17 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
   return (
     <motion.section
       style={{ scale, rotate }}
-      className="relative min-h-screen bg-gradient-to-t to-[#111827] from-[#030712] text-white flex flex-col justify-center py-20 px-4"
+      className="relative h-screen bg-gradient-to-t to-[#111827] from-[#030712] text-white flex flex-col justify-center px-4 overflow-hidden"
     >
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,168,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,168,255,0.08)_1px,transparent_1px)] bg-[size:54px_54px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
 
       <div className="p-wrap relative z-10 w-full">
-        <div style={{ maxWidth: 760, marginBottom: 40 }}>
+        <div style={{ maxWidth: 760, marginBottom: 32 }}>
           <p className="p-eyebrow">Moment-to-Content Engine</p>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 700, margin: "0 0 16px", color: "#fff", lineHeight: 1.15 }}>
+          <h2 style={{ fontSize: "clamp(26px, 3.8vw, 40px)", fontWeight: 700, margin: "0 0 12px", color: "#fff", lineHeight: 1.15 }}>
             Turn any moment you enjoy into content that creates real pipeline.
           </h2>
-          <p style={{ fontSize: 17, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 16, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.55 }}>
             From 2 AM debugging breakthroughs to whiteboard debates — capture the authentic energy of building your startup.
           </p>
         </div>
@@ -152,12 +152,12 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
             <img
               src="https://images.unsplash.com/photo-1717893777838-4e222311630b?w=800&auto=format&fit=crop"
               alt="2 AM Debugging"
-              style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+              style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 8, marginBottom: 10 }}
             />
             <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
               01 · 2 AM DEBUGGING
             </div>
-            <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 12.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
               Ranting about broken legacy architecture and how your startup solves it.
             </p>
           </div>
@@ -166,12 +166,12 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
             <img
               src="https://images.unsplash.com/photo-1717618389115-88db6d7d8f77?w=800&auto=format&fit=crop"
               alt="1-Take Studio"
-              style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+              style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 8, marginBottom: 10 }}
             />
             <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
               02 · 1-TAKE STUDIO
             </div>
-            <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 12.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
               Filming with teleprompter, pace meter, and zero camera stress.
             </p>
           </div>
@@ -180,12 +180,12 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
             <img
               src="https://images.unsplash.com/photo-1717588604557-55b2888f59a6?w=800&auto=format&fit=crop"
               alt="Whiteboard Debates"
-              style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+              style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 8, marginBottom: 10 }}
             />
             <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
               03 · WHITEBOARD DEBATES
             </div>
-            <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 12.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
               Explaining why industry orthodoxy is wrong and why your approach wins.
             </p>
           </div>
@@ -194,12 +194,12 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
             <img
               src="https://images.unsplash.com/photo-1713417338603-1b6b72fcade2?w=800&auto=format&fit=crop"
               alt="Real Retention"
-              style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+              style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 8, marginBottom: 10 }}
             />
             <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
               04 · REAL RETENTION
             </div>
-            <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 12.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
               Turning authentic followers into qualified demo requests and active users.
             </p>
           </div>
