@@ -20,11 +20,11 @@
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://apis.google.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self' https://securetoken.google.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://openrouter.ai/api https://integrate.api.nvidia.com https://dashscope-intl.aliyuncs.com https://generativelanguage.googleapis.com",
+  "connect-src 'self' https://securetoken.google.com https://securetoken.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://openrouter.ai/api https://integrate.api.nvidia.com https://dashscope-intl.aliyuncs.com https://generativelanguage.googleapis.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
