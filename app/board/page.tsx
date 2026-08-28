@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
+import { Progress } from "@/components/ui/progress-1";
 import {
   MousePointer2,
   Type,
@@ -98,14 +99,6 @@ function asText(v: unknown): string {
   }
 }
 
-/** Indeterminate progress bar — motion reads as "working", unlike static dots. */
-export function ProgressBar() {
-  return (
-    <div className="board-progress" role="progressbar" aria-label="Loading">
-      <div className="board-progress-bar" />
-    </div>
-  );
-}
 
 export default function BoardPage() {
   const router = useRouter();
@@ -124,6 +117,38 @@ export default function BoardPage() {
   const [mcqChoice, setMcqChoice] = useState<Record<string, string>>({});
   const [otherText, setOtherText] = useState<Record<string, string>>({});
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
+
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const getStatusMessage = (progress: number) => {
+    if (progress < 5) return 'Initializing...';
+    if (progress < 15) return 'Setting up parameters...';
+    if (progress < 25) return 'Connecting to AI model...';
+    if (progress < 35) return 'Structuring response...';
+    if (progress < 50) return 'Generating core concepts...';
+    if (progress < 65) return 'Creating visual assets...';
+    if (progress < 80) return 'Refining text details...';
+    if (progress < 90) return 'Extracting files...';
+    if (progress < 95) return 'Validating integrity...';
+    if (progress < 100) return 'Finalizing...';
+    return 'Complete!';
+  };
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (sending) {
+      setDownloadProgress(0);
+      timer = setInterval(() => {
+        setDownloadProgress((prev) => {
+          if (prev >= 98) return 98;
+          return prev + Math.random() * 5 + 1;
+        });
+      }, 300);
+    } else {
+      setDownloadProgress(100);
+    }
+    return () => clearInterval(timer);
+  }, [sending]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -364,6 +389,7 @@ export default function BoardPage() {
   if (!user) return null;
 
   return (
+
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="board-wrap-full h-full flex flex-col relative w-full overflow-hidden bg-[#F9FAFB]">
         {/* Top Header Controls */}
@@ -440,13 +466,13 @@ export default function BoardPage() {
 
           {plan === undefined ? (
             <div className="spinner mt-20 mx-auto" />
-          ) : plan !== null && (
+          ) : (
             <div className="max-w-[980px] mx-auto bg-white/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-100 shadow-sm relative z-0">
-              <p className="board-strategy">{plan.strategySummary}</p>
+              <p className="board-strategy">{plan?.strategySummary ?? ""}</p>
 
               {/* Sequential Duolingo-style path — one continuous winding line of day nodes */}
               <div className="board-path">
-                {plan.days.map((d, i) => {
+                {(plan?.days ?? []).map((d, i) => {
                   const side = i % 2 === 0 ? "left" : "right";
                   const state =
                     d.done ? "done" : d.day === currentDay ? "current" : "upcoming";
@@ -465,14 +491,14 @@ export default function BoardPage() {
                         <span className="board-node-day">Day {d.day}</span>
                         <span className="board-node-title">{d.title}</span>
                       </button>
-                      {i < plan.days.length - 1 && <div className={`board-connector board-connector-${side}`} />}
+                      {i < (plan?.days.length ?? 0) - 1 && <div className={`board-connector board-connector-${side}`} />}
                     </div>
                   );
                 })}
                 <div className="board-finish">🏁 Month shipped</div>
               </div>
 
-              {selectedDay != null &&
+              {selectedDay != null && plan != null &&
                 (() => {
                   const sel = plan.days.find((d) => d.day === selectedDay);
                   if (!sel) return null;
@@ -494,7 +520,7 @@ export default function BoardPage() {
             <section className="board-factors mt-8">
               <h2>Roadmap factors</h2>
               <div className="board-factor-grid">
-                {plan.factors.map((f) => {
+                {(plan?.factors ?? []).map((f) => {
                   const fDays = daysByFactor.get(f.id) ?? [];
                   return (
                     <div key={f.id} className="board-factor">
@@ -594,9 +620,9 @@ export default function BoardPage() {
             </div>
 
             {sending && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-1.5 rounded-full shadow-sm border border-gray-100 text-xs font-medium text-blue-600 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-                Working...
+              <div className="absolute -top-14 left-1/2 -translate-x-1/2 w-[350px] bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 p-3 flex flex-col gap-1.5 z-50">
+                <Progress value={downloadProgress} className="h-2 w-full" indicatorClassName="bg-blue-600" />
+                <div className="text-xs text-gray-500 font-medium text-center">{getStatusMessage(downloadProgress)}</div>
               </div>
             )}
 
@@ -643,6 +669,7 @@ export default function BoardPage() {
           )}
         </div>
       </div>
+
     </AppShell>
   );
 }
