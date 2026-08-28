@@ -93,6 +93,17 @@ const EDIT_JSON_SHAPE = {
         },
       },
     },
+    updatedArtifacts: {
+      type: "array" as const,
+      items: {
+        type: "object" as const,
+        properties: {
+          id: str,
+          title: str,
+          content: str,
+        },
+      },
+    },
     dayPatches: {
       type: "array" as const,
       items: {
@@ -326,7 +337,7 @@ They selected something — a day node, a factor, or an artifact inside a
 factor — and typed a request in natural language. It can be:
 
 1. An EDIT of what exists ("make this hook angrier", "swap day 4 and 5",
-   "this video should be a talking-head instead").
+   "this video should be a talking-head instead", or an edit to a selected artifact).
 2. A CREATION of new material attached to a roadmap factor — a script,
    visual suggestions, an edit style, or a note ("write the script for
    day 2", "visual suggestions for the intro video").
@@ -337,9 +348,12 @@ Rules:
 - For creation: produce full, ready-to-use content in newArtifacts with
   kind one of script/visual/style_edit/note, a CLEAR descriptive title
   that names what it is (e.g. "Day 2 — Hook script", "Edit style ·
-  talking-head intro"), complete content (a script is a full spoken-word
-  script with beats, not an outline), and a "day" number set to the plan
+  talking-head intro"), complete content, and a "day" number set to the plan
   day the artifact belongs to when the request names or implies one.
+- For script creations or edits: Scripts MUST use bullet points. Divide into headings for sections.
+  Under each heading, provide a MAXIMUM of 5 small sub-bullets. Include explicit notes on time, speed,
+  and actions. Structure the content into clear, distinct shot clusters as requested.
+- For in-place artifact edits (when a "Selected artifact id" is provided): output the modifications in \`updatedArtifacts\` instead of \`newArtifacts\`, providing the \`id\` and the newly modified \`title\` and/or \`content\`. DO NOT CREATE NEW ARTIFACTS IF AN ARTIFACT IS SELECTED FOR EDITING.
 - Attach creations to the right existing factor via targetFactorId when
   obvious (e.g. the selected day's factor); otherwise set newFactorName
   and leave targetFactorId empty — a new factor will be created.
@@ -365,6 +379,15 @@ export async function editBoardObject(req: BoardEditRequest): Promise<BoardEditR
         req.plan.factors.map((f) => ({ id: f.id, name: f.name, dayRange: f.dayRange })),
       )}\ndays: ${JSON.stringify(req.plan.days)}`,
     );
+    if (req.artifactId) {
+       for (const factor of req.plan.factors) {
+         const found = factor.artifacts.find(a => a.id === req.artifactId);
+         if (found) {
+            parts.push(`Selected artifact's current title: "${found.title}"\nSelected artifact's current content:\n"""\n${found.content}\n"""`);
+            break;
+         }
+       }
+    }
   } else {
     parts.push("No plan stored yet — work from the request alone.");
   }
@@ -393,6 +416,15 @@ export async function editBoardObject(req: BoardEditRequest): Promise<BoardEditR
           done: typeof p.done === "boolean" ? p.done : undefined,
         }))
     : [];
+  const updatedArtifacts = Array.isArray(obj.updatedArtifacts)
+    ? (obj.updatedArtifacts as Array<Record<string, unknown>>)
+        .filter((a) => typeof a.id === "string" && a.id)
+        .map((a) => ({
+           id: String(a.id),
+           title: typeof a.title === "string" ? a.title : undefined,
+           content: typeof a.content === "string" ? a.content : undefined,
+        }))
+    : [];
 
   return {
     reply: String(obj.reply ?? "Done."),
@@ -400,6 +432,7 @@ export async function editBoardObject(req: BoardEditRequest): Promise<BoardEditR
       artifacts.length > 0
         ? artifacts.map((a) => ({ ...a, kind: a.kind as BoardArtifactDraft["kind"] }))
         : undefined,
+    updatedArtifacts: updatedArtifacts.length > 0 ? updatedArtifacts : undefined,
     targetFactorId: typeof obj.targetFactorId === "string" && obj.targetFactorId ? obj.targetFactorId : undefined,
     newFactorName: typeof obj.newFactorName === "string" && obj.newFactorName ? obj.newFactorName : undefined,
     dayPatches: patches.length > 0 ? patches : undefined,
