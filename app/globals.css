@@ -2350,3 +2350,74 @@ footer {
   color: var(--p-text-secondary, var(--muted));
   margin: 0 0 12px;
 }
+
+.board-wrap-full {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.board-canvas-full {
+  background-color: #F9FAFB;
+  background-image: radial-gradient(rgba(157, 184, 242, 0.25) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+@keyframes gradient-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.artifact-loading-skeleton {
+  animation: gradient-shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f6f7f8 4%, #edeef1 25%, #f6f7f8 36%);
+  background-size: 1000px 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  min-height: 120px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.artifact-loading-skeleton::after {
+  content: "Generating...";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-color-destructive-foreground: var(----color-destructive-foreground);
+}
+
+:root {
+  --destructive-foreground: oklch(1 0 0);
+}
+
+.dark {
+  --destructive-foreground: oklch(1 0 0);
+}
