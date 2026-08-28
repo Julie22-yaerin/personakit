@@ -3,12 +3,10 @@ import Link from "next/link";
 import {
   ArrowRight,
   Camera,
-  ScanFace,
   Sparkles,
   Video,
   Target,
   ShieldCheck,
-  Flame,
   UserCheck,
   Mic,
   BrainCircuit,
@@ -17,14 +15,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Logo } from "../components/landing/Logo";
-import { MetricCard, MetricRow } from "../components/landing/MetricCard";
-import { PersonaScorePanel } from "../components/landing/PersonaScore";
-import { PredictionCard } from "../components/landing/PredictionCard";
+import { MetricCard } from "../components/landing/MetricCard";
 import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysis";
 import { PersonaTimeline } from "../components/landing/PersonaTimeline";
 import { PerformanceChart } from "../components/landing/PerformanceChart";
 import { Reveal } from "../components/landing/Reveal";
-import { ScrollHero, Section2Motion } from "../components/landing/ScrollHero";
+import { HeroScrollContainer } from "../components/landing/ScrollHero";
 import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
 import { CookieConsent } from "../components/landing/CookieConsent";
@@ -85,7 +81,6 @@ export default function LandingPage() {
             </Link>
             <div className="p-nav-links">
               <a href="#philosophy">Philosophy</a>
-              <a href="#moments">Moments</a>
               <a href="#identity-engine">Identity Engine</a>
               <a href="#board-feature">Content Board</a>
               <a href="#studio-feature">Live AI Studio</a>
@@ -103,192 +98,10 @@ export default function LandingPage() {
           </div>
         </nav>
 
-        {/* ---------- SECTION 1: HERO SCROLL MOTION ---------- */}
-        <ScrollHero>
-          <div className="p-wrap">
-            <div className="p-hero-grid">
-              <Reveal>
-                <div>
-                  <div className="p-hero-badge-pill">
-                    <Flame size={14} color="#ff3b30" />
-                    <span>BORN FOR FOUNDER-LED CONTENT</span>
-                  </div>
-                  <TextMotion
-                    as="h1"
-                    className="p-hero-title"
-                    text="Stop trying to be a 35-year-old CEO in a fleece vest. Perform as who you actually are."
-                  />
-                  <TextMotion
-                    as="p"
-                    className="p-hero-sub"
-                    delay={0.2}
-                    text="Turn any moment you enjoy into high-converting content for your startup. PersonaKit analyzes your natural voice, makes filming effortless, and turns radical founder authenticity into unstoppable distribution."
-                  />
-                  <div className="p-hero-ctas">
-                    <Link href="/login" className="p-btn p-btn-primary">
-                      Build My Persona <ArrowRight size={15} />
-                    </Link>
-                    <a href="#studio-feature" className="p-btn p-btn-ghost">
-                      Explore Live Studio
-                    </a>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--p-text-secondary)" }}>
-                      <CheckCircle2 size={14} color="var(--p-success)" />
-                      <span>Zero corporate jargon</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--p-text-secondary)" }}>
-                      <CheckCircle2 size={14} color="var(--p-success)" />
-                      <span>1-take shot readiness</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--p-text-secondary)" }}>
-                      <CheckCircle2 size={14} color="var(--p-success)" />
-                      <span>Closed reality loop</span>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
+        {/* ---------- DUAL-SECTION HERO SCROLL MOTION ---------- */}
+        <HeroScrollContainer />
 
-              <Reveal delay={0.1}>
-                <div className="p-hero-visual">
-                  <div className="p-phone-mock">
-                    <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 6, zIndex: 10 }}>
-                      <span className="p-live-pulse" />
-                      <span className="p-mono" style={{ fontSize: 10, color: "#fff", letterSpacing: "0.08em" }}>
-                        STUDIO LIVE · 1080P
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 20,
-                        textAlign: "center",
-                      }}
-                    >
-                      <ScanFace size={54} strokeWidth={1} color="rgba(59, 130, 246, 0.85)" style={{ marginBottom: 12 }} />
-                      <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
-                        DISTANCE: 1.4M (OPTIMAL)
-                      </div>
-                      <div className="p-mono" style={{ fontSize: 10, color: "rgba(245,245,245,0.7)" }}>
-                        EYE CONTACT: 94% · PACE: 142 WPM
-                      </div>
-                    </div>
-                    <div className="p-phone-label">AUTHENTIC FOUNDER TAKE · NO FAKE POSTURING</div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <PersonaScorePanel
-                      metrics={[
-                        { label: "CONTRARIANISM", value: 94 },
-                        { label: "AUTHORITY", value: 89 },
-                        { label: "MEMORABILITY", value: 92 },
-                        { label: "HUMOR", value: 76 },
-                        { label: "VULNERABILITY", value: 68 },
-                        { label: "WARMTH", value: 62 },
-                      ]}
-                      identitySignal="Unfiltered Builder"
-                      confidence={94.8}
-                    />
-                    <PredictionCard
-                      metrics={[
-                        { label: "CURIOSITY GAP", value: 95 },
-                        { label: "COMMENT PROBABILITY", value: 89 },
-                        { label: "PROFILE INTENT", value: 91 },
-                        { label: "SHARE POTENTIAL", value: 82 },
-                      ]}
-                    />
-                  </div>
-                </div>
-              </Reveal>
-            </div>
-          </div>
-        </ScrollHero>
-
-        {/* ---------- SECTION 2: MOTION IMAGE GALLERY & MOMENT HOOKS ---------- */}
-        <section className="p-section" id="moments" style={{ background: "rgba(8, 10, 22, 0.9)" }}>
-          <div className="p-wrap">
-            <Section2Motion>
-              <Reveal>
-                <div className="p-section-head" style={{ maxWidth: 840 }}>
-                  <p className="p-eyebrow">Moment-to-Content Engine</p>
-                  <TextMotion
-                    as="h2"
-                    text="Turn any moment you enjoy into content that creates real pipeline."
-                  />
-                  <TextMotion
-                    as="p"
-                    delay={0.2}
-                    text="Your product isn't built in a sterile PR studio. It's built during late-night code sprints, whiteboard debates, and honest customer rants. PersonaKit turns those real moments into high-retention video distribution."
-                  />
-                </div>
-              </Reveal>
-
-              <div className="p-grid-4" style={{ marginTop: 32 }}>
-                <div className="p-card" style={{ padding: 12 }}>
-                  <img
-                    src="https://images.unsplash.com/photo-1717893777838-4e222311630b?w=800&auto=format&fit=crop"
-                    alt="2 AM Debugging breakthrough"
-                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
-                  />
-                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
-                    01 · 2 AM DEBUGGING
-                  </div>
-                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
-                    Ranting about broken legacy architecture and how your startup fixes it.
-                  </p>
-                </div>
-
-                <div className="p-card" style={{ padding: 12 }}>
-                  <img
-                    src="https://images.unsplash.com/photo-1717618389115-88db6d7d8f77?w=800&auto=format&fit=crop"
-                    alt="Studio lighting aesthetic"
-                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
-                  />
-                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
-                    02 · 1-TAKE STUDIO
-                  </div>
-                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
-                    Filming with real-time teleprompter, pace meter, and zero camera stress.
-                  </p>
-                </div>
-
-                <div className="p-card" style={{ padding: 12 }}>
-                  <img
-                    src="https://images.unsplash.com/photo-1717588604557-55b2888f59a6?w=800&auto=format&fit=crop"
-                    alt="Product architecture whiteboard"
-                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
-                  />
-                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
-                    03 · WHITEBOARD DEBATES
-                  </div>
-                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
-                    Explaining why industry orthodoxy is wrong and why your approach wins.
-                  </p>
-                </div>
-
-                <div className="p-card" style={{ padding: 12 }}>
-                  <img
-                    src="https://images.unsplash.com/photo-1713417338603-1b6b72fcade2?w=800&auto=format&fit=crop"
-                    alt="Authentic founder desk workspace"
-                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
-                  />
-                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
-                    04 · REAL RETENTION
-                  </div>
-                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
-                    Turning authentic followers into qualified demo requests and active users.
-                  </p>
-                </div>
-              </div>
-            </Section2Motion>
-          </div>
-        </section>
-
-        {/* ---------- MAIN BODY: STATS & DEEP DIVES ---------- */}
+        {/* ---------- MAIN BODY: STATS & FEATURE DEEP DIVES ---------- */}
         <main className="p-after-hero" id="main">
           {/* ---------- STATS PROOF STRIP ---------- */}
           <section className="p-section-tight" style={{ borderBottom: "1px solid var(--p-border)" }}>

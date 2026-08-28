@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { logSecurityEvent, getRequestMeta } from "./security-log";
 
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "pclick-9f190";
 
 // Firebase ID tokens are standard JWTs signed by Google's securetoken
 // service — verifiable against its public JWKS the same way the Admin
