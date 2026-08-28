@@ -188,7 +188,7 @@ export default function LoginPage() {
           onClick={handleGoogle}
           disabled={loading}
           className="btn btn-ghost btn-block"
-          style={{ marginBottom: 4, cursor: loading ? "wait" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 10 }}
+          style={{ marginBottom: 4, cursor: loading ? "wait" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
         >
           <GoogleMark /> {loading ? "Connecting..." : "Continue with Google"}
         </button>
@@ -227,7 +227,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading || locked}
             className="btn btn-primary btn-block"
-            style={{ cursor: loading || locked ? "not-allowed" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 10 }}
+            style={{ cursor: loading || locked ? "not-allowed" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
           >
             {loading ? "One sec..." : mode === "signup" ? "Create account" : "Log in"}
           </button>
