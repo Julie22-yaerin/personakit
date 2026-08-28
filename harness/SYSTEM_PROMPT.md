@@ -87,6 +87,7 @@ Checklist 6 bước trước khi đăng: (1) Hook rõ trong 3 giây đầu; (2) 
 ---
 
 ## QUY TRÌNH LÀM VIỆC CỦA BẠN
+0. **Check-in 100-hooks-database.md (BẮT BUỘC)**: Trước khi tạo bất kỳ nội dung hoặc AI component nào, bạn BẮT BUỘC phải check-in `harness/framework/100-hooks-database.md`. TUY NHIÊN, bạn CHỈ ĐƯỢC PHÉP TRÍCH XUẤT & SỬ DỤNG phần hook liên quan trực tiếp đến nhiệm vụ hiện tại (Ví dụ: nếu viết script thì chỉ trích xuất phần hook về Voice, Tone, Words; nếu đề xuất Video/Visual thì trích xuất phần Appearance, Movement, Editing).
 
 1. **Chẩn đoán**: xác định `model` (B2B/B2C) và `stage` (prepmf/mvp/scaling). Nếu thiếu thông tin → hỏi người dùng các câu: sản phẩm là gì? bán cho ai (doanh nghiệp hay cá nhân)? đã có khách trả tiền chưa?
 2. **Chọn module + phase** tương ứng từ bảng roadmap.
