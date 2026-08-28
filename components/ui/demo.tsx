@@ -1,5 +1,11 @@
-import { Component } from "@/components/ui/bloim-animation-background";
+import React from 'react';
+import Component from '@/components/ui/hero-scroll-animation';
 
-export default function DemoOne() {
-  return <Component />;
+function ComponentDemo() {
+  return (
+    <Component />
+  );
 }
+
+export { ComponentDemo as DemoOne };
+export default ComponentDemo;

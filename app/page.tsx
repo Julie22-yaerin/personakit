@@ -1,6 +1,28 @@
 import { Geist, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
-import { ArrowRight, Camera, Hand, Scissors, ScanFace } from "lucide-react";
+import {
+  ArrowRight,
+  Camera,
+  Hand,
+  Scissors,
+  ScanFace,
+  Sparkles,
+  Video,
+  Target,
+  ShieldCheck,
+  Flame,
+  Zap,
+  BarChart3,
+  MessageSquare,
+  UserCheck,
+  Eye,
+  Mic,
+  BrainCircuit,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  TrendingUp,
+} from "lucide-react";
 import { Logo } from "../components/landing/Logo";
 import { MetricCard, MetricRow } from "../components/landing/MetricCard";
 import { PersonaScorePanel } from "../components/landing/PersonaScore";
@@ -22,24 +44,28 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variab
 
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   {
-    q: "What exactly does PERSONA measure?",
-    a: "It builds a measurable profile of the identity you project online — authority, warmth, contrarianism, humor, vulnerability, memorability — then connects those signals to how your content actually performs.",
+    q: "How does PersonaKit help me prepare for shots more easily?",
+    a: "PersonaKit removes all recording friction. It turns your casual moments into graph-based script nodes, provides an integrated teleprompter, tracks camera distance (1.4m sweet spot) and eye contact via real-time computer vision, monitors your speech pace (WPM), and gives subtle live drift warnings if you lose the core hook.",
   },
   {
-    q: "Is this a psychological diagnosis?",
-    a: "No. The persona profile is a model estimate based on what you upload and log. It describes how you come across in content, not who you are as a person.",
+    q: "What does 'not trying to be a 35-year-old CEO in a fleece vest' mean?",
+    a: "Most corporate personal branding advice turns founders into sterile corporate drones posting robotic clichés ('I'm thrilled to announce...'). PersonaKit does the opposite: it calibrates your authentic humor, contrarian beliefs, technical edge, and raw communication style so you perform naturally as yourself.",
   },
   {
-    q: "Do I have to connect my social accounts?",
-    a: "No. There is no social-platform API integration at all. Performance numbers exist only if you choose to enter them yourself.",
+    q: "How does it turn any moment I enjoy into high-converting content?",
+    a: "Whether you're debugging at 2 AM, passionate about an architectural breakthrough, or walking to grab coffee, PersonaKit takes those genuine thoughts, extracts the tension and curiosity, anchors them against your product's true value proposition, and generates ready-to-shoot scripts.",
   },
   {
-    q: "What happens to my data?",
-    a: "Your uploads and persona are stored privately on your account and never sold or shared. Face frames are processed in-memory and never persisted. See the privacy policy for details.",
+    q: "Is my video recording or facial data stored on servers?",
+    a: "Never. Camera frames, facial geometry, and speech analysis are processed entirely in-memory on your local browser during the recording session. No video files or biometric data are ever sent to or stored on our servers.",
   },
   {
-    q: "How much does it cost?",
-    a: "PERSONA is currently free while in early access. Build your persona and try the full loop — analysis, prediction, feedback.",
+    q: "Do I have to connect my social media accounts or share passwords?",
+    a: "No. PersonaKit requires zero social API permissions or passwords. You can log performance metrics directly to close the reality feedback loop, keeping your credentials 100% private.",
+  },
+  {
+    q: "How does the closed reality feedback loop work?",
+    a: "Before you post, PersonaKit predicts audience curiosity, comment probability, and profile intent. When you log actual engagement results, the system compares hypothesis against reality and recalibrates your persona model for subsequent scripts.",
   },
 ];
 
@@ -58,636 +84,702 @@ export default function LandingPage() {
     <>
       <AnimationBackground />
       <div className={`p-page ${grotesk.variable} ${mono.variable}`}>
-      {/* ---------- NAV ---------- */}
-      <nav className="p-nav">
-        <div className="p-nav-inner">
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Logo />
-          </Link>
-          <div className="p-nav-links">
-            <a href="#engine">Product</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#founders">For Founders</a>
-            <a href="#creators">For Creators</a>
-          </div>
-          <div className="p-nav-actions">
-            <Link href="/login" className="p-nav-signin">
-              Sign in
+        {/* ---------- NAVIGATION ---------- */}
+        <nav className="p-nav">
+          <div className="p-nav-inner">
+            <Link href="/" style={{ textDecoration: "none" }}>
+              <Logo />
             </Link>
-            <Link href="/login" className="p-btn p-btn-primary p-btn-sm">
-              Build your persona
-            </Link>
+            <div className="p-nav-links">
+              <a href="#philosophy">Philosophy</a>
+              <a href="#identity-engine">Identity Engine</a>
+              <a href="#board-feature">Content Board</a>
+              <a href="#studio-feature">Live AI Studio</a>
+              <a href="#reality-loop">Reality Loop</a>
+              <a href="#faq">FAQ</a>
+            </div>
+            <div className="p-nav-actions">
+              <Link href="/login" className="p-nav-signin">
+                Sign in
+              </Link>
+              <Link href="/login" className="p-btn p-btn-primary p-btn-sm">
+                Build your persona
+              </Link>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      {/* ---------- HERO (pinned, scales away on scroll) ---------- */}
-      <ScrollHero>
-        <div className="p-wrap">
-          <div className="p-hero-grid">
-            <Reveal>
-              <div>
-                <p className="p-eyebrow">Founder Persona Intelligence</p>
-                <TextMotion
-                  as="h1"
-                  className="p-hero-title"
-                  text="Stop making content that sounds like everyone else. Build a persona people remember."
+        {/* ---------- HERO SECTION (PINNED SCROLL HERO) ---------- */}
+        <ScrollHero>
+          <div className="p-wrap">
+            <div className="p-hero-grid">
+              <Reveal>
+                <div>
+                  <div className="p-hero-badge-pill">
+                    <Flame size={14} color="#ff3b30" />
+                    <span>BORN FOR FOUNDER-LED CONTENT</span>
+                  </div>
+                  <TextMotion
+                    as="h1"
+                    className="p-hero-title"
+                    text="Stop trying to be a 35-year-old CEO in a fleece vest. Perform as who you actually are."
+                  />
+                  <TextMotion
+                    as="p"
+                    className="p-hero-sub"
+                    delay={0.3}
+                    text="Turn any moment you enjoy into high-converting content for your startup. PersonaKit analyzes your natural voice, makes filming effortless, and turns radical founder authenticity into unstoppable distribution."
+                  />
+                  <div className="p-hero-ctas">
+                    <Link href="/login" className="p-btn p-btn-primary">
+                      Build My Persona <ArrowRight size={15} />
+                    </Link>
+                    <a href="#studio-feature" className="p-btn p-btn-ghost">
+                      Explore Live Studio
+                    </a>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 24 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--p-text-secondary)" }}>
+                      <CheckCircle2 size={14} color="var(--p-success)" />
+                      <span>Zero corporate jargon</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--p-text-secondary)" }}>
+                      <CheckCircle2 size={14} color="var(--p-success)" />
+                      <span>1-take shot readiness</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--p-text-secondary)" }}>
+                      <CheckCircle2 size={14} color="var(--p-success)" />
+                      <span>Closed reality loop</span>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.15}>
+                <div className="p-hero-visual">
+                  <div className="p-phone-mock">
+                    <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 6, zIndex: 10 }}>
+                      <span className="p-live-pulse" />
+                      <span className="p-mono" style={{ fontSize: 10, color: "#fff", letterSpacing: "0.08em" }}>
+                        STUDIO LIVE · 1080P
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 20,
+                        textAlign: "center",
+                      }}
+                    >
+                      <ScanFace size={54} strokeWidth={1} color="rgba(51, 86, 219, 0.75)" style={{ marginBottom: 12 }} />
+                      <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
+                        DISTANCE: 1.4M (OPTIMAL)
+                      </div>
+                      <div className="p-mono" style={{ fontSize: 10, color: "rgba(245,245,245,0.6)" }}>
+                        EYE CONTACT: 92% · PACE: 142 WPM
+                      </div>
+                    </div>
+                    <div className="p-phone-label">AUTHENTIC FOUNDER TAKE · NO FAKE VIBES</div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <PersonaScorePanel
+                      metrics={[
+                        { label: "CONTRARIANISM", value: 94 },
+                        { label: "AUTHORITY", value: 89 },
+                        { label: "MEMORABILITY", value: 92 },
+                        { label: "HUMOR", value: 76 },
+                        { label: "VULNERABILITY", value: 68 },
+                        { label: "WARMTH", value: 62 },
+                      ]}
+                      identitySignal="Unfiltered Builder"
+                      confidence={94.8}
+                    />
+                    <PredictionCard
+                      metrics={[
+                        { label: "CURIOSITY GAP", value: 95 },
+                        { label: "COMMENT PROBABILITY", value: 89 },
+                        { label: "PROFILE INTENT", value: 91 },
+                        { label: "SHARE POTENTIAL", value: 82 },
+                      ]}
+                    />
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </ScrollHero>
+
+        {/* ---------- MAIN CONTENT SLIDING OVER HERO ---------- */}
+        <main className="p-after-hero" id="main">
+          {/* ---------- STATS PROOF STRIP ---------- */}
+          <section className="p-section-tight" style={{ borderBottom: "1px solid var(--p-border)" }}>
+            <div className="p-wrap">
+              <div className="p-stat-grid">
+                <Reveal delay={0}>
+                  <div className="p-stat-box">
+                    <div className="p-stat-value">94.8%</div>
+                    <div className="p-stat-label">Persona Stability Score</div>
+                  </div>
+                </Reveal>
+                <Reveal delay={0.08}>
+                  <div className="p-stat-box">
+                    <div className="p-stat-value">&lt; 5 min</div>
+                    <div className="p-stat-label">From Idea to Filmed Shot</div>
+                  </div>
+                </Reveal>
+                <Reveal delay={0.16}>
+                  <div className="p-stat-box">
+                    <div className="p-stat-value">3.8x</div>
+                    <div className="p-stat-label">Higher Comment Engagement</div>
+                  </div>
+                </Reveal>
+                <Reveal delay={0.24}>
+                  <div className="p-stat-box">
+                    <div className="p-stat-value">0%</div>
+                    <div className="p-stat-label">Corporate Posturing</div>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- PHILOSOPHY / THE CONTRAST ---------- */}
+          <section className="p-section" id="philosophy">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">The Founder Reality</p>
+                  <TextMotion
+                    as="h2"
+                    text="Your content is boring because you're trying to act like a corporate executive."
+                  />
+                  <TextMotion
+                    as="p"
+                    delay={0.25}
+                    text="Nobody follows a startup because of press releases. They follow the raw, unfiltered obsession of the founder building it. When you try to sound professional, you sound like background noise."
+                  />
+                </div>
+              </Reveal>
+
+              <div className="p-contrast-grid">
+                <Reveal delay={0.05}>
+                  <div className="p-contrast-card-bad">
+                    <div className="p-contrast-header" style={{ color: "#ff453a" }}>
+                      <XCircle size={20} />
+                      <span>The Fleece Vest Trap (What Fails)</span>
+                    </div>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "var(--p-text-secondary)" }}>
+                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "#ff453a", fontWeight: 700 }}>✕</span>
+                        <span><strong>Canned AI Threads:</strong> &ldquo;Here are 10 ChatGPT prompts to scale your B2B SaaS in 2026&rdquo; (Zero differentiation, zero authority).</span>
+                      </li>
+                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "#ff453a", fontWeight: 700 }}>✕</span>
+                        <span><strong>Corporate Cosplay:</strong> Speaking in sterile press-release language because you&apos;re afraid of looking unprofessional.</span>
+                      </li>
+                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "#ff453a", fontWeight: 700 }}>✕</span>
+                        <span><strong>Shooting Paralysis:</strong> Staring into the lens for 45 minutes, stumbling over words, editing for 3 hours, then deleting the draft.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={0.12}>
+                  <div className="p-contrast-card-good">
+                    <div className="p-contrast-header" style={{ color: "var(--p-accent-secondary)" }}>
+                      <CheckCircle2 size={20} />
+                      <span>The PersonaKit Engine (What Converts)</span>
+                    </div>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "var(--p-text-secondary)" }}>
+                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "var(--p-success)", fontWeight: 700 }}>✓</span>
+                        <span><strong>Radical Authenticity:</strong> PersonaKit calibrates your real speech cadence, contrarian beliefs, humor, and debate style.</span>
+                      </li>
+                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "var(--p-success)", fontWeight: 700 }}>✓</span>
+                        <span><strong>Effortless Moments:</strong> Turn 2 AM debugging rants or whiteboard breakthroughs into high-tension content tied directly to your product.</span>
+                      </li>
+                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "var(--p-success)", fontWeight: 700 }}>✓</span>
+                        <span><strong>1-Take AI Studio:</strong> Real-time teleprompter, live drift protection, speech pacing, and visual framing keep you confident on camera.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- FEATURE 1: FOUNDER IDENTITY ENGINE ---------- */}
+          <section className="p-section" id="identity-engine">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Deep Dive 01 · Identity Calibration</p>
+                  <TextMotion as="h2" text="Extracting your voice — never inventing a fake one." />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="Most tools generate generic personality labels. PersonaKit runs a substantive interview into your real origins, beliefs, and debate style. You confirm, reject, or modify every signal."
+                  />
+                </div>
+              </Reveal>
+
+              <div className="p-feature-deep-dive">
+                <Reveal delay={0.05}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                    <div className="p-card">
+                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <BrainCircuit size={14} color="var(--p-accent-secondary)" />
+                        <span>SELF-KNOWLEDGE SCORE (SKS)</span>
+                      </div>
+                      <h3 style={{ fontSize: 18, margin: "0 0 8px", fontWeight: 600 }}>
+                        Calibrated Clarity: 92 / 100
+                      </h3>
+                      <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
+                        Specifics beat polish. PersonaKit scores your core beliefs and ensures your content is anchored in verifiable experience, not empty buzzwords.
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <span className="p-badge" style={{ color: "var(--p-success)", borderColor: "rgba(168,192,240,0.3)" }}>
+                          ✓ Contrarian Stance Confirmed
+                        </span>
+                        <span className="p-badge" style={{ color: "var(--p-accent-secondary)", borderColor: "rgba(51,86,219,0.3)" }}>
+                          ✓ Dry Technical Humor
+                        </span>
+                        <span className="p-badge" style={{ color: "var(--p-text)", borderColor: "rgba(255,255,255,0.2)" }}>
+                          ✓ High Authority Pacing
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-card">
+                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <UserCheck size={14} color="var(--p-accent-secondary)" />
+                        <span>HUMAN CONFIRMATION WORKFLOW</span>
+                      </div>
+                      <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: 0 }}>
+                        Every extracted trait comes with a &ldquo;Yes / No / Modify&rdquo; control. You have total veto power over your persona model before a single script is ever drafted.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={0.15}>
+                  <MetricCard
+                    metrics={[
+                      { label: "CONTRARIANISM", value: 94 },
+                      { label: "AUTHORITY", value: 89 },
+                      { label: "MEMORABILITY", value: 92 },
+                      { label: "WARMTH", value: 62 },
+                      { label: "VULNERABILITY", value: 68 },
+                      { label: "HUMOR", value: 76 },
+                      { label: "AGGRESSION", value: 45 },
+                      { label: "PRODUCT RELEVANCE", value: 96 },
+                    ]}
+                  />
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- FEATURE 2: 30-DAY CONTENT BOARD ---------- */}
+          <section className="p-section" id="board-feature">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Deep Dive 02 · The Content Board</p>
+                  <TextMotion as="h2" text="From casual thoughts to 30 days of high-tension content." />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="A visual, Duolingo-style roadmap that maps your founder moments into structured content milestones. Every day produces ready-to-use artifacts tuned to your exact voice."
+                  />
+                </div>
+              </Reveal>
+
+              <WorkflowSteps
+                steps={[
+                  {
+                    index: "01",
+                    title: "Moment Capture & Crafting",
+                    description: "Jot down a quick thought or ask the AI to craft your 30-day roadmap. PersonaKit asks clarifying questions to pin down your narrative angle.",
+                  },
+                  {
+                    index: "02",
+                    title: "Redline Fluff Stripping",
+                    description: "Our Redline engine removes corporate jargon, predictable hooks, and generic phrasing, replacing them with sharp curiosity gaps and tension.",
+                  },
+                  {
+                    index: "03",
+                    title: "Multi-Artifact Generation",
+                    description: "Each day delivers 4 distinct assets: Full Spoken Script, Visual Scene Direction, Edit Styling Presets, and Strategic Growth Notes.",
+                  },
+                  {
+                    index: "04",
+                    title: "Organic Product Anchoring",
+                    description: "Naturally weaves your company's value proposition into the narrative without turning your video into a sleazy sales pitch.",
+                  },
+                ]}
+              />
+
+              <Reveal delay={0.15}>
+                <div style={{ marginTop: 40 }}>
+                  <FlowDiagram
+                    steps={[
+                      ["FOUNDER MOMENT", "CORE BELIEF", "COMPANY CONTEXT"],
+                      "REDLINE SCRIPT ENGINE",
+                      "TENSION & CURIOSITY GAP",
+                      "READY-TO-SHOOT SHOT LIST",
+                    ]}
+                    accent
+                  />
+                </div>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ---------- FEATURE 3: THE LIVE AI VIDEO STUDIO ---------- */}
+          <section className="p-section" id="studio-feature">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Deep Dive 03 · The Live AI Studio</p>
+                  <TextMotion as="h2" text="Prepare for shots easily. Film in one clean take." />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="The hardest part of founder-led content is staring into a lens and freezing up. PersonaKit's Live Studio gives you real-time visual coaching, teleprompter pacing, and live drift protection."
+                  />
+                </div>
+              </Reveal>
+
+              <div className="p-feature-deep-dive">
+                <Reveal delay={0.05}>
+                  <div className="p-teleprompter-box">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, borderBottom: "1px solid var(--p-border)", paddingBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--p-accent-secondary)" }}>
+                        <Video size={14} />
+                        <span>LIVE SCRIPT TELEPROMPTER</span>
+                      </div>
+                      <span className="p-badge" style={{ color: "#30d158", borderColor: "rgba(48,209,88,0.3)" }}>
+                        NODE 02 / 04 ACTIVE
+                      </span>
+                    </div>
+                    <p style={{ margin: "0 0 12px", color: "var(--p-text-secondary)" }}>
+                      [HOOK] Most founders waste 20 hours a week building features nobody asked for...
+                    </p>
+                    <p className="p-teleprompter-highlight" style={{ margin: "0 0 12px" }}>
+                      [TENSION] Here is the brutal mistake we made last month that cost us $40,000 before we realized our onboarding was completely broken.
+                    </p>
+                    <p style={{ margin: 0, color: "rgba(245,245,245,0.4)" }}>
+                      [PROOF & RESOLUTION] We tore down the entire flow and rebuilt it around raw user intent...
+                    </p>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={0.15}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div className="p-card">
+                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Camera size={13} />
+                        <span>LIVE COMPUTER VISION FRAMING</span>
+                      </div>
+                      <SpecRow label="Camera Distance" value="1.4m (Optimal)" />
+                      <SpecRow label="Framing Height" value="Eye-Level" />
+                      <SpecRow label="Eye Contact Score" value="94% Steady" />
+                    </div>
+
+                    <div className="p-card">
+                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Mic size={13} />
+                        <span>SPEECH & PACE DIAGNOSTICS</span>
+                      </div>
+                      <SpecRow label="Speaking Rate" value="142 WPM (Sweet Spot)" />
+                      <SpecRow label="Filler Word Rate" value="0.4 / min (Low)" />
+                      <SpecRow label="Vocal Variation" value="Dynamic / Engaging" />
+                    </div>
+
+                    <div className="p-card">
+                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <AlertCircle size={13} color="var(--p-accent-secondary)" />
+                        <span>LIVE DRIFT PROTECTION</span>
+                      </div>
+                      <p style={{ fontSize: 13, color: "var(--p-text-secondary)", lineHeight: 1.5, margin: 0 }}>
+                        If you start rambling off-topic during recording, a subtle coaching toast gently guides you back to your hook before you ruin the take.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- FEATURE 4: COMPANY CONTEXT & PRODUCT GUARDRAILS ---------- */}
+          <section className="p-section" id="company-feature">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Deep Dive 04 · Zero-BS Guardrails</p>
+                  <TextMotion as="h2" text="Turn attention into product pipeline with zero cringe." />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="Your content shouldn't feel like a disconnected comedy sketch or a boring sales pitch. PersonaKit anchors your personal stories into your company's verified value proposition."
+                  />
+                </div>
+              </Reveal>
+
+              <div className="p-grid-2">
+                <Reveal delay={0.05}>
+                  <div className="p-card">
+                    <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <ShieldCheck size={14} color="var(--p-success)" />
+                      <span>ACCURATE CLAIMS GUARDRAIL</span>
+                    </div>
+                    <h3 style={{ fontSize: 17, margin: "0 0 10px", fontWeight: 600 }}>
+                      Compliance & Truth Alignment
+                    </h3>
+                    <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
+                      Store your company&apos;s verified capabilities and explicit false claims to avoid. PersonaKit guarantees your scripts never overpromise or make compliance mistakes.
+                    </p>
+                    <div style={{ padding: "10px 14px", background: "rgba(48, 209, 88, 0.08)", border: "1px solid rgba(48, 209, 88, 0.2)", borderRadius: 6, fontSize: 12.5, color: "var(--p-text)" }}>
+                      ✓ &ldquo;All face tracking is 100% in-memory and client-side.&rdquo;
+                    </div>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={0.12}>
+                  <div className="p-card">
+                    <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <Target size={14} color="var(--p-accent-secondary)" />
+                      <span>FOUNDER DISTRIBUTION VALUE</span>
+                    </div>
+                    <h3 style={{ fontSize: 17, margin: "0 0 10px", fontWeight: 600 }}>
+                      Organic Inbound Engine
+                    </h3>
+                    <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
+                      Turn viewers into trial signups, enterprise demo requests, and investor inbounds by making your technical perspective the definitive industry standard.
+                    </p>
+                    <div style={{ padding: "10px 14px", background: "rgba(51, 86, 219, 0.1)", border: "1px solid rgba(51, 86, 219, 0.25)", borderRadius: 6, fontSize: 12.5, color: "var(--p-accent-secondary)" }}>
+                      → 3.2x Higher conversion from founder content vs company ads
+                    </div>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- FEATURE 5: THE CLOSED REALITY FEEDBACK LOOP ---------- */}
+          <section className="p-section" id="reality-loop">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Deep Dive 05 · The Closed Reality Loop</p>
+                  <TextMotion as="h2" text="Hypothesis vs reality: a model that gets smarter every time you post." />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="Every post you create tests a hypothesis. Did high contrarianism generate comments? Did vulnerability drive profile visits? Log real outcomes to refine your persona vector continuously."
+                  />
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <PerformanceChart
+                  rows={[
+                    { label: "Curiosity Index", predicted: 95, actual: 92 },
+                    { label: "Authority Signal", predicted: 89, actual: 86 },
+                    { label: "Comment Depth", predicted: 88, actual: 94 },
+                    { label: "Profile Visit Intent", predicted: 91, actual: 90 },
+                    { label: "Inbound Pipeline", predicted: 82, actual: 88 },
+                  ]}
                 />
+              </Reveal>
+
+              <Reveal delay={0.15}>
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
+                  <FlowDiagram
+                    steps={["PREDICTED RESPONSE", "POST TO SOCIAL", "LOG ACTUAL OUTCOMES", "RECALIBRATE MODEL"]}
+                    accent
+                  />
+                </div>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ---------- PERSONA EVOLUTION TIMELINE ---------- */}
+          <section className="p-section">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head" style={{ margin: "0 auto 56px", textAlign: "center" }}>
+                  <p className="p-eyebrow">Long-Term Compounding</p>
+                  <TextMotion as="h2" text="Your founder persona is an evolving asset." />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="Watch your identity clarity, memorability, and organic distribution scale as your audience connects with who you actually are."
+                  />
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <PersonaTimeline
+                  points={[
+                    {
+                      label: "WEEK 01 · CALIBRATION",
+                      metrics: [
+                        { label: "Contrarianism", value: 74 },
+                        { label: "Authority", value: 68 },
+                        { label: "Memorability", value: 70 },
+                      ],
+                    },
+                    {
+                      label: "WEEK 04 · TRACTION",
+                      metrics: [
+                        { label: "Contrarianism", value: 88 },
+                        { label: "Authority", value: 82 },
+                        { label: "Memorability", value: 86 },
+                      ],
+                    },
+                    {
+                      label: "WEEK 08 · AUTHORITY",
+                      metrics: [
+                        { label: "Contrarianism", value: 94 },
+                        { label: "Authority", value: 91 },
+                        { label: "Memorability", value: 95 },
+                      ],
+                    },
+                  ]}
+                />
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ---------- COMPARISON TABLE ---------- */}
+          <section className="p-section">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Comparison</p>
+                  <TextMotion as="h2" text="Why PersonaKit is in a category of its own." />
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <div className="p-table-wrap">
+                  <table className="p-table">
+                    <thead>
+                      <tr>
+                        <th>Feature</th>
+                        <th>Generic AI Prompts</th>
+                        <th>Ghostwriting Agency</th>
+                        <th>PersonaKit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ComparisonRow3 label="Authentic Voice Calibration" c1="cross" c2="limited" c3="check" />
+                      <ComparisonRow3 label="Real-Time Teleprompter & Filming Coach" c1="cross" c2="cross" c3="check" />
+                      <ComparisonRow3 label="Computer Vision Eye & Face Framing" c1="cross" c2="cross" c3="check" />
+                      <ComparisonRow3 label="Live Off-Topic Drift Protection" c1="cross" c2="cross" c3="check" />
+                      <ComparisonRow3 label="Accurate Product Claims Guardrail" c1="cross" c2="limited" c3="check" />
+                      <ComparisonRow3 label="Closed Reality Feedback Loop" c1="cross" c2="cross" c3="check" />
+                      <ComparisonRow3 label="Zero Biometric Video Storage (Privacy)" c1="limited" c2="cross" c3="check" />
+                    </tbody>
+                  </table>
+                </div>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ---------- FAQ ---------- */}
+          <section className="p-section" id="faq">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-section-head">
+                  <p className="p-eyebrow">Common Questions</p>
+                  <TextMotion as="h2" text="Everything you need to know." />
+                </div>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <div className="p-faq">
+                  {FAQ_ITEMS.map(({ q, a }) => (
+                    <details key={q} className="p-faq-item">
+                      <summary>{q}</summary>
+                      <p>{a}</p>
+                    </details>
+                  ))}
+                </div>
+              </Reveal>
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+              />
+            </div>
+          </section>
+
+          {/* ---------- FINAL CTA ---------- */}
+          <section className="p-final">
+            <div className="p-wrap">
+              <Reveal>
+                <div className="p-hero-badge-pill" style={{ marginBottom: 16 }}>
+                  <Sparkles size={14} color="var(--p-accent-secondary)" />
+                  <span>EARLY ACCESS OPEN</span>
+                </div>
+                <TextMotion as="h2" text="Be recognizable before you become famous." />
                 <TextMotion
                   as="p"
-                  className="p-hero-sub"
-                  delay={0.35}
-                  text="Your personality is already part of your marketing. We turn it into something you can measure, test, and improve."
+                  delay={0.25}
+                  text="Build the version of yourself people remember. Turn authentic thoughts into distribution today."
                 />
-                <div className="p-hero-ctas">
+                <div className="p-final-actions">
                   <Link href="/login" className="p-btn p-btn-primary">
-                    Build my persona
+                    Build My Persona <ArrowRight size={15} />
                   </Link>
                   <a href="#how-it-works" className="p-btn p-btn-ghost">
-                    See how it works <ArrowRight size={15} />
+                    Explore Architecture
                   </a>
                 </div>
-              </div>
-            </Reveal>
-
-            <Reveal delay={0.15}>
-              <div className="p-hero-visual">
-                <div className="p-phone-mock">
-                  <div className="p-phone-label">RAW TAKE · NO OVERLAY BAKED IN</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <PersonaScorePanel
-                    metrics={[
-                      { label: "AUTHORITY", value: 84 },
-                      { label: "CONTRARIANISM", value: 91 },
-                      { label: "WARMTH", value: 28 },
-                      { label: "MEMORABILITY", value: 93 },
-                      { label: "VULNERABILITY", value: 34 },
-                      { label: "HUMOR", value: 71 },
-                    ]}
-                    identitySignal="Strategic Contrarian"
-                    confidence={91.4}
-                  />
-                  <PredictionCard
-                    metrics={[
-                      { label: "CURIOSITY", value: 92 },
-                      { label: "COMMENT POTENTIAL", value: 86 },
-                      { label: "SHARE POTENTIAL", value: 74 },
-                      { label: "PROFILE INTENT", value: 81 },
-                    ]}
-                  />
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </ScrollHero>
-
-      {/* ---------- EVERYTHING AFTER THE HERO SLIDES OVER IT ---------- */}
-      <main className="p-after-hero" id="main">
-      {/* ---------- PROBLEM ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion
-                as="h2"
-                text="Your content isn't boring because your product is boring."
-              />
-              <TextMotion
-                as="p"
-                delay={0.25}
-                text="You're probably just presenting yourself like everyone else."
-              />
-            </div>
-          </Reveal>
-          <div className="p-grid-3">
-            <Reveal delay={0}>
-              <div className="p-card p-problem-card">
-                <span className="p-tag">THE TECH FOUNDER</span>
-                <p style={{ margin: 0, fontSize: 15, color: "var(--p-text-secondary)", lineHeight: 1.6 }}>
-                  Brilliant product.
-                  <br />
-                  Zero personality.
-                  <br />
-                  Terrified of looking stupid on camera.
-                </p>
-              </div>
-            </Reveal>
-            <Reveal delay={0.08}>
-              <div className="p-card p-problem-card">
-                <span className="p-tag">THE PERFECTIONIST</span>
-                <p style={{ margin: 0, fontSize: 15, color: "var(--p-text-secondary)", lineHeight: 1.6 }}>
-                  Three hours editing a 30-second video.
-                  <br />
-                  Twelve views.
-                  <br />
-                  Never posts again.
-                </p>
-              </div>
-            </Reveal>
-            <Reveal delay={0.16}>
-              <div className="p-card p-problem-card">
-                <span className="p-tag">THE CORPORATE FOUNDER</span>
-                <p style={{ margin: 0, fontSize: 15, color: "var(--p-text-secondary)", lineHeight: 1.6 }}>
-                  &ldquo;We&apos;re excited to announce&hellip;&rdquo;
-                  <br />
-                  <br />
-                  Nobody was excited.
-                </p>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- CORE IDEA ---------- */}
-      <section className="p-section" id="how-it-works">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion
-                as="h2"
-                text="Personality is not a vibe. It is a variable."
-              />
-              <TextMotion
-                as="p"
-                delay={0.25}
-                text="Most creator tools optimize captions, hashtags, posting schedules, thumbnails. This system studies identity, personality signals, tone, authority, warmth, contrarianism, vulnerability, humor, aggression, curiosity, memorability, and visual behavior — then connects those variables to actual content performance."
-              />
-            </div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <FlowDiagram
-              steps={[
-                ["PERSONA", "CONTENT", "AUDIENCE", "PLATFORM"],
-                "PREDICTED RESPONSE",
-                "REAL RESPONSE",
-                "MODEL UPDATE",
-              ]}
-              accent
-            />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------- PERSONA ENGINE ---------- */}
-      <section className="p-section" id="engine">
-        <div className="p-wrap">
-          <div className="p-hero-grid">
-            <Reveal>
-              <div>
-                <TextMotion
-                  as="h2"
-                  className="p-engine-title"
-                  text="Know exactly what you're projecting."
-                />
-                <p style={{ fontSize: 17, color: "var(--p-text-secondary)", lineHeight: 1.6, marginBottom: 20 }}>
-                  Upload your profile, previous posts, scripts, videos, images, bio, and target
-                  audience. The system generates a measurable persona profile.
-                </p>
-                <span className="p-badge">MODEL ESTIMATE · NOT A PSYCHOLOGICAL DIAGNOSIS</span>
-              </div>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <MetricCard
-                metrics={[
-                  { label: "AUTHORITY", value: 84 },
-                  { label: "CONTRARIANISM", value: 91 },
-                  { label: "WARMTH", value: 28 },
-                  { label: "HUMOR", value: 71 },
-                  { label: "VULNERABILITY", value: 34 },
-                  { label: "AGGRESSION", value: 63 },
-                  { label: "MEMORABILITY", value: 93 },
-                  { label: "TREND ALIGNMENT", value: 77 },
-                ]}
-              />
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- CONTENT LAB ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion as="h2" text="Don't ask AI to write another script." />
-              <TextMotion
-                as="p"
-                delay={0.25}
-                text="Ask it what version of you should appear in the script."
-              />
-            </div>
-          </Reveal>
-          <WorkflowSteps
-            steps={[
-              { index: "01", title: "Upload", description: "Upload an idea, draft, or existing video." },
-              {
-                index: "02",
-                title: "Analyze",
-                description: "Persona engine analyzes how the content currently communicates identity.",
-              },
-              {
-                index: "03",
-                title: "Identify",
-                description:
-                  "System identifies weak identity signals, generic phrasing, predictable structure, missing tension, weak curiosity, inconsistent persona behavior.",
-              },
-              {
-                index: "04",
-                title: "Regenerate",
-                description: "Generate a revised content concept — not just hook, body, CTA.",
-              },
-            ]}
-          />
-          <Reveal delay={0.15}>
-            <div style={{ marginTop: 56 }}>
-              <FlowDiagram
-                steps={[
-                  "PERSONA SIGNAL",
-                  "HOOK",
-                  "TENSION",
-                  "PROOF",
-                  "IDENTITY REINFORCEMENT",
-                  "CURIOSITY GAP",
-                  "CTA",
-                ]}
-                accent
-              />
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------- VISUAL DIRECTOR ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion as="h2" text="Your persona doesn't stop at words." />
-              <TextMotion
-                as="p"
-                delay={0.25}
-                text="The system generates a visual direction for filming."
-              />
-            </div>
-          </Reveal>
-          <div className="p-hero-grid">
-            <Reveal delay={0.05}>
-              <div className="p-phone-mock" style={{ maxWidth: 320 }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <ScanFace size={64} strokeWidth={0.9} color="rgba(255,59,48,0.55)" />
-                </div>
-                <div className="p-phone-label">FACIAL TRACKING · ILLUSTRATIVE</div>
-              </div>
-            </Reveal>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <Reveal delay={0.1}>
-                <div className="p-card">
-                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Camera size={13} /> CAMERA
-                  </div>
-                  <SpecRow label="Distance" value="1.4m" />
-                  <SpecRow label="Angle" value="eye-level" />
-                  <SpecRow label="Movement" value="low" />
-                </div>
-              </Reveal>
-              <Reveal delay={0.15}>
-                <div className="p-card">
-                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <ScanFace size={13} /> FACE
-                  </div>
-                  <SpecRow label="Eye contact" value="high" />
-                  <SpecRow label="Expression" value="restrained" />
-                  <SpecRow label="Smile frequency" value="low" />
-                </div>
-              </Reveal>
-              <Reveal delay={0.2}>
-                <div className="p-card">
-                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Hand size={13} /> GESTURE
-                  </div>
-                  <SpecRow label="Hand movement" value="medium" />
-                  <SpecRow label="Pause frequency" value="high" />
-                </div>
-              </Reveal>
-              <Reveal delay={0.25}>
-                <div className="p-card">
-                  <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Scissors size={13} /> EDITING
-                  </div>
-                  <SpecRow label="Cut frequency" value="1.8/sec" />
-                  <MetricRow label="Text density" value={64} />
-                  <MetricRow label="Visual novelty" value={72} />
-                </div>
-              </Reveal>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- PREDICTION ENGINE ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion as="h2" text="Before you post, make a hypothesis." />
-            </div>
-          </Reveal>
-          <div className="p-hero-grid">
-            <Reveal delay={0.05}>
-              <div className="p-card">
-                <div
-                  className="p-mono"
-                  style={{ fontSize: 11, color: "var(--p-text-secondary)", letterSpacing: "0.08em", marginBottom: 16 }}
-                >
-                  CONTENT PREDICTION
-                </div>
-                <MetricRow label="Persona alignment" value={91} />
-                <MetricRow label="Hook strength" value={87} />
-                <MetricRow label="Curiosity" value={93} />
-                <MetricRow label="Identity clarity" value={89} />
-                <MetricRow label="Audience tension" value={81} />
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--p-border)" }}>
-                  <PredictedTag label="Comment probability" value="HIGH" />
-                  <PredictedTag label="Profile intent" value="HIGH" />
-                  <PredictedTag label="Share potential" value="MEDIUM" />
-                </div>
-                <p style={{ fontSize: 12, color: "var(--p-text-secondary)", marginTop: 18, marginBottom: 0 }}>
-                  Predictions are estimates, not guarantees. Social algorithms remain probabilistic
-                  systems.
-                </p>
-              </div>
-            </Reveal>
-            <Reveal delay={0.15}>
-              <FlowDiagram steps={["PREDICTED", "POST", "ACTUAL PERFORMANCE", "LEARNING"]} />
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- FEEDBACK LOOP ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion
-                as="h2"
-                text="Every post teaches the system who you actually are online."
-              />
-              <TextMotion
-                as="p"
-                delay={0.25}
-                text="Connect a social account or manually import performance data — views, likes, comments, shares, saves, profile visits, followers gained, watch time, retention, website clicks."
-              />
-            </div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <PerformanceChart
-              rows={[
-                { label: "Curiosity", predicted: 93, actual: 88 },
-                { label: "Authority", predicted: 84, actual: 79 },
-                { label: "Comments", predicted: 86, actual: 91 },
-                { label: "Shares", predicted: 74, actual: 63 },
-                { label: "Profile intent", predicted: 81, actual: 87 },
-              ]}
-            />
-          </Reveal>
-          <Reveal delay={0.2}>
-            <p
-              className="p-mono"
-              style={{ textAlign: "center", fontSize: 13, color: "var(--p-text-secondary)", marginTop: 28 }}
-            >
-              The next recommendation is based on what actually happened.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------- PERSONA EVOLVES ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head" style={{ margin: "0 auto 56px", textAlign: "center" }}>
-              <TextMotion as="h2" text="Your persona is not a document." />
-            </div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <PersonaTimeline
-              points={[
-                {
-                  label: "WEEK 01",
-                  metrics: [
-                    { label: "Contrarianism", value: 72 },
-                    { label: "Authority", value: 61 },
-                    { label: "Memorability", value: 68 },
-                  ],
-                },
-                {
-                  label: "WEEK 04",
-                  metrics: [
-                    { label: "Contrarianism", value: 84 },
-                    { label: "Authority", value: 76 },
-                    { label: "Memorability", value: 82 },
-                  ],
-                },
-                {
-                  label: "WEEK 08",
-                  metrics: [
-                    { label: "Contrarianism", value: 89 },
-                    { label: "Authority", value: 83 },
-                    { label: "Memorability", value: 91 },
-                  ],
-                },
-              ]}
-            />
-          </Reveal>
-          <p
-            className="p-mono"
-            style={{ textAlign: "center", fontSize: 13, color: "var(--p-text-secondary)", marginTop: 32 }}
-          >
-            Your model changes as your audience responds.
-          </p>
-        </div>
-      </section>
-
-      {/* ---------- FOUNDERS / CREATORS ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <div className="p-grid-2">
-            <Reveal>
-              <div className="p-card p-split-card" id="founders">
-                <span className="p-eyebrow" style={{ marginBottom: 12 }}>
-                  For Founders
+                <span className="p-mono" style={{ fontSize: 12, color: "var(--p-text-secondary)" }}>
+                  PERSONAKIT ENGINE v1.0 · FOUNDER-LED DISTRIBUTION
                 </span>
-                <h3 style={{ fontSize: 24, margin: "0 0 8px", fontWeight: 600 }}>
-                  Turn your personality into distribution.
-                </h3>
-                <ul>
-                  <li>Founder persona</li>
-                  <li>Positioning</li>
-                  <li>Content experiments</li>
-                  <li>Audience response</li>
-                  <li>Personal brand analytics</li>
-                  <li>Founder-led growth</li>
-                </ul>
-                <Link href="/login" className="p-btn p-btn-primary">
-                  Build my founder persona
-                </Link>
-                <div className="p-split-card-image">
-                  <img
-                    src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=400&fit=crop"
-                    alt="Founder persona illustration"
-                  />
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ---------- GIANT SCROLL WORDMARK ---------- */}
+          <div className="p-wordmark-band" aria-hidden>
+            <FooterWordmark text="PERSONA" />
+            <div className="p-wordmark-arch" />
+          </div>
+
+          {/* ---------- FOOTER ---------- */}
+          <footer className="p-footer">
+            <div className="p-wrap">
+              <div className="p-footer-top">
+                <Logo size={24} />
+                <div className="p-footer-links">
+                  <a href="#identity-engine">Identity Engine</a>
+                  <a href="#board-feature">Content Board</a>
+                  <a href="#studio-feature">Live AI Studio</a>
+                  <a href="#company-feature">Company Context</a>
+                  <a href="#reality-loop">Reality Loop</a>
+                  <a href="#faq">FAQ</a>
+                  <Link href="/privacy">Privacy</Link>
+                  <Link href="/terms">Terms</Link>
                 </div>
               </div>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <div className="p-card p-split-card" id="creators">
-                <span className="p-eyebrow" style={{ marginBottom: 12 }}>
-                  For Creators / Marketers
-                </span>
-                <h3 style={{ fontSize: 24, margin: "0 0 8px", fontWeight: 600 }}>
-                  Understand which identity signals actually move your audience.
-                </h3>
-                <ul>
-                  <li>Persona analysis</li>
-                  <li>Content analysis</li>
-                  <li>Visual direction</li>
-                  <li>Performance prediction</li>
-                  <li>Feedback loop</li>
-                  <li>Experimentation</li>
-                </ul>
-                <Link href="/login" className="p-btn p-btn-ghost">
-                  Analyze my content
-                </Link>
-                <div className="p-split-card-image">
-                  <img
-                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=400&fit=crop"
-                    alt="Creator analytics illustration"
-                  />
-                </div>
+              <div className="p-footer-bottom">
+                Built for founders and creators who refuse to sound like everyone else.
               </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- DIFFERENCE ---------- */}
-      <section className="p-section">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion as="h2" text="Not another AI writer." />
             </div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <div className="p-table-wrap">
-              <table className="p-table">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Generic AI</th>
-                    <th>Persona</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <ComparisonRow label="Writes scripts" left="check" right="check" />
-                  <ComparisonRow label="Knows your persona" left="limited" right="check" />
-                  <ComparisonRow label="Measures identity signals" left="cross" right="check" />
-                  <ComparisonRow label="Predicts response" left="limited" right="check" />
-                  <ComparisonRow label="Tracks actual results" left="limited" right="check" />
-                  <ComparisonRow label="Learns from your posts" left="cross" right="check" />
-                  <ComparisonRow label="Builds a persistent persona model" left="cross" right="check" />
-                  <ComparisonRow label="Connects personality to performance" left="cross" right="check" />
-                </tbody>
-              </table>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------- FAQ ---------- */}
-      <section className="p-section" id="faq">
-        <div className="p-wrap">
-          <Reveal>
-            <div className="p-section-head">
-              <TextMotion as="h2" text="Questions, answered." />
-            </div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <div className="p-faq">
-              {FAQ_ITEMS.map(({ q, a }) => (
-                <details key={q} className="p-faq-item">
-                  <summary>{q}</summary>
-                  <p>{a}</p>
-                </details>
-              ))}
-            </div>
-          </Reveal>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-          />
-        </div>
-      </section>
-
-      {/* ---------- FINAL CTA ---------- */}
-      <section className="p-final">
-        <div className="p-wrap">
-          <Reveal>
-            <TextMotion as="h2" text="Be recognizable before you become famous." />
-            <TextMotion as="p" delay={0.25} text="Build the version of yourself people remember." />
-            <div className="p-final-actions">
-              <Link href="/login" className="p-btn p-btn-primary">
-                Build my persona
-              </Link>
-              <a href="#how-it-works" className="p-btn p-btn-ghost">
-                Explore the system <ArrowRight size={15} />
-              </a>
-            </div>
-            <span className="p-mono" style={{ fontSize: 12, color: "var(--p-text-secondary)" }}>
-              PERSONA ENGINE v0.1
-            </span>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------- GIANT SCROLL WORDMARK ---------- */}
-      <div className="p-wordmark-band" aria-hidden>
-        <FooterWordmark text="PERSONA" />
-        <div className="p-wordmark-arch" />
-      </div>
-
-
-      {/* ---------- FOOTER ---------- */}
-      <footer className="p-footer">
-        <div className="p-wrap">
-          <div className="p-footer-top">
-            <Logo size={24} />
-            <div className="p-footer-links">
-              <a href="#engine">Product</a>
-              <a href="#founders">For Founders</a>
-            <a href="#creators">For Creators</a>
-            <a href="#faq">FAQ</a>
-              <a href="#how-it-works">Research</a>
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/terms">Terms</Link>
-            </div>
-          </div>
-          <div className="p-footer-bottom">Built for people who refuse to sound like everyone else.</div>
-        </div>
-      </footer>
-      </main>
+          </footer>
+        </main>
       </div>
       <PageTracker />
       <FeedbackWidget />
@@ -707,42 +799,35 @@ function SpecRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PredictedTag({ label, value }: { label: string; value: string }) {
-  const color = value === "HIGH" ? "var(--p-success)" : value === "MEDIUM" ? "var(--p-accent-secondary)" : "var(--p-text-secondary)";
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}>
-      <span style={{ color: "var(--p-text-secondary)" }}>{label}</span>
-      <span className="p-mono" style={{ color }}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function ComparisonRow({
+function ComparisonRow3({
   label,
-  left,
-  right,
+  c1,
+  c2,
+  c3,
 }: {
   label: string;
-  left: "check" | "cross" | "limited";
-  right: "check" | "cross" | "limited";
+  c1: "check" | "cross" | "limited";
+  c2: "check" | "cross" | "limited";
+  c3: "check" | "cross" | "limited";
 }) {
   return (
     <tr>
-      <td>{label}</td>
+      <td style={{ fontWeight: 500 }}>{label}</td>
       <td>
-        <ComparisonMark kind={left} />
+        <ComparisonMark kind={c1} />
       </td>
       <td>
-        <ComparisonMark kind={right} />
+        <ComparisonMark kind={c2} />
+      </td>
+      <td>
+        <ComparisonMark kind={c3} />
       </td>
     </tr>
   );
 }
 
 function ComparisonMark({ kind }: { kind: "check" | "cross" | "limited" }) {
-  if (kind === "check") return <span className="p-check">✓</span>;
+  if (kind === "check") return <span className="p-check" style={{ fontWeight: 700 }}>✓</span>;
   if (kind === "cross") return <span className="p-cross">✕</span>;
   return <span className="p-limited">limited</span>;
 }

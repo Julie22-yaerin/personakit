@@ -31,33 +31,33 @@ const Section2: React.FC<SectionProps> = ({ scrollYProgress }) => {
   return (
     <motion.section
       style={{ scale, rotate }}
-      className='relative h-screen bg-gradient-to-t to-[#1a1919] from-[#06060e] text-white'
+      className='relative h-screen bg-gradient-to-t to-[#1a1919] from-[#06060e] text-white '
     >
       <div className='absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:54px_54px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]'></div>
-      <article className='container mx-auto relative z-10'>
+      <article className='container mx-auto relative z-10 px-4'>
         <h1 className='text-6xl leading-[100%] py-10 font-semibold tracking-tight'>
           Images That doesn&apos;t Make any sense <br /> but still in this section
         </h1>
         <div className='grid grid-cols-4 gap-4'>
           <img
             src='https://images.unsplash.com/photo-1717893777838-4e222311630b?w=1200&auto=format&fit=crop'
-            alt='Abstract gradient light trails in blue and violet'
+            alt='Founder content abstract visual'
             className='object-cover w-full rounded-md h-full'
           />
           <img
             src='https://images.unsplash.com/photo-1717618389115-88db6d7d8f77?w=500&auto=format&fit=crop'
-            alt='Soft-focus studio lighting setup against a dark backdrop'
+            alt='Studio recording lighting'
             className='object-cover w-full rounded-md'
           />
           <img
             src='https://images.unsplash.com/photo-1717588604557-55b2888f59a6?w=500&auto=format&fit=crop'
-            alt='Close-up of a camera lens reflecting colored light'
+            alt='Filming camera setup'
             className='object-cover w-full rounded-md h-full'
           />
           <img
             src='https://images.unsplash.com/photo-1713417338603-1b6b72fcade2?w=500&auto=format&fit=crop'
-            alt='Minimal desk workspace with a monitor glowing in a dark room'
-            className='object-cover w-full rounded-md'
+            alt='Authentic creator desk'
+            className='object-cover w-full rounded-md h-full'
           />
         </div>
       </article>
@@ -73,16 +73,18 @@ const Component = forwardRef<HTMLElement>((props, ref) => {
   });
 
   return (
-    <main ref={ref} className='relative h-[200vh] bg-black'>
-      <Section1 scrollYProgress={scrollYProgress} />
-      <Section2 scrollYProgress={scrollYProgress} />
-      <footer className='group bg-[#06060e]'>
-        <h1 className='text-[16vw] translate-y-20 leading-[100%] uppercase font-semibold text-center bg-gradient-to-r from-gray-400 to-gray-800 bg-clip-text text-transparent transition-all ease-linear'>
-          ui-layout
-        </h1>
-        <div className='bg-black text-white h-40 relative z-10 grid place-content-center text-2xl rounded-tr-full rounded-tl-full'></div>
-      </footer>
-    </main>
+    <>
+      <main ref={container} className='relative h-[200vh] bg-black'>
+        <Section1 scrollYProgress={scrollYProgress} />
+        <Section2 scrollYProgress={scrollYProgress} />
+        <footer className='group bg-[#06060e]'>
+          <h1 className='text-[16vw] translate-y-20 leading-[100%] uppercase font-semibold text-center bg-gradient-to-r from-gray-400 to-gray-800 bg-clip-text text-transparent transition-all ease-linear'>
+            ui-layout
+          </h1>
+          <div className='bg-black text-white h-40 relative z-10 grid place-content-center text-2xl rounded-tr-full rounded-tl-full'></div>
+        </footer>
+      </main>
+    </>
   );
 });
 
