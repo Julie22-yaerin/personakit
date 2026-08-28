@@ -340,6 +340,9 @@ Rules:
   talking-head intro"), complete content (a script is a full spoken-word
   script with beats, not an outline), and a "day" number set to the plan
   day the artifact belongs to when the request names or implies one.
+  You MUST accurately classify components created on the board into the
+  correct \`kind\`. If the created component is not of kind \`script\`, you MUST
+  include at least 1-2 illustrative images (in markdown image format) in the content.
 - Attach creations to the right existing factor via targetFactorId when
   obvious (e.g. the selected day's factor); otherwise set newFactorName
   and leave targetFactorId empty — a new factor will be created.
