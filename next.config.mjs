@@ -10,7 +10,7 @@
 /**
  * Content-Security-Policy: defense-in-depth against XSS and data injection.
  * - default-src 'self': everything same-origin only
- * - script-src 'self': no inline/eval scripts (Next.js handles compilation)
+ * - script-src 'self' 'unsafe-inline': inline/eval scripts needed for React hydration
  * - style-src 'self' 'unsafe-inline': Tailwind needs unsafe-inline for <style>
  * - img-src 'self' data: blob: Firebase uses data: URIs for avatars
  * - connect-src: Firebase + AI providers (Anthropic, OpenRouter, NVIDIA, Qwen)
@@ -20,7 +20,7 @@
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
