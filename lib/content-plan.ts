@@ -159,6 +159,11 @@ export interface BoardEditResult {
   reply: string;
   /** Artifacts to attach to the factor (created or updated). */
   newArtifacts?: BoardArtifactDraft[];
+  updatedArtifacts?: Array<{
+    id: string;
+    title?: string;
+    content?: string;
+  }>;
   /** Factor to attach them to; when absent a new factor is created. */
   targetFactorId?: string;
   newFactorName?: string;

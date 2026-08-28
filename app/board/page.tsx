@@ -82,7 +82,14 @@ function asText(v: unknown): string {
 }
 
 /** Indeterminate progress bar — motion reads as "working", unlike static dots. */
-export function ProgressBar() {
+export function ProgressBar({ progress }: { progress?: number }) {
+  if (typeof progress === "number") {
+    return (
+      <div className="board-progress" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Loading">
+        <div className="board-progress-bar-fill" style={{ width: `${progress}%` }} />
+      </div>
+    );
+  }
   return (
     <div className="board-progress" role="progressbar" aria-label="Loading">
       <div className="board-progress-bar" />
@@ -96,10 +103,12 @@ export default function BoardPage() {
   const [plan, setPlan] = useState<ContentPlan | null | undefined>(undefined);
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
   const [request, setRequest] = useState("");
   const [sending, setSending] = useState(false);
   const [reply, setReply] = useState<FloatingReply | null>(null);
   const dockInputRef = useRef<HTMLInputElement>(null);
+  const [filmingProgress, setFilmingProgress] = useState<number | null>(null);
 
   // Craft-on-the-board state
   const [craftRequest, setCraftRequest] = useState("");
@@ -248,6 +257,7 @@ export default function BoardPage() {
         request: finalText,
         selectedDay: selectedDay ?? undefined,
         factorId: selected?.factorId ?? undefined,
+        artifactId: selectedArtifactId ?? undefined,
         plan,
       });
       const data = (await res.json()) as BoardEditResult & { error?: string };
@@ -308,6 +318,22 @@ export default function BoardPage() {
           }
         }
 
+        if ((data.updatedArtifacts?.length ?? 0) > 0) {
+          for (const update of data.updatedArtifacts!) {
+            for (let i = 0; i < nextFactors.length; i++) {
+              const f = nextFactors[i];
+              const aIdx = f.artifacts.findIndex(a => a.id === update.id);
+              if (aIdx >= 0) {
+                 nextFactors[i] = {
+                   ...f,
+                   artifacts: f.artifacts.map((a, j) => j === aIdx ? { ...a, title: update.title ?? a.title, content: update.content ?? a.content } : a)
+                 };
+                 break;
+              }
+            }
+          }
+        }
+
         await persist({ ...plan, days: nextDays, factors: nextFactors });
       }
     } catch (err) {
@@ -335,6 +361,26 @@ export default function BoardPage() {
       JSON.stringify({ title: a.title, content: a.content }),
     );
     router.push("/studio");
+  }
+
+  function startFilmingFactor(f: RoadmapFactor) {
+    const script = f.artifacts.find(a => a.kind === "script");
+    if (!script) {
+      setReply({ text: "Please ask the AI to write a script for this factor first.", seen: false });
+      return;
+    }
+    setFilmingProgress(0);
+    const interval = setInterval(() => {
+      setFilmingProgress(prev => {
+        if (prev === null) return null;
+        if (prev >= 100) {
+          clearInterval(interval);
+          sendScriptToStudio(script);
+          return null;
+        }
+        return prev + 10;
+      });
+    }, 200);
   }
 
   if (user === undefined) {
@@ -542,7 +588,12 @@ export default function BoardPage() {
                           {f.artifacts.map((a) => (
                             <li
                               key={a.id}
-                              className="board-artifact"
+                              className={`board-artifact ${selectedArtifactId === a.id ? "board-artifact-selected" : ""}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedArtifactId(a.id);
+                                setTimeout(() => dockInputRef.current?.focus(), 50);
+                              }}
                               onContextMenu={(e) => {
                                 if (a.kind !== "script") return;
                                 e.preventDefault();
@@ -590,6 +641,20 @@ export default function BoardPage() {
                             </button>
                           ))}
                         </div>
+                      )}
+
+                      {filmingProgress !== null ? (
+                        <div style={{ marginTop: "16px" }}>
+                           <ProgressBar progress={filmingProgress} />
+                        </div>
+                      ) : (
+                        <button
+                           className="btn btn-primary btn-block"
+                           style={{ marginTop: "16px" }}
+                           onClick={() => startFilmingFactor(f)}
+                        >
+                           Start filming
+                        </button>
                       )}
                     </div>
                   );

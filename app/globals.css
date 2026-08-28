@@ -1884,6 +1884,28 @@ footer {
   white-space: nowrap;
 }
 
+.board-artifact {
+  position: relative;
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+}
+
+.board-artifact-selected {
+  background: var(--bg-raised);
+}
+
+.board-artifact-selected::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim), var(--success));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 .board-artifact-content {
   font-family: var(--mono);
   font-size: 12px;
@@ -2192,6 +2214,13 @@ footer {
   border-radius: 999px;
   background: linear-gradient(90deg, var(--accent), var(--accent-dim));
   animation: board-progress-slide 1.15s ease-in-out infinite;
+}
+
+.board-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+  transition: width 0.2s ease-in-out;
 }
 
 @keyframes board-progress-slide {
