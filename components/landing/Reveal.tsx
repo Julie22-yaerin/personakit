@@ -1,13 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { ReactNode } from "react";
 
-/** Restrained scroll-triggered fade/rise — not a slideshow, just enough motion to read as a live system. */
+/** Safe reveal animation that never hides content if scroll observer lags. */
 export function Reveal({
   children,
   delay = 0,
-  y = 16,
+  y = 12,
 }: {
   children: ReactNode;
   delay?: number;
@@ -15,10 +15,11 @@ export function Reveal({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y }}
+      initial={{ opacity: 0.9, y }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-10% 0px" }}
-      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, amount: "some" }}
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
+      style={{ opacity: 1 }}
     >
       {children}
     </motion.div>

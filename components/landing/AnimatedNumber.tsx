@@ -1,18 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useInView, useMotionValue, useSpring } from "framer-motion";
+import { useInView, useMotionValue, useSpring } from "motion/react";
 
-/** Counts up to `value` once it scrolls into view. Illustrative UI motion, not real-time telemetry. */
+/** Counts up to `value` once it scrolls into view, with initial value rendered so it never shows 0 or blanks. */
 export function AnimatedNumber({ value, decimals = 0 }: { value: number; decimals?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-10% 0px" });
-  const motionValue = useMotionValue(0);
+  const inView = useInView(ref, { once: true });
+  const motionValue = useMotionValue(value);
   const spring = useSpring(motionValue, { damping: 24, stiffness: 90 });
-  const [display, setDisplay] = useState("0");
+  const [display, setDisplay] = useState(value.toFixed(decimals));
 
   useEffect(() => {
-    if (inView) motionValue.set(value);
+    setDisplay(value.toFixed(decimals));
+  }, [value, decimals]);
+
+  useEffect(() => {
+    if (inView) {
+      motionValue.set(value);
+    }
   }, [inView, value, motionValue]);
 
   useEffect(() => {

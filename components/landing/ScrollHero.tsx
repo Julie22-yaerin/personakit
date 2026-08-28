@@ -4,15 +4,8 @@ import { useScroll, useSpring, useTransform, motion } from "motion/react";
 import { useRef, type ReactNode } from "react";
 
 /**
- * ScrollHero — the reference "hero scroll animation" adapted to PERSONA's
- * brand: the hero is pinned full-screen; as the visitor scrolls, it
- * scales down, tilts a few degrees and dims while the rest of the page
- * slides up over it. Content is passed through unchanged — only the
- * wrapper moves.
- *
- * The raw scroll position is stepped (wheel/tick), which reads as janky
- * on the pinned hero. A critically-damped spring smooths every value
- * without adding noticeable lag.
+ * ScrollHero — High performance pinned hero with smooth spring interpolation.
+ * Keeps opacity high and readable at all times so content never goes black.
  */
 export function ScrollHero({ children }: { children: ReactNode }) {
   const container = useRef<HTMLDivElement>(null);
@@ -22,15 +15,14 @@ export function ScrollHero({ children }: { children: ReactNode }) {
   });
 
   const smooth = useSpring(scrollYProgress, {
-    stiffness: 90,
-    damping: 24,
+    stiffness: 100,
+    damping: 26,
     restDelta: 0.001,
   });
 
-  const scale = useTransform(smooth, [0, 1], [1, 0.82]);
-  const rotate = useTransform(smooth, [0, 1], [0, -3.5]);
-  const opacity = useTransform(smooth, [0, 0.85], [1, 0.15]);
-  const contentY = useTransform(smooth, [0, 1], [0, -60]);
+  const scale = useTransform(smooth, [0, 1], [1, 0.92]);
+  const rotate = useTransform(smooth, [0, 1], [0, -2]);
+  const opacity = useTransform(smooth, [0, 1], [1, 0.85]);
 
   return (
     <div ref={container} className="p-hero-scroll">
@@ -38,11 +30,10 @@ export function ScrollHero({ children }: { children: ReactNode }) {
         style={{ scale, rotate, opacity }}
         className="p-hero-pinned"
       >
-        {/* blueprint grid mask over the pinned hero */}
         <div className="p-hero-grid-overlay" aria-hidden />
-        <motion.div style={{ y: contentY }} className="p-hero-inner">
+        <div className="p-hero-inner">
           {children}
-        </motion.div>
+        </div>
       </motion.section>
     </div>
   );
