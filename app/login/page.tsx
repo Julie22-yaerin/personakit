@@ -15,16 +15,24 @@ import { Logo } from "../../components/landing/Logo";
 type Mode = "signup" | "signin";
 
 async function ensureUserDoc(uid: string, email: string | null) {
-  await setDoc(
-    doc(db, "users", uid),
-    { email, lastSeenAt: serverTimestamp(), createdAt: serverTimestamp() },
-    { merge: true },
-  );
+  try {
+    await setDoc(
+      doc(db, "users", uid),
+      { email, lastSeenAt: serverTimestamp(), createdAt: serverTimestamp() },
+      { merge: true },
+    );
+  } catch (err) {
+    console.warn("ensureUserDoc fallback:", err);
+  }
 }
 
 async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/app"> {
-  const snap = await getDoc(doc(db, "users", uid));
-  return snap.exists() && snap.data().onboardingCompletedAt ? "/app" : "/onboarding";
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    return snap.exists() && snap.data()?.onboardingCompletedAt ? "/app" : "/onboarding";
+  } catch {
+    return "/onboarding";
+  }
 }
 
 // Sign-in errors deliberately don't distinguish "no account" from "wrong

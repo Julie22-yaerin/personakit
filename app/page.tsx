@@ -3,25 +3,18 @@ import Link from "next/link";
 import {
   ArrowRight,
   Camera,
-  Hand,
-  Scissors,
   ScanFace,
   Sparkles,
   Video,
   Target,
   ShieldCheck,
   Flame,
-  Zap,
-  BarChart3,
-  MessageSquare,
   UserCheck,
-  Eye,
   Mic,
   BrainCircuit,
   CheckCircle2,
   XCircle,
   AlertCircle,
-  TrendingUp,
 } from "lucide-react";
 import { Logo } from "../components/landing/Logo";
 import { MetricCard, MetricRow } from "../components/landing/MetricCard";
@@ -31,7 +24,7 @@ import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysi
 import { PersonaTimeline } from "../components/landing/PersonaTimeline";
 import { PerformanceChart } from "../components/landing/PerformanceChart";
 import { Reveal } from "../components/landing/Reveal";
-import { ScrollHero } from "../components/landing/ScrollHero";
+import { ScrollHero, Section2Motion } from "../components/landing/ScrollHero";
 import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
 import { CookieConsent } from "../components/landing/CookieConsent";
@@ -45,19 +38,19 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variab
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   {
     q: "How does PersonaKit help me prepare for shots more easily?",
-    a: "PersonaKit removes all recording friction. It turns your casual moments into graph-based script nodes, provides an integrated teleprompter, tracks camera distance (1.4m sweet spot) and eye contact via real-time computer vision, monitors your speech pace (WPM), and gives subtle live drift warnings if you lose the core hook.",
+    a: "PersonaKit removes all filming friction. It turns your authentic thoughts into graph-based script teleprompter nodes, tracks camera distance (1.4m optimal) and eye contact via computer vision, monitors speech pace (WPM), and provides real-time drift protection if you start rambling off-topic.",
   },
   {
-    q: "What does 'not trying to be a 35-year-old CEO in a fleece vest' mean?",
-    a: "Most corporate personal branding advice turns founders into sterile corporate drones posting robotic clichés ('I'm thrilled to announce...'). PersonaKit does the opposite: it calibrates your authentic humor, contrarian beliefs, technical edge, and raw communication style so you perform naturally as yourself.",
+    q: "What does 'stop being a 35-year-old CEO in a fleece vest' mean?",
+    a: "Most generic branding advice turns founders into sterile corporate clones posting robotic LinkedIn platitudes ('Excited to share...'). PersonaKit calibrates your natural humor, contrarian stances, technical edge, and raw debate style so you perform as who you actually are.",
   },
   {
     q: "How does it turn any moment I enjoy into high-converting content?",
-    a: "Whether you're debugging at 2 AM, passionate about an architectural breakthrough, or walking to grab coffee, PersonaKit takes those genuine thoughts, extracts the tension and curiosity, anchors them against your product's true value proposition, and generates ready-to-shoot scripts.",
+    a: "Whether you're debugging at 2 AM, passionate about an architectural breakthrough, or talking with early users, PersonaKit extracts the core tension and curiosity, anchors it against your startup's true value proposition, and generates ready-to-shoot scripts.",
   },
   {
     q: "Is my video recording or facial data stored on servers?",
-    a: "Never. Camera frames, facial geometry, and speech analysis are processed entirely in-memory on your local browser during the recording session. No video files or biometric data are ever sent to or stored on our servers.",
+    a: "Never. Camera frames, facial geometry, and speech analysis are processed entirely in-memory on your local browser during recording. No video files or biometric data are ever sent to or stored on our servers.",
   },
   {
     q: "Do I have to connect my social media accounts or share passwords?",
@@ -65,7 +58,7 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   },
   {
     q: "How does the closed reality feedback loop work?",
-    a: "Before you post, PersonaKit predicts audience curiosity, comment probability, and profile intent. When you log actual engagement results, the system compares hypothesis against reality and recalibrates your persona model for subsequent scripts.",
+    a: "Before you post, PersonaKit predicts audience curiosity, comment probability, and profile intent. When you log actual results, the system compares hypothesis against reality and recalibrates your persona model for subsequent scripts.",
   },
 ];
 
@@ -92,6 +85,7 @@ export default function LandingPage() {
             </Link>
             <div className="p-nav-links">
               <a href="#philosophy">Philosophy</a>
+              <a href="#moments">Moments</a>
               <a href="#identity-engine">Identity Engine</a>
               <a href="#board-feature">Content Board</a>
               <a href="#studio-feature">Live AI Studio</a>
@@ -109,7 +103,7 @@ export default function LandingPage() {
           </div>
         </nav>
 
-        {/* ---------- HERO SECTION (PINNED SCROLL HERO) ---------- */}
+        {/* ---------- SECTION 1: HERO SCROLL MOTION ---------- */}
         <ScrollHero>
           <div className="p-wrap">
             <div className="p-hero-grid">
@@ -127,7 +121,7 @@ export default function LandingPage() {
                   <TextMotion
                     as="p"
                     className="p-hero-sub"
-                    delay={0.3}
+                    delay={0.2}
                     text="Turn any moment you enjoy into high-converting content for your startup. PersonaKit analyzes your natural voice, makes filming effortless, and turns radical founder authenticity into unstoppable distribution."
                   />
                   <div className="p-hero-ctas">
@@ -139,15 +133,15 @@ export default function LandingPage() {
                     </a>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--p-text-secondary)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--p-text-secondary)" }}>
                       <CheckCircle2 size={14} color="var(--p-success)" />
                       <span>Zero corporate jargon</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--p-text-secondary)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--p-text-secondary)" }}>
                       <CheckCircle2 size={14} color="var(--p-success)" />
                       <span>1-take shot readiness</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--p-text-secondary)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--p-text-secondary)" }}>
                       <CheckCircle2 size={14} color="var(--p-success)" />
                       <span>Closed reality loop</span>
                     </div>
@@ -155,7 +149,7 @@ export default function LandingPage() {
                 </div>
               </Reveal>
 
-              <Reveal delay={0.15}>
+              <Reveal delay={0.1}>
                 <div className="p-hero-visual">
                   <div className="p-phone-mock">
                     <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 6, zIndex: 10 }}>
@@ -176,15 +170,15 @@ export default function LandingPage() {
                         textAlign: "center",
                       }}
                     >
-                      <ScanFace size={54} strokeWidth={1} color="rgba(51, 86, 219, 0.75)" style={{ marginBottom: 12 }} />
+                      <ScanFace size={54} strokeWidth={1} color="rgba(59, 130, 246, 0.85)" style={{ marginBottom: 12 }} />
                       <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
                         DISTANCE: 1.4M (OPTIMAL)
                       </div>
-                      <div className="p-mono" style={{ fontSize: 10, color: "rgba(245,245,245,0.6)" }}>
-                        EYE CONTACT: 92% · PACE: 142 WPM
+                      <div className="p-mono" style={{ fontSize: 10, color: "rgba(245,245,245,0.7)" }}>
+                        EYE CONTACT: 94% · PACE: 142 WPM
                       </div>
                     </div>
-                    <div className="p-phone-label">AUTHENTIC FOUNDER TAKE · NO FAKE VIBES</div>
+                    <div className="p-phone-label">AUTHENTIC FOUNDER TAKE · NO FAKE POSTURING</div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <PersonaScorePanel
@@ -214,7 +208,87 @@ export default function LandingPage() {
           </div>
         </ScrollHero>
 
-        {/* ---------- MAIN CONTENT SLIDING OVER HERO ---------- */}
+        {/* ---------- SECTION 2: MOTION IMAGE GALLERY & MOMENT HOOKS ---------- */}
+        <section className="p-section" id="moments" style={{ background: "rgba(8, 10, 22, 0.9)" }}>
+          <div className="p-wrap">
+            <Section2Motion>
+              <Reveal>
+                <div className="p-section-head" style={{ maxWidth: 840 }}>
+                  <p className="p-eyebrow">Moment-to-Content Engine</p>
+                  <TextMotion
+                    as="h2"
+                    text="Turn any moment you enjoy into content that creates real pipeline."
+                  />
+                  <TextMotion
+                    as="p"
+                    delay={0.2}
+                    text="Your product isn't built in a sterile PR studio. It's built during late-night code sprints, whiteboard debates, and honest customer rants. PersonaKit turns those real moments into high-retention video distribution."
+                  />
+                </div>
+              </Reveal>
+
+              <div className="p-grid-4" style={{ marginTop: 32 }}>
+                <div className="p-card" style={{ padding: 12 }}>
+                  <img
+                    src="https://images.unsplash.com/photo-1717893777838-4e222311630b?w=800&auto=format&fit=crop"
+                    alt="2 AM Debugging breakthrough"
+                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+                  />
+                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
+                    01 · 2 AM DEBUGGING
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+                    Ranting about broken legacy architecture and how your startup fixes it.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ padding: 12 }}>
+                  <img
+                    src="https://images.unsplash.com/photo-1717618389115-88db6d7d8f77?w=800&auto=format&fit=crop"
+                    alt="Studio lighting aesthetic"
+                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+                  />
+                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
+                    02 · 1-TAKE STUDIO
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+                    Filming with real-time teleprompter, pace meter, and zero camera stress.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ padding: 12 }}>
+                  <img
+                    src="https://images.unsplash.com/photo-1717588604557-55b2888f59a6?w=800&auto=format&fit=crop"
+                    alt="Product architecture whiteboard"
+                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+                  />
+                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
+                    03 · WHITEBOARD DEBATES
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+                    Explaining why industry orthodoxy is wrong and why your approach wins.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ padding: 12 }}>
+                  <img
+                    src="https://images.unsplash.com/photo-1713417338603-1b6b72fcade2?w=800&auto=format&fit=crop"
+                    alt="Authentic founder desk workspace"
+                    style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+                  />
+                  <div className="p-mono" style={{ fontSize: 11, color: "var(--p-accent-secondary)", marginBottom: 4 }}>
+                    04 · REAL RETENTION
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.45 }}>
+                    Turning authentic followers into qualified demo requests and active users.
+                  </p>
+                </div>
+              </div>
+            </Section2Motion>
+          </div>
+        </section>
+
+        {/* ---------- MAIN BODY: STATS & DEEP DIVES ---------- */}
         <main className="p-after-hero" id="main">
           {/* ---------- STATS PROOF STRIP ---------- */}
           <section className="p-section-tight" style={{ borderBottom: "1px solid var(--p-border)" }}>
@@ -226,19 +300,19 @@ export default function LandingPage() {
                     <div className="p-stat-label">Persona Stability Score</div>
                   </div>
                 </Reveal>
-                <Reveal delay={0.08}>
+                <Reveal delay={0.06}>
                   <div className="p-stat-box">
                     <div className="p-stat-value">&lt; 5 min</div>
                     <div className="p-stat-label">From Idea to Filmed Shot</div>
                   </div>
                 </Reveal>
-                <Reveal delay={0.16}>
+                <Reveal delay={0.12}>
                   <div className="p-stat-box">
                     <div className="p-stat-value">3.8x</div>
                     <div className="p-stat-label">Higher Comment Engagement</div>
                   </div>
                 </Reveal>
-                <Reveal delay={0.24}>
+                <Reveal delay={0.18}>
                   <div className="p-stat-box">
                     <div className="p-stat-value">0%</div>
                     <div className="p-stat-label">Corporate Posturing</div>
@@ -260,7 +334,7 @@ export default function LandingPage() {
                   />
                   <TextMotion
                     as="p"
-                    delay={0.25}
+                    delay={0.2}
                     text="Nobody follows a startup because of press releases. They follow the raw, unfiltered obsession of the founder building it. When you try to sound professional, you sound like background noise."
                   />
                 </div>
@@ -346,10 +420,10 @@ export default function LandingPage() {
                         Specifics beat polish. PersonaKit scores your core beliefs and ensures your content is anchored in verifiable experience, not empty buzzwords.
                       </p>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        <span className="p-badge" style={{ color: "var(--p-success)", borderColor: "rgba(168,192,240,0.3)" }}>
+                        <span className="p-badge" style={{ color: "var(--p-success)", borderColor: "rgba(148,168,255,0.3)" }}>
                           ✓ Contrarian Stance Confirmed
                         </span>
-                        <span className="p-badge" style={{ color: "var(--p-accent-secondary)", borderColor: "rgba(51,86,219,0.3)" }}>
+                        <span className="p-badge" style={{ color: "var(--p-accent-secondary)", borderColor: "rgba(59,130,246,0.3)" }}>
                           ✓ Dry Technical Humor
                         </span>
                         <span className="p-badge" style={{ color: "var(--p-text)", borderColor: "rgba(255,255,255,0.2)" }}>
@@ -467,7 +541,7 @@ export default function LandingPage() {
                         <Video size={14} />
                         <span>LIVE SCRIPT TELEPROMPTER</span>
                       </div>
-                      <span className="p-badge" style={{ color: "#30d158", borderColor: "rgba(48,209,88,0.3)" }}>
+                      <span className="p-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,0.3)" }}>
                         NODE 02 / 04 ACTIVE
                       </span>
                     </div>
@@ -477,7 +551,7 @@ export default function LandingPage() {
                     <p className="p-teleprompter-highlight" style={{ margin: "0 0 12px" }}>
                       [TENSION] Here is the brutal mistake we made last month that cost us $40,000 before we realized our onboarding was completely broken.
                     </p>
-                    <p style={{ margin: 0, color: "rgba(245,245,245,0.4)" }}>
+                    <p style={{ margin: 0, color: "rgba(245,245,245,0.5)" }}>
                       [PROOF & RESOLUTION] We tore down the entire flow and rebuilt it around raw user intent...
                     </p>
                   </div>
@@ -548,7 +622,7 @@ export default function LandingPage() {
                     <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
                       Store your company&apos;s verified capabilities and explicit false claims to avoid. PersonaKit guarantees your scripts never overpromise or make compliance mistakes.
                     </p>
-                    <div style={{ padding: "10px 14px", background: "rgba(48, 209, 88, 0.08)", border: "1px solid rgba(48, 209, 88, 0.2)", borderRadius: 6, fontSize: 12.5, color: "var(--p-text)" }}>
+                    <div style={{ padding: "10px 14px", background: "rgba(59, 130, 246, 0.12)", border: "1px solid rgba(148, 168, 255, 0.25)", borderRadius: 6, fontSize: 12.5, color: "var(--p-text)" }}>
                       ✓ &ldquo;All face tracking is 100% in-memory and client-side.&rdquo;
                     </div>
                   </div>
@@ -566,7 +640,7 @@ export default function LandingPage() {
                     <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
                       Turn viewers into trial signups, enterprise demo requests, and investor inbounds by making your technical perspective the definitive industry standard.
                     </p>
-                    <div style={{ padding: "10px 14px", background: "rgba(51, 86, 219, 0.1)", border: "1px solid rgba(51, 86, 219, 0.25)", borderRadius: 6, fontSize: 12.5, color: "var(--p-accent-secondary)" }}>
+                    <div style={{ padding: "10px 14px", background: "rgba(59, 130, 246, 0.12)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: 6, fontSize: 12.5, color: "var(--p-accent-secondary)" }}>
                       → 3.2x Higher conversion from founder content vs company ads
                     </div>
                   </div>

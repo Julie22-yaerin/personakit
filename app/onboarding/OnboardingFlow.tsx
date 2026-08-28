@@ -15,6 +15,7 @@ import {
   getStepById,
 } from '@/lib/onboarding-questions';
 import { Logo } from '@/components/landing/Logo';
+import { authedFetch } from '@/lib/api-client';
 
 type Option = { value: string; label: string };
 
@@ -402,16 +403,13 @@ export default function OnboardingFlow() {
     if (!validateStep()) return;
     setSubmitted(true);
     try {
-      const res = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const res = await authedFetch('/api/onboarding/complete', data);
       if (res.ok) {
         router.push('/app');
       } else {
         setSubmitted(false);
-        alert('Failed to save. Try again.');
+        const errJson = await res.json().catch(() => null);
+        alert(errJson?.error || 'Failed to save. Try again.');
       }
     } catch {
       setSubmitted(false);
