@@ -695,8 +695,6 @@ export default function StudioPage() {
               {liveMetrics && overlayVisible && (
                 <div className="studio-metrics-overlay">
                   <MetricBar label="Eye contact" value={liveMetrics.eyeContact} />
-                  <MetricBar label="Smile" value={liveMetrics.smile} />
-                  <MetricBar label="Expressiveness" value={liveMetrics.expressiveness} />
                   <MetricBar label="Volume" value={liveVolume} />
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#fff", marginTop: 3 }}>
                     <span>{Math.round(liveWpm)} wpm</span>
