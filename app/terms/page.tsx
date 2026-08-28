@@ -5,6 +5,7 @@ import { Logo } from "../../components/landing/Logo";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description: "The ground rules for using PERSONA — what the service provides and what it doesn't promise.",
+  alternates: { canonical: "/terms" },
 };
 
 const SECTIONS: Array<{ heading: string; body: string[] }> = [

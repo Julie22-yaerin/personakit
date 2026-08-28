@@ -359,14 +359,14 @@
   padding: 1.5rem;
   border-radius: 1rem;
   border: 1px solid var(--p-border);
-  background: var(--p-surface);
-  box-shadow: var(--p-shadow-sm);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: var(--p-card);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .p-split-card:hover {
   transform: scale(1.03) translateY(-1.25rem);
-  box-shadow: var(--p-shadow-lg);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
+  background: var(--p-card-elevated);
 }
 
 .p-split-card .p-eyebrow {
@@ -652,4 +652,189 @@
   height: 90px;
   background: #050508;
   border-radius: 100% 100% 0 0 / 200px 200px 0 0;
+}
+
+/* ---------- FAQ ---------- */
+
+.p-faq {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.p-faq-item {
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: var(--p-card);
+  padding: 0;
+}
+
+.p-faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--p-text);
+}
+
+.p-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.p-faq-item summary::after {
+  content: "+";
+  flex-shrink: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 18px;
+  color: var(--p-accent-secondary);
+  transition: transform 0.2s ease;
+}
+
+.p-faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.p-faq-item p {
+  margin: 0;
+  padding: 0 22px 20px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--p-text-secondary);
+}
+
+/* ---------- feedback widget ---------- */
+
+.p-feedback {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  background: var(--p-card-elevated);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 13px;
+  color: var(--p-text-secondary);
+}
+
+.p-feedback-label {
+  margin-right: 2px;
+}
+
+.p-feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--p-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.p-feedback-btn:hover {
+  color: var(--p-text);
+  border-color: var(--p-accent-secondary);
+}
+
+@media (max-width: 620px) {
+  .p-feedback {
+    bottom: 76px;
+    right: 12px;
+  }
+}
+
+/* ---------- cookie consent ---------- */
+
+.p-consent {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+  background: var(--p-card-elevated);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.p-consent p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--p-text-secondary);
+}
+
+.p-consent a {
+  color: var(--p-accent-secondary);
+  text-decoration: underline;
+}
+
+.p-consent-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 620px) {
+  .p-consent {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .p-consent-actions {
+    justify-content: center;
+  }
+}
+
+/* ---------- accessibility: visible keyboard focus ---------- */
+.p-btn:focus-visible,
+.p-nav-signin:focus-visible,
+.p-nav-links a:focus-visible,
+.p-footer-links a:focus-visible,
+.p-feedback-btn:focus-visible,
+.p-consent button:focus-visible,
+.p-faq-item summary:focus-visible,
+a:focus-visible {
+  outline: 2px solid #FF3B30;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-page *,
+  .p-page *::before,
+  .p-page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

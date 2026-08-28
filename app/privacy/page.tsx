@@ -5,6 +5,7 @@ import { Logo } from "../../components/landing/Logo";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "What PERSONA collects, what it stores, and what it never does with your data.",
+  alternates: { canonical: "/privacy" },
 };
 
 const SECTIONS: Array<{ heading: string; body: string[] }> = [

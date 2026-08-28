@@ -1,23 +1,20 @@
 /**
- * A thin, incomplete red iris inside a black square — observation that
- * never quite closes the loop (observe -> feedback -> iterate). No
- * sparkle, no brain, no orb: an instrument mark, not a mascot.
+ * Pixel-cat mark — a white cat head on a black tile, red pixel nose as
+ * the one brand-accent carryover. Matches the app/icon.svg favicon and
+ * the 404 page's blocky crispEdges mascot.
  */
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect x="0.5" y="0.5" width="31" height="31" rx="7" fill="#0A0A0B" stroke="rgba(255,255,255,0.12)" />
-      <circle
-        cx="16"
-        cy="16"
-        r="8"
-        stroke="#FF3B30"
-        strokeWidth="1.3"
-        strokeDasharray="38 12"
-        strokeDashoffset="-6"
-        strokeLinecap="round"
-      />
-      <circle cx="19.4" cy="12.8" r="1.4" fill="#FF3B30" />
+    <svg width={size} height={size} viewBox="0 0 32 32" shapeRendering="crispEdges" aria-hidden="true">
+      <rect width="32" height="32" rx="7" fill="#0A0A0B" />
+      <g fill="#F5F5F5">
+        <polygon points="8,11 14,11 8,4" />
+        <polygon points="24,11 18,11 24,4" />
+        <rect x="7" y="10" width="18" height="15" />
+      </g>
+      <rect x="11" y="15" width="3" height="3" fill="#0A0A0B" />
+      <rect x="18" y="15" width="3" height="3" fill="#0A0A0B" />
+      <rect x="15" y="20" width="2" height="2" fill="#FF3B30" />
     </svg>
   );
 }

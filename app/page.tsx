@@ -12,10 +12,46 @@ import { Reveal } from "../components/landing/Reveal";
 import { ScrollHero } from "../components/landing/ScrollHero";
 import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
+import { CookieConsent } from "../components/landing/CookieConsent";
+import { FeedbackWidget } from "../components/landing/FeedbackWidget";
+import { PageTracker } from "../components/landing/PageTracker";
 import "./persona-landing.css";
 
 const grotesk = Geist({ subsets: ["latin"], variable: "--font-grotesk" });
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
+
+const FAQ_ITEMS: Array<{ q: string; a: string }> = [
+  {
+    q: "What exactly does PERSONA measure?",
+    a: "It builds a measurable profile of the identity you project online — authority, warmth, contrarianism, humor, vulnerability, memorability — then connects those signals to how your content actually performs.",
+  },
+  {
+    q: "Is this a psychological diagnosis?",
+    a: "No. The persona profile is a model estimate based on what you upload and log. It describes how you come across in content, not who you are as a person.",
+  },
+  {
+    q: "Do I have to connect my social accounts?",
+    a: "No. There is no social-platform API integration at all. Performance numbers exist only if you choose to enter them yourself.",
+  },
+  {
+    q: "What happens to my data?",
+    a: "Your uploads and persona are stored privately on your account and never sold or shared. Face frames are processed in-memory and never persisted. See the privacy policy for details.",
+  },
+  {
+    q: "How much does it cost?",
+    a: "PERSONA is currently free while in early access. Build your persona and try the full loop — analysis, prediction, feedback.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
 
 export default function LandingPage() {
   return (
@@ -108,7 +144,7 @@ export default function LandingPage() {
       </ScrollHero>
 
       {/* ---------- EVERYTHING AFTER THE HERO SLIDES OVER IT ---------- */}
-      <div className="p-after-hero">
+      <main className="p-after-hero" id="main">
       {/* ---------- PROBLEM ---------- */}
       <section className="p-section">
         <div className="p-wrap">
@@ -580,6 +616,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ---------- FAQ ---------- */}
+      <section className="p-section" id="faq">
+        <div className="p-wrap">
+          <Reveal>
+            <div className="p-section-head">
+              <TextMotion as="h2" text="Questions, answered." />
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="p-faq">
+              {FAQ_ITEMS.map(({ q, a }) => (
+                <details key={q} className="p-faq-item">
+                  <summary>{q}</summary>
+                  <p>{a}</p>
+                </details>
+              ))}
+            </div>
+          </Reveal>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          />
+        </div>
+      </section>
+
       {/* ---------- FINAL CTA ---------- */}
       <section className="p-final">
         <div className="p-wrap">
@@ -607,6 +668,7 @@ export default function LandingPage() {
         <div className="p-wordmark-arch" />
       </div>
 
+
       {/* ---------- FOOTER ---------- */}
       <footer className="p-footer">
         <div className="p-wrap">
@@ -615,17 +677,21 @@ export default function LandingPage() {
             <div className="p-footer-links">
               <a href="#engine">Product</a>
               <a href="#founders">For Founders</a>
-              <a href="#creators">For Creators</a>
+            <a href="#creators">For Creators</a>
+            <a href="#faq">FAQ</a>
               <a href="#how-it-works">Research</a>
-              <span style={{ color: "var(--p-text-secondary)", fontSize: 13 }}>Privacy</span>
-              <span style={{ color: "var(--p-text-secondary)", fontSize: 13 }}>Terms</span>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
             </div>
           </div>
           <div className="p-footer-bottom">Built for people who refuse to sound like everyone else.</div>
         </div>
       </footer>
+      </main>
       </div>
-      </div>
+      <PageTracker />
+      <FeedbackWidget />
+      <CookieConsent />
     </>
   );
 }
