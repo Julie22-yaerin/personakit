@@ -8,6 +8,23 @@ import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import {
+  MousePointer2,
+  Type,
+  StickyNote,
+  Square,
+  Pen,
+  Eraser,
+  Undo,
+  Redo,
+  ZoomIn,
+  ZoomOut,
+  Share2,
+  Download,
+  MoreHorizontal,
+  Wand2,
+  ArrowUp
+} from "lucide-react";
+import {
   ARTIFACT_KIND_LABELS,
   type ArtifactKind,
   type ClarifyQuestion,
@@ -348,128 +365,83 @@ export default function BoardPage() {
 
   return (
     <AppShell userEmail={user.email} uid={user.uid}>
-      <div className="board-wrap">
-        <header className="board-head">
-          <h1 className="dashboard-title">The Board</h1>
-          <p className="dashboard-caption">
-            Your production roadmap — tap a day to edit it, or ask the assistant to make something new.
-          </p>
-        </header>
-
-        {reply && (
-          <div
-            className={`board-floating-reply ${reply.seen ? "" : "board-floating-reply-new"}`}
-            onClick={() => setReply({ ...reply, seen: true })}
-            role="status"
-          >
-            <span className="board-floating-reply-label">Assistant</span>
-            {reply.text}
-            {!reply.seen && <span className="board-floating-reply-dot" />}
+      <div className="board-wrap-full h-full flex flex-col relative w-full overflow-hidden bg-[#F9FAFB]">
+        {/* Top Header Controls */}
+        <div className="absolute top-4 right-6 z-10 flex items-center gap-3">
+          <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+            <button className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-medium text-gray-700 px-3">100%</span>
+            <button className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
+              <ZoomIn className="w-4 h-4" />
+            </button>
           </div>
-        )}
+          <button className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg shadow-sm font-medium transition-colors text-sm">
+            <Share2 className="w-4 h-4" />
+            Share
+          </button>
+          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow-sm font-medium transition-colors text-sm">
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+          <button className="p-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg shadow-sm text-gray-600 transition-colors">
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+        </div>
 
-        {plan === undefined ? (
-          <div className="spinner" />
-        ) : plan === null ? (
-          <>
-            {/* ---- no plan yet: craft one right here ---- */}
-            <div className="board-canvas board-canvas-craft">
-              <div className="board-craft-intro">
-                <h2>The board is empty.</h2>
-                <p>
-                  Tell the assistant what you want to build this month and it crafts your
-                  day-by-day roadmap here. It may ask you a couple of quick questions first —
-                  answer or skip freely.
-                </p>
+        {/* Left Toolbar */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-6 z-10 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 p-2 gap-1.5">
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors bg-gray-100" title="Select">
+            <MousePointer2 className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Text">
+            <Type className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Sticky Note">
+            <StickyNote className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Shape">
+            <Square className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Pen">
+            <Pen className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Eraser">
+            <Eraser className="w-5 h-5" />
+          </button>
+          <div className="w-full h-px bg-gray-200 my-1"></div>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Undo">
+            <Undo className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Redo">
+            <Redo className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Canvas Area */}
+        <div className="flex-1 board-canvas-full w-full h-full relative cursor-crosshair overflow-auto p-20 pb-40">
+
+          {reply && (
+            <div
+              className={`fixed top-20 right-6 z-20 bg-white shadow-lg rounded-xl border border-gray-200 p-4 max-w-sm transition-all ${reply.seen ? "opacity-90" : "opacity-100 ring-2 ring-blue-500"}`}
+              onClick={() => setReply({ ...reply, seen: true })}
+              role="status"
+            >
+              <div className="text-xs font-semibold text-blue-600 mb-1 flex items-center gap-1">
+                <Wand2 className="w-3 h-3" /> Assistant
               </div>
-
-              {!clarify && (
-                <form
-                  className="chat-input-row"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (craftRequest.trim()) void submitCraft();
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={craftRequest}
-                    onChange={(e) => setCraftRequest(e.target.value)}
-                    placeholder="e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm của mình..."
-                    disabled={sending}
-                    maxLength={2000}
-                  />
-                  <button type="submit" className="btn btn-primary" disabled={sending || !craftRequest.trim()}>
-                    {sending ? "Thinking..." : "Craft plan"}
-                  </button>
-                </form>
-              )}
-              {sending && <ProgressBar />}
-
-              {clarify && (
-                <form className="board-clarify" onSubmit={submitClarifyAnswers}>
-                  <p className="board-clarify-message">{clarify.message}</p>
-                  {clarify.questions.map((q: ClarifyQuestion, qi) => (
-                    <div key={q.id} className="board-clarify-q">
-                      <span className="board-clarify-index">{qi + 1}</span>
-                      <label>{q.question}</label>
-                      {q.type === "text" ? (
-                        <input
-                          type="text"
-                          value={textAnswers[q.id] ?? ""}
-                          onChange={(e) => setTextAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Type your answer..."
-                          maxLength={1000}
-                        />
-                      ) : (
-                        <div className="board-clarify-options">
-                          {(q.options ?? []).map((opt) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              className={`assistant-suggestion-chip ${mcqChoice[q.id] === opt ? "chip-active" : ""}`}
-                              onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: opt }))}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            className={`assistant-suggestion-chip chip-other ${mcqChoice[q.id] === "__other__" ? "chip-active" : ""}`}
-                            onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: "__other__" }))}
-                          >
-                            Other…
-                          </button>
-                        </div>
-                      )}
-                      {q.type === "mcq" && mcqChoice[q.id] === "__other__" && (
-                        <input
-                          type="text"
-                          value={otherText[q.id] ?? ""}
-                          onChange={(e) => setOtherText((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Nhập ý kiến riêng của bạn..."
-                          maxLength={1000}
-                        />
-                      )}
-                    </div>
-                  ))}
-                  <div className="board-clarify-actions">
-                    <button type="submit" className="btn btn-primary" disabled={sending}>
-                      {sending ? "Crafting..." : "Send answers"}
-                    </button>
-                    <button type="button" className="btn btn-ghost" onClick={() => void submitCraft()}>
-                      Skip questions — just plan it
-                    </button>
-                  </div>
-                </form>
-              )}
+              <div className="text-sm text-gray-700">
+                {reply.text}
+              </div>
+              {!reply.seen && <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white" />}
             </div>
+          )}
 
-            {/* factors section hidden until a plan exists */}
-          </>
-        ) : (
-          <>
-            <div className="board-canvas">
+          {plan === undefined ? (
+            <div className="spinner mt-20 mx-auto" />
+          ) : plan !== null && (
+            <div className="max-w-[980px] mx-auto bg-white/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-100 shadow-sm relative z-0">
               <p className="board-strategy">{plan.strategySummary}</p>
 
               {/* Sequential Duolingo-style path — one continuous winding line of day nodes */}
@@ -517,10 +489,9 @@ export default function BoardPage() {
                     </aside>
                   );
                 })()}
-            </div>
 
             {/* Roadmap factors — everything the AI produces lives here, clearly labeled */}
-            <section className="board-factors">
+            <section className="board-factors mt-8">
               <h2>Roadmap factors</h2>
               <div className="board-factor-grid">
                 {plan.factors.map((f) => {
@@ -533,11 +504,11 @@ export default function BoardPage() {
                           Day {f.dayRange[0]}–{f.dayRange[1]}
                         </span>
                       </div>
-                      {f.artifacts.length === 0 ? (
+                      {f.artifacts.length === 0 && (!sending || selectedDay == null || !fDays.some(d => d.day === selectedDay)) ? (
                         <p className="board-factor-empty">
                           Nothing produced yet — select one of this factor&apos;s days and ask for a script, visual or edit style.
                         </p>
-                      ) : (
+                      ) : f.artifacts.length > 0 ? (
                         <ul className="board-artifact-list">
                           {f.artifacts.map((a) => (
                             <li
@@ -577,7 +548,13 @@ export default function BoardPage() {
                             </li>
                           ))}
                         </ul>
+                      ) : null}
+
+                      {/* Show loading skeleton if AI is generating an artifact for a day in this factor */}
+                      {sending && selectedDay != null && fDays.some(d => d.day === selectedDay) && (
+                        <div className="artifact-loading-skeleton mt-3" />
                       )}
+
                       {fDays.length > 0 && (
                         <div className="board-factor-days">
                           {fDays.map((d) => (
@@ -597,50 +574,74 @@ export default function BoardPage() {
               </div>
             </section>
 
-            {/* The input dock — whiteboard-style dotted tray under the path */}
-            <form className="board-dock" onSubmit={sendRequest}>
-              <div className="board-dock-context">
-                {selectedDay != null ? (
-                  <>Editing <strong>Day {selectedDay}</strong></>
-                ) : (
-                  "Select a day above, then type your request"
-                )}
+            </div>
+          )}
+        </div>
+
+        {/* Floating AI Chat Dock */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 w-full max-w-2xl px-4">
+          <form
+            className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-2 flex flex-col gap-2 relative"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!plan && craftRequest.trim()) void submitCraft();
+              else if (plan && request.trim()) void sendRequest(e);
+            }}
+          >
+            <div className="absolute -top-3 left-6 bg-blue-50 text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
+              <Wand2 className="w-3 h-3" />
+              AI Assistant
+            </div>
+
+            {sending && (
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-1.5 rounded-full shadow-sm border border-gray-100 text-xs font-medium text-blue-600 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+                Working...
               </div>
-              <div className="chat-input-row">
-                <input
-                  ref={dockInputRef}
-                  type="text"
-                  value={request}
-                  onChange={(e) => setRequest(e.target.value)}
-                  placeholder={
-                    selectedDay != null
-                      ? `e.g. rewrite day ${selectedDay} hook, write its script...`
-                      : "Pick a day node first..."
-                  }
-                  disabled={sending || selectedDay == null}
-                  maxLength={2000}
-                />
-                <button type="submit" className="btn btn-primary" disabled={sending || !request.trim()}>
-                  {sending ? "Working..." : "Ask AI"}
-                </button>
-              </div>
-              {sending && <ProgressBar />}
-              <div className="board-dock-actions">
+            )}
+
+            <div className="flex items-center gap-3 px-3 py-1.5">
+              <input
+                ref={dockInputRef}
+                type="text"
+                className="flex-1 bg-transparent outline-none text-gray-700 placeholder-gray-400 py-2 text-[15px]"
+                placeholder={
+                  !plan
+                    ? "Lên kế hoạch 30 ngày video TikTok cho sản phẩm của mình..."
+                    : selectedDay != null
+                      ? `Bạn đang nghĩ gì về kịch bản Day ${selectedDay}...`
+                      : "Pick a day node first or ask a general question..."
+                }
+                value={plan ? request : craftRequest}
+                onChange={(e) => plan ? setRequest(e.target.value) : setCraftRequest(e.target.value)}
+                disabled={sending || (plan !== null && selectedDay == null && !request.trim())}
+              />
+              <button
+                type="submit"
+                className={`p-2 rounded-xl transition-all ${(plan ? request.trim() : craftRequest.trim()) ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200' : 'bg-gray-100 text-gray-400'}`}
+                disabled={sending || !(plan ? request.trim() : craftRequest.trim())}
+              >
+                <ArrowUp className="w-5 h-5" />
+              </button>
+            </div>
+          </form>
+
+          {plan !== null && (
+             <div className="mt-3 flex justify-center gap-2">
                 {QUICK_ACTIONS.map((qa) => (
                   <button
                     key={qa.label}
                     type="button"
-                    className="assistant-suggestion-chip"
+                    className="bg-white/80 backdrop-blur text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm border border-gray-200 hover:bg-white hover:text-gray-900 transition-colors"
                     disabled={sending || selectedDay == null}
                     onClick={() => quickAction(qa.template)}
                   >
                     {qa.label}
                   </button>
                 ))}
-              </div>
-            </form>
-          </>
-        )}
+             </div>
+          )}
+        </div>
       </div>
     </AppShell>
   );
