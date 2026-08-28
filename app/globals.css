@@ -622,13 +622,14 @@ footer {
 }
 
 .camera-frame {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: 6px;
+  width: 100vw;
+  margin: 0 calc(-50vw + 50%);
+  margin-bottom: 16px;
+  border-radius: 0px;
   overflow: hidden;
   background: #000;
-  margin-bottom: 16px;
-  border: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 /* ---------- new onboarding flow ---------- */
@@ -907,10 +908,10 @@ footer {
    layout, and this caps the frame at a sane max height on very wide
    monitors instead of stretching it edge to edge. */
 .studio-page .camera-frame {
-  max-width: 1180px;
+  max-width: none;
   max-height: 78vh;
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
 }
 
 .camera-frame video {
@@ -2251,7 +2252,7 @@ footer {
 }
 
 /* Recording screen should be near full-page */
-.studio-page .camera-frame {
+.studio-page .camera-frame.expanded {
   max-width: none;
   max-height: 92vh;
 }

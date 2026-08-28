@@ -1,44 +1,22 @@
 import { z } from "zod";
 
-/** DRM §11-14 — the fixed script graph: HOOK -> CLAIM -> REASON -> EXAMPLE -> PERSONAL EXPERIENCE -> PRODUCT CONNECTION -> ENDING. */
-export const SCRIPT_NODE_TYPES = [
-  "hook",
-  "claim",
-  "reason",
-  "example",
-  "personal_experience",
-  "product_connection",
-  "ending",
-] as const;
-export type ScriptNodeType = (typeof SCRIPT_NODE_TYPES)[number];
-
-export const SCRIPT_NODE_LABELS: Record<ScriptNodeType, string> = {
-  hook: "Hook",
-  claim: "Claim",
-  reason: "Reason",
-  example: "Example",
-  personal_experience: "Personal Experience",
-  product_connection: "Product Connection",
-  ending: "Ending",
-};
-
-export const ScriptNodeSchema = z.object({
-  type: z.enum(SCRIPT_NODE_TYPES),
-  concept: z.string().min(1),
+export const ScriptSegmentSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  bulletPoints: z.array(z.string()).min(3).max(5),
+  estimatedDurationSeconds: z.number().min(1),
 });
-/** One node's required semantic concept — the founder should never memorize exact wording for this, only communicate the concept. */
-export type ScriptNode = z.infer<typeof ScriptNodeSchema>;
+export type ScriptSegment = z.infer<typeof ScriptSegmentSchema>;
 
 export const ScriptGraphSchema = z.object({
   sourceText: z.string().min(1),
-  nodes: z.array(ScriptNodeSchema).length(SCRIPT_NODE_TYPES.length),
+  segments: z.array(ScriptSegmentSchema).min(3).max(5),
 });
 export type ScriptGraph = z.infer<typeof ScriptGraphSchema>;
 
 export const ScriptNodeCoverageSchema = z.object({
-  type: z.enum(SCRIPT_NODE_TYPES),
-  covered: z.boolean(),
-  evidenceQuote: z.string(),
+  coveredPoints: z.array(z.boolean()),
+  evidenceQuotes: z.array(z.string()),
 });
 export type ScriptNodeCoverage = z.infer<typeof ScriptNodeCoverageSchema>;
 

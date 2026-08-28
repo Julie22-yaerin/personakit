@@ -1,5 +1,4 @@
-import type { DriftSegment, ScriptNodeCoverage } from "./script";
-import { SCRIPT_NODE_LABELS } from "./script";
+import type { DriftSegment } from "./script";
 import type { SpeechSegment } from "./speech-analysis";
 
 /**
@@ -34,11 +33,12 @@ export function cutCandidatesFromDrift(segments: DriftSegment[]): EditSuggestion
     }));
 }
 
-/** A missing script node is a concrete "you'll need a pickup line or voiceover for this" pointer, not vague advice. */
-export function coverageGapSuggestions(missing: ScriptNodeCoverage[]): EditSuggestion[] {
-  return missing.map((m) => ({
+/** A missing script bullet point is a concrete "you'll need a pickup line or voiceover for this" pointer, not vague advice. */
+export function coverageGapSuggestions(missingPointIndexes: number[], allBulletPoints: string[]): EditSuggestion[] {
+  return missingPointIndexes.map((m) => ({
     type: "coverage_gap" as const,
-    message: `Never covered "${SCRIPT_NODE_LABELS[m.type]}" — consider a pickup line or voiceover to add it in editing.`,
+    message: `Never covered Point ${m + 1} — consider a pickup line or voiceover to add it in editing.`,
+    evidence: allBulletPoints[m],
   }));
 }
 
@@ -73,7 +73,8 @@ export function fillerCleanupSuggestion(fillerRate: number): EditSuggestion | nu
 
 export interface EditSuggestionInputs {
   driftSegments: DriftSegment[];
-  missingCoverage: ScriptNodeCoverage[];
+  missingCoverageIndexes: number[];
+  allBulletPoints: string[];
   speechSegments: SpeechSegment[];
   fillerRate: number;
 }
@@ -82,7 +83,7 @@ export function generateEditSuggestions(inputs: EditSuggestionInputs): EditSugge
   const filler = fillerCleanupSuggestion(inputs.fillerRate);
   return [
     ...cutCandidatesFromDrift(inputs.driftSegments),
-    ...coverageGapSuggestions(inputs.missingCoverage),
+    ...coverageGapSuggestions(inputs.missingCoverageIndexes, inputs.allBulletPoints),
     ...longPauseSuggestions(inputs.speechSegments),
     ...(filler ? [filler] : []),
   ];

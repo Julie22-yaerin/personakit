@@ -21,7 +21,7 @@ import {
   type SpeechSegment,
 } from "../../lib/speech-analysis";
 import type { SessionPlan } from "../../lib/studio-llm";
-import { SCRIPT_NODE_LABELS, type ScriptGraph, type ScriptNodeCoverage, type DriftSegment } from "../../lib/script";
+import { type ScriptGraph, type ScriptNodeCoverage, type DriftSegment, type ScriptSegment } from "../../lib/script";
 import { generateEditSuggestions, type EditSuggestion } from "../../lib/edit-suggestions";
 import {
   buildDriftSignal,
@@ -66,8 +66,16 @@ interface SpeechResult {
 }
 
 interface DeliveryReport {
-  alignment: { score: number; coverage: ScriptNodeCoverage[]; missing: ScriptNodeCoverage[] };
+  alignment: { score: number; coverage: ScriptNodeCoverage; missing: number[] };
   drift: { score: number; label: string; segments: DriftSegment[]; mostOffTopic: DriftSegment | null };
+}
+
+interface SegmentState {
+  recordedUrl: string | null;
+  speechResult: SpeechResult | null;
+  deliveryReport: DeliveryReport | null;
+  vcsResult: any | null; // using any here for brevity instead of duplicating the huge anonymous type
+  editSuggestions: EditSuggestion[];
 }
 
 function frameToDataUrl(video: HTMLVideoElement, maxDim = 480): string {
@@ -119,8 +127,12 @@ export default function StudioPage() {
   // small toggle only hides it.
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
+  const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
+  const [segmentTakes, setSegmentTakes] = useState<Record<number, SegmentState>>({});
   const [scriptLoading, setScriptLoading] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
+
+  // These drive the live recording UI for the *current* segment
   const [deliveryReport, setDeliveryReport] = useState<DeliveryReport | null>(null);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
@@ -193,6 +205,23 @@ export default function StudioPage() {
     });
     return unsubscribe;
   }, [router]);
+
+  // Auto-stop logic for the segment based on estimatedDurationSeconds
+  useEffect(() => {
+    if (!isRecording || !scriptGraph) return;
+    const currentSegment = scriptGraph.segments[currentSegmentIndex];
+    if (!currentSegment) return;
+
+    // give 5 seconds of buffer time
+    const targetMs = (currentSegment.estimatedDurationSeconds + 5) * 1000;
+
+    const interval = setInterval(() => {
+      if (Date.now() - sessionStartRef.current >= targetMs) {
+        handleStopRecording();
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRecording, scriptGraph, currentSegmentIndex]);
 
   // Camera, kept alive for the whole page visit.
   useEffect(() => {
@@ -359,6 +388,8 @@ export default function StudioPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Script decomposition failed");
       setScriptGraph(data);
+      setCurrentSegmentIndex(0);
+      setSegmentTakes({});
     } catch (err) {
       setScriptError(err instanceof Error ? err.message : "Script decomposition failed");
     } finally {
@@ -384,8 +415,9 @@ export default function StudioPage() {
       const signals: DeliverySignal[] = [];
       if (scriptGraph) {
         try {
+          const currentSegment = scriptGraph.segments[currentSegmentIndex];
           const res = await authedFetch("/api/studio/live-drift", {
-            topic: scriptGraph.sourceText,
+            topic: currentSegment ? currentSegment.title : scriptGraph.sourceText,
             recentTranscript: transcriptRef.current.slice(-600),
           });
           const data = await res.json();
@@ -469,7 +501,15 @@ export default function StudioPage() {
     };
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
-      setRecordedUrl(URL.createObjectURL(blob));
+      const url = URL.createObjectURL(blob);
+      setRecordedUrl(url);
+      setSegmentTakes(prev => ({
+        ...prev,
+        [currentSegmentIndex]: {
+           ...prev[currentSegmentIndex],
+           recordedUrl: url,
+        }
+      }));
     };
     recorder.start();
     mediaRecorderRef.current = recorder;
@@ -496,14 +536,23 @@ export default function StudioPage() {
     setCoachingTip(null);
 
     const fillerRate = computeFillerRate(speechSegmentsRef.current);
-    if (speechSegmentsRef.current.length > 0 || volumeSamplesRef.current.length > 0) {
-      setSpeechResult({
-        wpm: computeSpeechRate(speechSegmentsRef.current, Date.now() - sessionStartRef.current),
-        fillerRate,
-        pauses: computePauseDistribution(speechSegmentsRef.current),
-        volumeVariation: computeVolumeVariation(volumeSamplesRef.current),
-        hasTranscript: speechSegmentsRef.current.length > 0,
-      });
+    const newSpeechResult = (speechSegmentsRef.current.length > 0 || volumeSamplesRef.current.length > 0) ? {
+      wpm: computeSpeechRate(speechSegmentsRef.current, Date.now() - sessionStartRef.current),
+      fillerRate,
+      pauses: computePauseDistribution(speechSegmentsRef.current),
+      volumeVariation: computeVolumeVariation(volumeSamplesRef.current),
+      hasTranscript: speechSegmentsRef.current.length > 0,
+    } : null;
+
+    if (newSpeechResult) {
+      setSpeechResult(newSpeechResult);
+      setSegmentTakes(prev => ({
+        ...prev,
+        [currentSegmentIndex]: {
+          ...prev[currentSegmentIndex],
+          speechResult: newSpeechResult,
+        }
+      }));
     }
     volumeSamplerRef.current?.dispose();
     volumeSamplerRef.current = null;
@@ -511,31 +560,46 @@ export default function StudioPage() {
     // Pause/filler-based suggestions don't need a script — set a base
     // list now, then replace it with the full list (including cut
     // candidates + coverage gaps) once/if the delivery report lands.
-    setEditSuggestions(
-      generateEditSuggestions({
-        driftSegments: [],
-        missingCoverage: [],
-        speechSegments: speechSegmentsRef.current,
-        fillerRate,
-      }),
-    );
+    const baseSuggestions = generateEditSuggestions({
+      driftSegments: [],
+      missingCoverageIndexes: [],
+      allBulletPoints: [],
+      speechSegments: speechSegmentsRef.current,
+      fillerRate,
+    });
+    setEditSuggestions(baseSuggestions);
+    setSegmentTakes(prev => ({
+      ...prev,
+      [currentSegmentIndex]: { ...prev[currentSegmentIndex], editSuggestions: baseSuggestions }
+    }));
 
     if (scriptGraph && transcript.trim()) {
       setDeliveryLoading(true);
       setDeliveryError(null);
       try {
-        const res = await authedFetch("/api/studio/script/analyze", { graph: scriptGraph, transcript });
+        const segment = scriptGraph.segments[currentSegmentIndex];
+        const res = await authedFetch("/api/studio/script/analyze", { segment, transcript });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Delivery analysis failed");
         setDeliveryReport(data);
-        setEditSuggestions(
-          generateEditSuggestions({
-            driftSegments: data.drift.segments,
-            missingCoverage: data.alignment.missing,
-            speechSegments: speechSegmentsRef.current,
-            fillerRate,
-          }),
-        );
+
+        const nextSuggestions = generateEditSuggestions({
+          driftSegments: data.drift.segments,
+          missingCoverageIndexes: data.alignment.missing,
+          allBulletPoints: segment.bulletPoints,
+          speechSegments: speechSegmentsRef.current,
+          fillerRate,
+        });
+        setEditSuggestions(nextSuggestions);
+
+        setSegmentTakes(prev => ({
+          ...prev,
+          [currentSegmentIndex]: {
+             ...prev[currentSegmentIndex],
+             deliveryReport: data,
+             editSuggestions: nextSuggestions,
+          }
+        }));
       } catch (err) {
         setDeliveryError(err instanceof Error ? err.message : "Delivery analysis failed");
       } finally {
@@ -557,10 +621,16 @@ export default function StudioPage() {
     }
 
     const vcs = computeVisualConsistencyScore(visualTargets, measured);
-    setVcsResult({      score: vcs.score,
+    const newVcsResult = {
+      score: vcs.score,
       label: vcs.score !== null ? classifyVisualConsistency(vcs.score) : null,
       categories: vcs.categories,
-    });
+    };
+    setVcsResult(newVcsResult);
+    setSegmentTakes(prev => ({
+      ...prev,
+      [currentSegmentIndex]: { ...prev[currentSegmentIndex], vcsResult: newVcsResult }
+    }));
 
     // Only persist a history entry when something was actually measured —
     // a null score means "no face detected," not "scored 0," and saving
@@ -597,9 +667,12 @@ export default function StudioPage() {
       samples.length ? samples.reduce((sum, s) => sum + s[key], 0) / samples.length : 0;
 
     try {
+      const allTranscripts = Object.values(segmentTakes).map(s => s.deliveryReport ? "" : "").join(" "); // Simplification since full context spans segments.
+      const fullTranscript = scriptGraph ? scriptGraph.segments.map((_, i) => segmentTakes[i] ? "Recorded." : "").join(" ") : transcript;
+
       const res = await authedFetch("/api/studio/plan", {
         personaVector,
-        transcript,
+        transcript: fullTranscript || transcript,
         metricsSummary: {
           avgSmile: avg("smile"),
           avgEyeContact: avg("eyeContact"),
@@ -662,8 +735,37 @@ export default function StudioPage() {
           </button>
           {scriptError && <p className="error" style={{ marginTop: 8 }}>{scriptError}</p>}
           {scriptGraph && (
-            <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-              Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
+                {scriptGraph.segments.map((seg, idx) => (
+                  <button
+                    key={seg.id}
+                    className={`btn btn-sm ${currentSegmentIndex === idx ? "btn-primary" : "btn-ghost"}`}
+                    onClick={() => {
+                      if (!isRecording) {
+                        setCurrentSegmentIndex(idx);
+                        const state = segmentTakes[idx];
+                        setRecordedUrl(state?.recordedUrl || null);
+                        setDeliveryReport(state?.deliveryReport || null);
+                        setSpeechResult(state?.speechResult || null);
+                        setVcsResult(state?.vcsResult || null);
+                        setEditSuggestions(state?.editSuggestions || []);
+                        setTranscript("");
+                      }
+                    }}
+                  >
+                    {idx + 1}. {seg.title} {segmentTakes[idx]?.deliveryReport ? "✓" : ""}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text)", background: "var(--surface)", padding: 12, borderRadius: 6, marginTop: 4 }}>
+                <strong>{scriptGraph.segments[currentSegmentIndex].title}</strong> ({scriptGraph.segments[currentSegmentIndex].estimatedDurationSeconds}s target)
+                <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
+                  {scriptGraph.segments[currentSegmentIndex].bulletPoints.map((bp, i) => (
+                    <li key={i}>{bp}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>
@@ -787,21 +889,25 @@ export default function StudioPage() {
               <div className="price-name">Script Alignment</div>
               <span className="score-badge">{Math.round(deliveryReport.alignment.score)}</span>
             </div>
-            {deliveryReport.alignment.coverage.map((c) => (
-              <div key={c.type} style={{ marginTop: 6 }}>
-                <span style={{ fontSize: 13, color: c.covered ? "var(--text)" : "var(--muted)" }}>
-                  {c.covered ? "✓" : "○"} {SCRIPT_NODE_LABELS[c.type]}
-                </span>
-                {c.covered && c.evidenceQuote && (
-                  <p style={{ fontSize: 12, fontStyle: "italic", color: "var(--muted)", margin: "2px 0 0 18px" }}>
-                    &ldquo;{c.evidenceQuote}&rdquo;
-                  </p>
-                )}
-              </div>
-            ))}
+            {scriptGraph && scriptGraph.segments[currentSegmentIndex].bulletPoints.map((bp, idx) => {
+              const covered = deliveryReport.alignment.coverage.coveredPoints[idx];
+              const evidence = deliveryReport.alignment.coverage.evidenceQuotes[idx];
+              return (
+                <div key={idx} style={{ marginTop: 6 }}>
+                  <span style={{ fontSize: 13, color: covered ? "var(--text)" : "var(--muted)" }}>
+                    {covered ? "✓" : "○"} {bp}
+                  </span>
+                  {covered && evidence && (
+                    <p style={{ fontSize: 12, fontStyle: "italic", color: "var(--muted)", margin: "2px 0 0 18px" }}>
+                      &ldquo;{evidence}&rdquo;
+                    </p>
+                  )}
+                </div>
+              );
+            })}
             {deliveryReport.alignment.missing.length > 0 && (
               <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-                Missing: {deliveryReport.alignment.missing.map((m) => SCRIPT_NODE_LABELS[m.type]).join(", ")}
+                Missing Points: {deliveryReport.alignment.missing.map(m => `Point ${m + 1}`).join(", ")}
               </div>
             )}
 

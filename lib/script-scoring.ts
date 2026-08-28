@@ -8,16 +8,18 @@ function average(values: number[]): number {
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 }
 
-/** DRM §11-14 — SAS = semantic coverage / required concepts, e.g. 7 of 8 covered = 87.5. */
-export function computeScriptAlignmentScore(coverage: ScriptNodeCoverage[]): number {
-  if (coverage.length === 0) return 0;
-  const coveredCount = coverage.filter((c) => c.covered).length;
-  return clamp((coveredCount / coverage.length) * 100, 0, 100);
+/** SAS = bullet point coverage / required concepts, e.g. 3 of 4 covered = 75. */
+export function computeScriptAlignmentScore(coverage: ScriptNodeCoverage): number {
+  if (coverage.coveredPoints.length === 0) return 0;
+  const coveredCount = coverage.coveredPoints.filter(Boolean).length;
+  return clamp((coveredCount / coverage.coveredPoints.length) * 100, 0, 100);
 }
 
-/** Nodes the delivery never actually communicated, in graph order. */
-export function missingScriptNodes(coverage: ScriptNodeCoverage[]): ScriptNodeCoverage[] {
-  return coverage.filter((c) => !c.covered);
+/** Indexes of bullet points the delivery never actually communicated. */
+export function missingScriptNodes(coverage: ScriptNodeCoverage): number[] {
+  return coverage.coveredPoints
+    .map((covered, i) => (covered ? -1 : i))
+    .filter((i) => i !== -1);
 }
 
 /** DRM §11-14 — Drift = 1 - semantic relevance, expressed on the same 0-100 scale as relevance. */
