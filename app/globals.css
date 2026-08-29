@@ -1,27 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "./studio-hud.css";
-
-@font-face {
-  font-family: 'Gimola';
-  src: local('Gimola'), local('Syne-Bold'), url('https://fonts.gstatic.com/s/syne/v22/8vIS7w4qzmVysDAxl7N-r74.woff2') format('woff2');
-  font-weight: 600 700 800 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Coco';
-  src: local('Coco'), local('PlusJakartaSans-Regular'), url('https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsDxUFnMVeNM9PnfM.woff2') format('woff2');
-  font-weight: 300 400 500 600 700 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Black Mango';
-  src: local('Black Mango'), local('Cinzel-SemiBold'), url('https://fonts.gstatic.com/s/cinzel/v23/8vIJ7ww63mVu7gt79W7P.woff2') format('woff2');
-  font-weight: 500 600 700 800;
-  font-display: swap;
-}
 
 @theme inline {
   --color-background: var(--bg);
@@ -34,11 +12,11 @@
 }
 
 :root {
-  /* Typography Tokens */
-  --font-title-1: 'Gimola', 'Syne', -apple-system, sans-serif;
-  --font-title-2: 'Black Mango', 'Cinzel', serif;
-  --font-body: 'Coco', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Typography Tokens — Wired to Next.js Optimized Self-Hosted Fonts */
+  --font-title-1: 'Gimola', var(--font-syne), 'Syne', -apple-system, sans-serif;
+  --font-title-2: 'Black Mango', var(--font-cinzel), 'Cinzel', serif;
+  --font-body: 'Coco', var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Color Palette — Headline: #F5EFEB, Paragraph / Main Idea: #8FB3E2 */
   --headline: #F5EFEB;

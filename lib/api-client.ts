@@ -55,20 +55,34 @@ export async function safeReadJson<T = Record<string, unknown>>(
       };
     }
 
-    const parsed = JSON.parse(text);
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // Server returned non-JSON text (e.g. 502 "upstream error" or HTML error page)
+      const cleanMsg =
+        text.length < 200 && !text.includes("<html")
+          ? text.trim()
+          : `Server error (HTTP ${res.status})`;
+      return {
+        ok: false,
+        data: null,
+        error: cleanMsg,
+      };
+    }
+
     if (!res.ok) {
       const errMsg =
         parsed && typeof parsed === "object" && "error" in parsed
-          ? typeof parsed.error === "string"
-            ? parsed.error
-            : JSON.stringify(parsed.error)
+          ? typeof (parsed as { error: unknown }).error === "string"
+            ? (parsed as { error: string }).error
+            : JSON.stringify((parsed as { error: unknown }).error)
           : `Request failed with status ${res.status}`;
-      return { ok: false, data: parsed, error: errMsg };
+      return { ok: false, data: parsed as T, error: errMsg };
     }
 
     return { ok: true, data: parsed as T, error: null };
   } catch (err) {
-    console.warn("[safeReadJson] Error reading response:", err);
     return {
       ok: false,
       data: null,
