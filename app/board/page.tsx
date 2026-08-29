@@ -182,12 +182,13 @@ export default function BoardPage() {
 
   // ---------- craft on the board ----------
 
-  async function submitCraft(answers?: CraftAnswer[]) {
+  async function submitCraft(answers?: CraftAnswer[], customPrompt?: string) {
     if (sending) return;
     setSending(true);
+    const promptToUse = customPrompt ?? craftRequest;
     try {
       const res = await authedFetch("/api/board/craft", {
-        request: craftRequest || undefined,
+        request: promptToUse || undefined,
         ...(answers ? { answers } : {}),
       });
       const data = await res.json();
@@ -229,12 +230,18 @@ export default function BoardPage() {
     void submitCraft(answers);
   }
 
-  // ---------- edit existing objects ----------
+  // ---------- edit existing objects or craft directly from dock ----------
 
   async function sendRequest(e: FormEvent) {
     e.preventDefault();
     const text = request.trim();
     if (!text || sending) return;
+
+    if (!plan || plan.days.length === 0) {
+      setRequest("");
+      await submitCraft(undefined, text);
+      return;
+    }
 
     let finalText = text;
     const selected = selectedDay != null ? plan?.days.find((d) => d.day === selectedDay) : undefined;
@@ -322,7 +329,11 @@ export default function BoardPage() {
   }
 
   function quickAction(template: string) {
-    setRequest(`${template} ${selectedDay != null ? `day ${selectedDay}` : "the plan"}`);
+    if (!plan || plan.days.length === 0) {
+      setRequest(template);
+    } else {
+      setRequest(`${template} ${selectedDay != null ? `day ${selectedDay}` : "the plan"}`);
+    }
     dockInputRef.current?.focus();
   }
 
@@ -343,16 +354,17 @@ export default function BoardPage() {
   }
   if (!user) return null;
 
+  const currentQuickActions = !plan || plan.days.length === 0
+    ? [
+        { label: "30-Day Launch", template: "Lên kế hoạch 30 ngày cho sản phẩm của mình" },
+        { label: "TikTok Series", template: "Xây dựng chuỗi 30 video TikTok viral" },
+        { label: "Brand Story", template: "Kế hoạch 30 ngày kể câu chuyện thương hiệu" },
+      ]
+    : QUICK_ACTIONS;
+
   return (
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="board-wrap">
-        <header className="board-head">
-          <h1 className="dashboard-title">The Board</h1>
-          <p className="dashboard-caption">
-            Your production roadmap — tap a day to edit it, or ask the assistant to make something new.
-          </p>
-        </header>
-
         {reply && (
           <div
             className={`board-floating-reply ${reply.seen ? "" : "board-floating-reply-new"}`}
@@ -365,111 +377,86 @@ export default function BoardPage() {
           </div>
         )}
 
-        {plan === undefined ? (
-          <div className="spinner" />
-        ) : plan === null ? (
-          <>
-            {/* ---- no plan yet: craft one right here ---- */}
-            <div className="board-canvas board-canvas-craft">
-              <div className="board-craft-intro">
-                <h2>The board is empty.</h2>
-                <p>
-                  Tell the assistant what you want to build this month and it crafts your
-                  day-by-day roadmap here. It may ask you a couple of quick questions first —
-                  answer or skip freely.
-                </p>
-              </div>
-
-              {!clarify && (
-                <form
-                  className="chat-input-row"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (craftRequest.trim()) void submitCraft();
-                  }}
+        {/* Clarifying Questions Modal Overlay */}
+        {clarify && (
+          <div className="board-clarify-modal-backdrop">
+            <div className="board-clarify-modal">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>Clarifying Questions</span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setClarify(null)}
                 >
-                  <input
-                    type="text"
-                    value={craftRequest}
-                    onChange={(e) => setCraftRequest(e.target.value)}
-                    placeholder="e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm của mình..."
-                    disabled={sending}
-                    maxLength={2000}
-                  />
-                  <button type="submit" className="btn btn-primary" disabled={sending || !craftRequest.trim()}>
-                    {sending ? "Thinking..." : "Craft plan"}
-                  </button>
-                </form>
-              )}
-              {sending && <ProgressBar />}
-
-              {clarify && (
-                <form className="board-clarify" onSubmit={submitClarifyAnswers}>
-                  <p className="board-clarify-message">{clarify.message}</p>
-                  {clarify.questions.map((q: ClarifyQuestion, qi) => (
-                    <div key={q.id} className="board-clarify-q">
-                      <span className="board-clarify-index">{qi + 1}</span>
-                      <label>{q.question}</label>
-                      {q.type === "text" ? (
-                        <input
-                          type="text"
-                          value={textAnswers[q.id] ?? ""}
-                          onChange={(e) => setTextAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Type your answer..."
-                          maxLength={1000}
-                        />
-                      ) : (
-                        <div className="board-clarify-options">
-                          {(q.options ?? []).map((opt) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              className={`assistant-suggestion-chip ${mcqChoice[q.id] === opt ? "chip-active" : ""}`}
-                              onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: opt }))}
-                            >
-                              {opt}
-                            </button>
-                          ))}
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={submitClarifyAnswers}>
+                <p className="board-clarify-message">{clarify.message}</p>
+                {clarify.questions.map((q: ClarifyQuestion, qi) => (
+                  <div key={q.id} className="board-clarify-q">
+                    <span className="board-clarify-index">{qi + 1}</span>
+                    <label>{q.question}</label>
+                    {q.type === "text" ? (
+                      <input
+                        type="text"
+                        value={textAnswers[q.id] ?? ""}
+                        onChange={(e) => setTextAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                        placeholder="Type your answer..."
+                        maxLength={1000}
+                      />
+                    ) : (
+                      <div className="board-clarify-options">
+                        {(q.options ?? []).map((opt) => (
                           <button
+                            key={opt}
                             type="button"
-                            className={`assistant-suggestion-chip chip-other ${mcqChoice[q.id] === "__other__" ? "chip-active" : ""}`}
-                            onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: "__other__" }))}
+                            className={`assistant-suggestion-chip ${mcqChoice[q.id] === opt ? "chip-active" : ""}`}
+                            onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: opt }))}
                           >
-                            Other…
+                            {opt}
                           </button>
-                        </div>
-                      )}
-                      {q.type === "mcq" && mcqChoice[q.id] === "__other__" && (
-                        <input
-                          type="text"
-                          value={otherText[q.id] ?? ""}
-                          onChange={(e) => setOtherText((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Nhập ý kiến riêng của bạn..."
-                          maxLength={1000}
-                        />
-                      )}
-                    </div>
-                  ))}
-                  <div className="board-clarify-actions">
-                    <button type="submit" className="btn btn-primary" disabled={sending}>
-                      {sending ? "Crafting..." : "Send answers"}
-                    </button>
-                    <button type="button" className="btn btn-ghost" onClick={() => void submitCraft()}>
-                      Skip questions — just plan it
-                    </button>
+                        ))}
+                        <button
+                          type="button"
+                          className={`assistant-suggestion-chip chip-other ${mcqChoice[q.id] === "__other__" ? "chip-active" : ""}`}
+                          onClick={() => setMcqChoice((prev) => ({ ...prev, [q.id]: "__other__" }))}
+                        >
+                          Other…
+                        </button>
+                      </div>
+                    )}
+                    {q.type === "mcq" && mcqChoice[q.id] === "__other__" && (
+                      <input
+                        type="text"
+                        value={otherText[q.id] ?? ""}
+                        onChange={(e) => setOtherText((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                        placeholder="Nhập ý kiến riêng của bạn..."
+                        maxLength={1000}
+                      />
+                    )}
                   </div>
-                </form>
-              )}
+                ))}
+                <div className="board-clarify-actions">
+                  <button type="submit" className="btn btn-primary" disabled={sending}>
+                    {sending ? "Crafting..." : "Send answers"}
+                  </button>
+                  <button type="button" className="btn btn-ghost" onClick={() => void submitCraft()}>
+                    Skip questions — just plan it
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>
+        )}
 
-            {/* factors section hidden until a plan exists */}
-          </>
-        ) : (
-          <>
-            <div className="board-canvas">
+        {/* Full-Screen Whiteboard Canvas */}
+        <div className={`board-canvas ${!plan || plan.days.length === 0 ? "board-canvas-empty" : ""}`}>
+          {plan && plan.days.length > 0 ? (
+            <>
               <p className="board-strategy">{plan.strategySummary}</p>
 
-              {/* Sequential Duolingo-style path — one continuous winding line of day nodes */}
+              {/* Sequential Duolingo-style path */}
               <div className="board-path">
                 {plan.days.map((d, i) => {
                   const side = i % 2 === 0 ? "left" : "right";
@@ -514,130 +501,136 @@ export default function BoardPage() {
                     </aside>
                   );
                 })()}
-            </div>
+            </>
+          ) : null}
+        </div>
 
-            {/* Roadmap factors — everything the AI produces lives here, clearly labeled */}
-            <section className="board-factors">
-              <h2>Roadmap factors</h2>
-              <div className="board-factor-grid">
-                {plan.factors.map((f) => {
-                  const fDays = daysByFactor.get(f.id) ?? [];
-                  return (
-                    <div key={f.id} className="board-factor">
-                      <div className="board-factor-head">
-                        <span className="board-factor-name">{f.name}</span>
-                        <span className="board-factor-range">
-                          Day {f.dayRange[0]}–{f.dayRange[1]}
-                        </span>
-                      </div>
-                      {f.artifacts.length === 0 ? (
-                        <p className="board-factor-empty">
-                          Nothing produced yet — select one of this factor&apos;s days and ask for a script, visual or edit style.
-                        </p>
-                      ) : (
-                        <ul className="board-artifact-list">
-                          {f.artifacts.map((a) => (
-                            <li
-                              key={a.id}
-                              className="board-artifact"
-                              onContextMenu={(e) => {
-                                if (a.kind !== "script") return;
-                                e.preventDefault();
-                                sendScriptToStudio(a);
-                              }}
-                              title={a.kind === "script" ? "Right-click → send to Studio" : undefined}
-                            >
-                              <details>
-                                <summary>
-                                  <span className={`board-artifact-kind ${KIND_CLASS[a.kind] ?? ""}`}>
-                                    {ARTIFACT_KIND_LABELS[a.kind] ?? a.kind}
-                                  </span>
-                                  {typeof a.day === "number" && (
-                                    <span className="board-artifact-day">Day {a.day}</span>
-                                  )}
-                                  <span className="board-artifact-title">{a.title}</span>
-                                  {a.kind === "script" && (
-                                    <button
-                                      type="button"
-                                      className="profile-edit-link"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        sendScriptToStudio(a);
-                                      }}
-                                    >
-                                      → Studio
-                                    </button>
-                                  )}
-                                </summary>
-                                <pre className="board-artifact-content">{a.content}</pre>
-                              </details>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {fDays.length > 0 && (
-                        <div className="board-factor-days">
-                          {fDays.map((d) => (
-                            <button
-                              key={d.day}
-                              className={`board-chip ${d.done ? "board-chip-done" : ""}`}
-                              onClick={() => setSelectedDay(d.day)}
-                            >
-                              D{d.day}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+        {/* Roadmap factors — only shown when factors exist */}
+        {plan && plan.factors && plan.factors.length > 0 && (
+          <section className="board-factors">
+            <h2>Roadmap factors</h2>
+            <div className="board-factor-grid">
+              {plan.factors.map((f) => {
+                const fDays = daysByFactor.get(f.id) ?? [];
+                return (
+                  <div key={f.id} className="board-factor">
+                    <div className="board-factor-head">
+                      <span className="board-factor-name">{f.name}</span>
+                      <span className="board-factor-range">
+                        Day {f.dayRange[0]}–{f.dayRange[1]}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* The input dock — whiteboard-style dotted tray under the path */}
-            <form className="board-dock" onSubmit={sendRequest}>
-              <div className="board-dock-context">
-                {selectedDay != null ? (
-                  <>Editing <strong>Day {selectedDay}</strong></>
-                ) : (
-                  "Select a day above, then type your request"
-                )}
-              </div>
-              <div className="chat-input-row">
-                <input
-                  ref={dockInputRef}
-                  type="text"
-                  value={request}
-                  onChange={(e) => setRequest(e.target.value)}
-                  placeholder={
-                    selectedDay != null
-                      ? `e.g. rewrite day ${selectedDay} hook, write its script...`
-                      : "Pick a day node first..."
-                  }
-                  disabled={sending || selectedDay == null}
-                  maxLength={2000}
-                />
-                <button type="submit" className="btn btn-primary" disabled={sending || !request.trim()}>
-                  {sending ? "Working..." : "Ask AI"}
-                </button>
-              </div>
-              {sending && <ProgressBar />}
-              <div className="board-dock-actions">
-                {QUICK_ACTIONS.map((qa) => (
-                  <button
-                    key={qa.label}
-                    type="button"
-                    className="assistant-suggestion-chip"
-                    disabled={sending || selectedDay == null}
-                    onClick={() => quickAction(qa.template)}
-                  >
-                    {qa.label}
-                  </button>
-                ))}
-              </div>
-            </form>
-          </>
+                    {f.artifacts.length === 0 ? (
+                      <p className="board-factor-empty">
+                        Nothing produced yet — select one of this factor&apos;s days and ask for a script, visual or edit style.
+                      </p>
+                    ) : (
+                      <ul className="board-artifact-list">
+                        {f.artifacts.map((a) => (
+                          <li
+                            key={a.id}
+                            className="board-artifact"
+                            onContextMenu={(e) => {
+                              if (a.kind !== "script") return;
+                              e.preventDefault();
+                              sendScriptToStudio(a);
+                            }}
+                            title={a.kind === "script" ? "Right-click → send to Studio" : undefined}
+                          >
+                            <details>
+                              <summary>
+                                <span className={`board-artifact-kind ${KIND_CLASS[a.kind] ?? ""}`}>
+                                  {ARTIFACT_KIND_LABELS[a.kind] ?? a.kind}
+                                </span>
+                                {typeof a.day === "number" && (
+                                  <span className="board-artifact-day">Day {a.day}</span>
+                                )}
+                                <span className="board-artifact-title">{a.title}</span>
+                                {a.kind === "script" && (
+                                  <button
+                                    type="button"
+                                    className="profile-edit-link"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      sendScriptToStudio(a);
+                                    }}
+                                  >
+                                    → Studio
+                                  </button>
+                                )}
+                              </summary>
+                              <pre className="board-artifact-content">{a.content}</pre>
+                            </details>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {fDays.length > 0 && (
+                      <div className="board-factor-days">
+                        {fDays.map((d) => (
+                          <button
+                            key={d.day}
+                            className={`board-chip ${d.done ? "board-chip-done" : ""}`}
+                            onClick={() => setSelectedDay(d.day)}
+                          >
+                            D{d.day}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
+
+        {/* The input dock — whiteboard-style dotted tray under the path */}
+        <form className="board-dock" onSubmit={sendRequest}>
+          <div className="board-dock-context">
+            {selectedDay != null ? (
+              <>Editing <strong>Day {selectedDay}</strong></>
+            ) : plan && plan.days.length > 0 ? (
+              "Select a day above, then type your request"
+            ) : (
+              "Whiteboard ready · Type what you want to build or craft for this month"
+            )}
+          </div>
+          <div className="chat-input-row">
+            <input
+              ref={dockInputRef}
+              type="text"
+              value={request}
+              onChange={(e) => setRequest(e.target.value)}
+              placeholder={
+                selectedDay != null
+                  ? `e.g. rewrite day ${selectedDay} hook, write its script...`
+                  : plan && plan.days.length > 0
+                  ? "Pick a day node or ask to adjust the roadmap..."
+                  : "e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm..."
+              }
+              disabled={sending}
+              maxLength={2000}
+            />
+            <button type="submit" className="btn btn-primary" disabled={sending || !request.trim()}>
+              {sending ? "Working..." : plan && plan.days.length > 0 ? "Ask AI" : "Craft Plan"}
+            </button>
+          </div>
+          {sending && <ProgressBar />}
+          <div className="board-dock-actions">
+            {currentQuickActions.map((qa) => (
+              <button
+                key={qa.label}
+                type="button"
+                className="assistant-suggestion-chip"
+                disabled={sending}
+                onClick={() => quickAction(qa.template)}
+              >
+                {qa.label}
+              </button>
+            ))}
+          </div>
+        </form>
       </div>
     </AppShell>
   );

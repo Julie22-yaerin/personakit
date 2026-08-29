@@ -1596,11 +1596,11 @@ footer {
 /* ---------- the board ---------- */
 .board-wrap {
   position: relative;
-  max-width: 980px;
-}
-
-.board-head {
-  margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
 }
 
 .board-canvas {
@@ -1614,6 +1614,15 @@ footer {
   position: relative;
   display: flex;
   gap: 24px;
+  flex: 1;
+  min-height: 60vh;
+  width: 100%;
+}
+
+.board-canvas-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .board-strategy {
@@ -2002,6 +2011,30 @@ footer {
   line-height: 1.6;
   max-width: 560px;
   margin: 0;
+}
+
+.board-clarify-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.board-clarify-modal {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 580px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
 }
 
 .board-clarify {
