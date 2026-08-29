@@ -55,9 +55,6 @@ const FAQ_ITEMS = [
 export default function LandingPage() {
   return (
     <>
-      {/* 1. Neuro Noise WebGL1 Animated Shader Background */}
-      <AnimationBackground />
-
       <div className={`p-page ${grotesk.variable} ${mono.variable}`}>
         {/* ---------- NAVIGATION ---------- */}
         <nav className="p-nav">

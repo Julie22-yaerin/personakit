@@ -189,9 +189,6 @@ export default function OnboardingFlow() {
 
   return (
     <div className="p-page" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative" }}>
-      {/* Background Neural Noise Shader */}
-      <NeuroNoiseBackground className="opacity-65 pointer-events-none" />
-
       {/* Top Header & Progress */}
       <header className="p-nav" style={{ position: "sticky", top: 0, zIndex: 40 }}>
         <div className="p-nav-inner" style={{ padding: "14px 24px" }}>
