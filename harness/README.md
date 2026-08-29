@@ -21,6 +21,7 @@ harness/
 │   ├── case-studies.md          # Case studies thực tế (Slayton, Selleb, PostHog, Rilla, Dex)
 │   ├── viral-vs-conversion.md   # Tranh cãi đúng cách: view ≠ khách hàng, Wrong Audience
 │   ├── production-playbook.md   # Kỹ thuật quay/chỉnh sửa + checklist
+│   ├── 100-hooks-database.md    # Hệ thống 100 điểm chạm mạng xã hội cho nội dung founder-led
 │   └── state.schema.json        # Schema trạng thái dự án AI đọc/ghi
 ├── templates/
 │   ├── post-types.md            # 4 mẫu bài đăng + quy tắc thực thi
