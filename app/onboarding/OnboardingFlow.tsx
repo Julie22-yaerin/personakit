@@ -25,6 +25,7 @@ import {
 import { Logo } from "../../components/landing/Logo";
 import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { ArrowRight, ArrowLeft, Check, Sparkles, AlertCircle } from "lucide-react";
+import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
 
 export default function OnboardingFlow() {
   const router = useRouter();
@@ -234,7 +235,12 @@ export default function OnboardingFlow() {
           </p>
 
           {/* STAGE-SPECIFIC QUESTIONS */}
-          <div className="p-card" style={{ background: "rgba(10, 14, 26, 0.9)", border: "1px solid rgba(0, 240, 255, 0.25)", padding: 28, borderRadius: 16, marginBottom: 24 }}>
+          <FrostedGlassCard
+            containerClassName="w-full mb-6"
+            className="p-card border border-[#00f0ff]/30 p-7 sm:p-8 rounded-2xl shadow-2xl backdrop-blur-2xl"
+            glowColor="rgba(0, 240, 255, 0.22)"
+            tiltIntensity={4}
+          >
             {/* STAGE 01 — What are you building? */}
             {stageConfig.id === "building" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -856,7 +862,7 @@ export default function OnboardingFlow() {
                 <span>{errorMessage}</span>
               </div>
             )}
-          </div>
+          </FrostedGlassCard>
 
           {/* Bottom Action Controls */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

@@ -10,6 +10,7 @@ import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
 import { StudioHudOverlay } from "../../components/studio/StudioHudOverlay";
 import { StudioTelemetrySimulator } from "../../components/studio/StudioTelemetrySimulator";
+import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
 import { INITIAL_OVERLAY_STATE, type FilmingOverlayState } from "../../lib/studio-overlay-types";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
@@ -687,7 +688,12 @@ export default function StudioPage() {
       <div className="app-main-inner-wide studio-page">
         <p className="onboarding-step-label">Studio · live filming</p>
 
-        <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+        <FrostedGlassCard
+          containerClassName="w-full mb-4"
+          className="auth-card p-6 rounded-2xl border border-border"
+          glowColor="rgba(51, 86, 219, 0.2)"
+          tiltIntensity={3}
+        >
           <div className="price-name" style={{ marginBottom: 8 }}>Script (optional)</div>
           <p className="auth-caption" style={{ textAlign: "left", marginBottom: 10 }}>
             Paste your talking points or topic — never memorize it. Scripts made on The Board
@@ -695,7 +701,7 @@ export default function StudioPage() {
             delivery covered the ground it needed to, not whether you said it word for word.
           </p>
           <textarea
-            rows={4}
+            rows={3}
             value={scriptText}
             onChange={(e) => setScriptText(e.target.value)}
             placeholder="What's this take about?"
@@ -714,9 +720,9 @@ export default function StudioPage() {
               Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
             </div>
           )}
-        </div>
+        </FrostedGlassCard>
 
-        <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+        <div className="studio-canvas-wrap">
           {receivedScript && (
             <div className="studio-received-script">
               <div className="studio-received-script-head">
@@ -738,7 +744,7 @@ export default function StudioPage() {
           {cameraError ? (
             <p className="error">{cameraError}</p>
           ) : (
-            <div className="camera-frame" style={{ position: "relative", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: 12 }}>
+            <div className="studio-camera-canvas" style={{ position: "relative", width: "100%", minHeight: "calc(100vh - 200px)", height: "72vh", maxHeight: "860px", overflow: "hidden", borderRadius: 18, border: "1px dashed rgba(148, 168, 255, 0.3)", background: "#060812" }}>
               <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               {overlayVisible && (
                 <StudioHudOverlay
@@ -798,16 +804,26 @@ export default function StudioPage() {
         </div>
 
         {(transcript || isRecording) && (
-          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+          <FrostedGlassCard
+            containerClassName="w-full mb-4 mt-6"
+            className="auth-card p-6 rounded-2xl border border-border"
+            glowColor="rgba(0, 240, 255, 0.2)"
+            tiltIntensity={3}
+          >
             <div className="price-name" style={{ marginBottom: 8 }}>Live transcript</div>
             <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)", minHeight: 24 }}>
               {transcript || "..."}
             </p>
-          </div>
+          </FrostedGlassCard>
         )}
 
         {recordedUrl && (
-          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
+          <FrostedGlassCard
+            containerClassName="w-full mb-4"
+            className="auth-card p-6 rounded-2xl border border-border"
+            glowColor="rgba(51, 86, 219, 0.25)"
+            tiltIntensity={3}
+          >
             <div className="price-name" style={{ marginBottom: 8 }}>Your take (raw footage — no overlay baked in)</div>
             <video src={recordedUrl} controls style={{ width: "100%", borderRadius: 6, marginBottom: 12 }} />
             <a href={recordedUrl} download="lyceum-take.webm" className="btn btn-ghost btn-block" style={{ marginBottom: 10 }}>
@@ -817,7 +833,7 @@ export default function StudioPage() {
               {planLoading ? "Planning next take..." : "Get Session Plan"}
             </button>
             {planError && <p className="error">{planError}</p>}
-          </div>
+          </FrostedGlassCard>
         )}
 
         {deliveryLoading && (

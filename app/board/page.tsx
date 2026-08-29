@@ -8,6 +8,7 @@ import { auth, db } from "../../lib/firebase";
 import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
+import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
 import {
   ARTIFACT_KIND_LABELS,
   type ArtifactKind,
@@ -384,7 +385,12 @@ export default function BoardPage() {
         {/* Clarifying Questions Modal Overlay */}
         {clarify && (
           <div className="board-clarify-modal-backdrop">
-            <div className="board-clarify-modal">
+            <FrostedGlassCard
+              containerClassName="max-w-[580px] w-full"
+              className="board-clarify-modal p-6"
+              glowColor="rgba(0, 240, 255, 0.25)"
+              tiltIntensity={3}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <span style={{ fontWeight: 600, fontSize: 14 }}>Clarifying Questions</span>
                 <button
@@ -450,7 +456,7 @@ export default function BoardPage() {
                   </button>
                 </div>
               </form>
-            </div>
+            </FrostedGlassCard>
           </div>
         )}
 
@@ -493,15 +499,21 @@ export default function BoardPage() {
                   const sel = plan.days.find((d) => d.day === selectedDay);
                   if (!sel) return null;
                   return (
-                    <aside className="board-day-detail">
-                      <div className="board-day-detail-head">
-                        <strong>Day {sel.day}</strong>
-                        <span className="score-badge">{sel.format}</span>
-                      </div>
-                      <p>{sel.task}</p>
-                      <button className="btn btn-ghost btn-sm" onClick={() => toggleDone(sel)}>
-                        {sel.done ? "Mark as not done" : "Mark as done ✓"}
-                      </button>
+                    <aside className="board-day-detail-wrap">
+                      <FrostedGlassCard
+                        className="board-day-detail p-4 rounded-xl shadow-lg border border-border"
+                        glowColor="rgba(51, 86, 219, 0.25)"
+                        tiltIntensity={4}
+                      >
+                        <div className="board-day-detail-head">
+                          <strong>Day {sel.day}</strong>
+                          <span className="score-badge">{sel.format}</span>
+                        </div>
+                        <p>{sel.task}</p>
+                        <button className="btn btn-ghost btn-sm" onClick={() => toggleDone(sel)}>
+                          {sel.done ? "Mark as not done" : "Mark as done ✓"}
+                        </button>
+                      </FrostedGlassCard>
                     </aside>
                   );
                 })()}
@@ -514,7 +526,13 @@ export default function BoardPage() {
                     {plan.factors.map((f) => {
                       const fDays = daysByFactor.get(f.id) ?? [];
                       return (
-                        <div key={f.id} className="board-factor">
+                        <FrostedGlassCard
+                          key={f.id}
+                          containerClassName="h-full"
+                          className="board-factor p-4 h-full rounded-2xl shadow-lg border border-border"
+                          glowColor="rgba(157, 184, 242, 0.18)"
+                          tiltIntensity={4}
+                        >
                           <div className="board-factor-head">
                             <span className="board-factor-name">{f.name}</span>
                             <span className="board-factor-range">
@@ -579,7 +597,7 @@ export default function BoardPage() {
                               ))}
                             </div>
                           )}
-                        </div>
+                        </FrostedGlassCard>
                       );
                     })}
                   </div>

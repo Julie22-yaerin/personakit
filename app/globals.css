@@ -2585,3 +2585,70 @@ footer {
   font-weight: 500;
 }
 
+
+/* ---------- Interactive Frosted Glass Card & Studio Canvas Expansion ---------- */
+
+.card-container {
+  perspective: 1000px;
+}
+
+.card {
+  position: relative;
+  background: rgba(14, 18, 30, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out, border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, -1000px) var(--mouse-y, -1000px),
+    var(--glow-color, rgba(255, 255, 255, 0.15)),
+    transparent 45%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* Studio Canvas Expanded (Equal to Board Canvas Size) */
+.studio-canvas-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.studio-camera-canvas {
+  width: 100%;
+  min-height: calc(100vh - 180px);
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px dashed rgba(148, 168, 255, 0.25);
+  background: rgba(10, 12, 18, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+}
+
+.studio-camera-canvas video {
+  width: 100%;
+  height: 100%;
+  min-height: calc(100vh - 180px);
+  object-fit: cover;
+}
