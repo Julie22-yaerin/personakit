@@ -5,7 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
-import { authedFetch } from "../../lib/api-client";
+import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
 import {
@@ -22,6 +22,13 @@ import {
 import { classifySelfKnowledge, type SksClassification } from "../../lib/identity-scoring";
 
 type Step = "interview" | "extracting" | "confirm" | "error";
+
+interface ExtractionPayload {
+  candidates: IdentityCandidate[];
+  communicationProfile: CommunicationProfile;
+  founderOrigin: FounderOrigin;
+  selfKnowledgeScore: number;
+}
 
 const DRAFT_KEY = "personakit:identityDraft";
 
@@ -155,8 +162,9 @@ export default function IdentityPage() {
     setErrorMessage(null);
     try {
       const res = await authedFetch("/api/identity/extract", { answers });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Extraction failed");
+      const parsed = await safeReadJson<ExtractionPayload>(res);
+      if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Extraction failed");
+      const data = parsed.data;
 
       // Preserve every decision already made on a prior pass — re-running
       // the interview should never silently discard confirmed identity.

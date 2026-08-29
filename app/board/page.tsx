@@ -5,7 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { auth, db } from "../../lib/firebase";
-import { authedFetch } from "../../lib/api-client";
+import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
 import {
@@ -191,19 +191,22 @@ export default function BoardPage() {
         request: promptToUse || undefined,
         ...(answers ? { answers } : {}),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setReply({ text: asText(data.error) || "Crafting failed.", seen: false });
+      const parsed = await safeReadJson<CraftClarifyResult | { plan: ContentPlan; error?: string }>(res);
+      if (!parsed.ok || !parsed.data) {
+        setReply({ text: parsed.error || "Crafting failed.", seen: false });
         return;
       }
-      if (data.needsInfo) {
+      const data = parsed.data;
+      if ("needsInfo" in data && data.needsInfo) {
         setClarify(data as CraftClarifyResult);
         return;
       }
       setClarify(null);
       setCraftRequest("");
-      await persist(data.plan as ContentPlan);
-      setReply({ text: "Roadmap ready — every day is on the path below.", seen: false });
+      if ("plan" in data && data.plan) {
+        await persist(data.plan as ContentPlan);
+        setReply({ text: "Roadmap ready — every day is on the path below.", seen: false });
+      }
     } catch (err) {
       setReply({ text: err instanceof Error ? err.message : "Crafting failed.", seen: false });
     } finally {
@@ -258,12 +261,13 @@ export default function BoardPage() {
         factorId: selected?.factorId ?? undefined,
         plan,
       });
-      const data = (await res.json()) as BoardEditResult & { error?: string };
-      if (!res.ok) {
-        setReply({ text: asText(data.error) || "The edit didn't land.", seen: false });
+      const parsed = await safeReadJson<BoardEditResult & { error?: string }>(res);
+      if (!parsed.ok || !parsed.data) {
+        setReply({ text: parsed.error || "The edit didn't land.", seen: false });
         return;
       }
-      setReply({ text: data.reply, seen: false });
+      const data = parsed.data;
+      setReply({ text: data.reply || "Edit updated.", seen: false });
 
       if (plan) {
         const nextFactors: RoadmapFactor[] = [...plan.factors];
@@ -450,7 +454,7 @@ export default function BoardPage() {
           </div>
         )}
 
-        {/* Full-Screen Whiteboard Canvas */}
+        {/* Full-Screen Whiteboard Canvas — wraps the entire area including underneath the prompt dock */}
         <div className={`board-canvas ${!plan || plan.days.length === 0 ? "board-canvas-empty" : ""}`}>
           {plan && plan.days.length > 0 ? (
             <>
@@ -501,136 +505,136 @@ export default function BoardPage() {
                     </aside>
                   );
                 })()}
+
+              {/* Roadmap factors */}
+              {plan.factors && plan.factors.length > 0 && (
+                <section className="board-factors">
+                  <h2>Roadmap factors</h2>
+                  <div className="board-factor-grid">
+                    {plan.factors.map((f) => {
+                      const fDays = daysByFactor.get(f.id) ?? [];
+                      return (
+                        <div key={f.id} className="board-factor">
+                          <div className="board-factor-head">
+                            <span className="board-factor-name">{f.name}</span>
+                            <span className="board-factor-range">
+                              Day {f.dayRange[0]}–{f.dayRange[1]}
+                            </span>
+                          </div>
+                          {f.artifacts.length === 0 ? (
+                            <p className="board-factor-empty">
+                              Nothing produced yet — select one of this factor&apos;s days and ask for a script, visual or edit style.
+                            </p>
+                          ) : (
+                            <ul className="board-artifact-list">
+                              {f.artifacts.map((a) => (
+                                <li
+                                  key={a.id}
+                                  className="board-artifact"
+                                  onContextMenu={(e) => {
+                                    if (a.kind !== "script") return;
+                                    e.preventDefault();
+                                    sendScriptToStudio(a);
+                                  }}
+                                  title={a.kind === "script" ? "Right-click → send to Studio" : undefined}
+                                >
+                                  <details>
+                                    <summary>
+                                      <span className={`board-artifact-kind ${KIND_CLASS[a.kind] ?? ""}`}>
+                                        {ARTIFACT_KIND_LABELS[a.kind] ?? a.kind}
+                                      </span>
+                                      {typeof a.day === "number" && (
+                                        <span className="board-artifact-day">Day {a.day}</span>
+                                      )}
+                                      <span className="board-artifact-title">{a.title}</span>
+                                      {a.kind === "script" && (
+                                        <button
+                                          type="button"
+                                          className="profile-edit-link"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            sendScriptToStudio(a);
+                                          }}
+                                        >
+                                          → Studio
+                                        </button>
+                                      )}
+                                    </summary>
+                                    <pre className="board-artifact-content">{a.content}</pre>
+                                  </details>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {fDays.length > 0 && (
+                            <div className="board-factor-days">
+                              {fDays.map((d) => (
+                                <button
+                                  key={d.day}
+                                  className={`board-chip ${d.done ? "board-chip-done" : ""}`}
+                                  onClick={() => setSelectedDay(d.day)}
+                                >
+                                  D{d.day}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </>
           ) : null}
-        </div>
 
-        {/* Roadmap factors — only shown when factors exist */}
-        {plan && plan.factors && plan.factors.length > 0 && (
-          <section className="board-factors">
-            <h2>Roadmap factors</h2>
-            <div className="board-factor-grid">
-              {plan.factors.map((f) => {
-                const fDays = daysByFactor.get(f.id) ?? [];
-                return (
-                  <div key={f.id} className="board-factor">
-                    <div className="board-factor-head">
-                      <span className="board-factor-name">{f.name}</span>
-                      <span className="board-factor-range">
-                        Day {f.dayRange[0]}–{f.dayRange[1]}
-                      </span>
-                    </div>
-                    {f.artifacts.length === 0 ? (
-                      <p className="board-factor-empty">
-                        Nothing produced yet — select one of this factor&apos;s days and ask for a script, visual or edit style.
-                      </p>
-                    ) : (
-                      <ul className="board-artifact-list">
-                        {f.artifacts.map((a) => (
-                          <li
-                            key={a.id}
-                            className="board-artifact"
-                            onContextMenu={(e) => {
-                              if (a.kind !== "script") return;
-                              e.preventDefault();
-                              sendScriptToStudio(a);
-                            }}
-                            title={a.kind === "script" ? "Right-click → send to Studio" : undefined}
-                          >
-                            <details>
-                              <summary>
-                                <span className={`board-artifact-kind ${KIND_CLASS[a.kind] ?? ""}`}>
-                                  {ARTIFACT_KIND_LABELS[a.kind] ?? a.kind}
-                                </span>
-                                {typeof a.day === "number" && (
-                                  <span className="board-artifact-day">Day {a.day}</span>
-                                )}
-                                <span className="board-artifact-title">{a.title}</span>
-                                {a.kind === "script" && (
-                                  <button
-                                    type="button"
-                                    className="profile-edit-link"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      sendScriptToStudio(a);
-                                    }}
-                                  >
-                                    → Studio
-                                  </button>
-                                )}
-                              </summary>
-                              <pre className="board-artifact-content">{a.content}</pre>
-                            </details>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {fDays.length > 0 && (
-                      <div className="board-factor-days">
-                        {fDays.map((d) => (
-                          <button
-                            key={d.day}
-                            className={`board-chip ${d.done ? "board-chip-done" : ""}`}
-                            onClick={() => setSelectedDay(d.day)}
-                          >
-                            D{d.day}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+          {/* The input dock — floats inside and over the whiteboard canvas at the bottom */}
+          <form className="board-dock" onSubmit={sendRequest}>
+            <div className="board-dock-context">
+              {selectedDay != null ? (
+                <>Editing <strong>Day {selectedDay}</strong></>
+              ) : plan && plan.days.length > 0 ? (
+                "Select a day above, then type your request"
+              ) : (
+                "Whiteboard ready · Type what you want to build or craft for this month"
+              )}
             </div>
-          </section>
-        )}
-
-        {/* The input dock — whiteboard-style dotted tray under the path */}
-        <form className="board-dock" onSubmit={sendRequest}>
-          <div className="board-dock-context">
-            {selectedDay != null ? (
-              <>Editing <strong>Day {selectedDay}</strong></>
-            ) : plan && plan.days.length > 0 ? (
-              "Select a day above, then type your request"
-            ) : (
-              "Whiteboard ready · Type what you want to build or craft for this month"
-            )}
-          </div>
-          <div className="chat-input-row">
-            <input
-              ref={dockInputRef}
-              type="text"
-              value={request}
-              onChange={(e) => setRequest(e.target.value)}
-              placeholder={
-                selectedDay != null
-                  ? `e.g. rewrite day ${selectedDay} hook, write its script...`
-                  : plan && plan.days.length > 0
-                  ? "Pick a day node or ask to adjust the roadmap..."
-                  : "e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm..."
-              }
-              disabled={sending}
-              maxLength={2000}
-            />
-            <button type="submit" className="btn btn-primary" disabled={sending || !request.trim()}>
-              {sending ? "Working..." : plan && plan.days.length > 0 ? "Ask AI" : "Craft Plan"}
-            </button>
-          </div>
-          {sending && <ProgressBar />}
-          <div className="board-dock-actions">
-            {currentQuickActions.map((qa) => (
-              <button
-                key={qa.label}
-                type="button"
-                className="assistant-suggestion-chip"
+            <div className="chat-input-row">
+              <input
+                ref={dockInputRef}
+                type="text"
+                value={request}
+                onChange={(e) => setRequest(e.target.value)}
+                placeholder={
+                  selectedDay != null
+                    ? `e.g. rewrite day ${selectedDay} hook, write its script...`
+                    : plan && plan.days.length > 0
+                    ? "Pick a day node or ask to adjust the roadmap..."
+                    : "e.g. Lên kế hoạch 30 ngày video TikTok cho sản phẩm..."
+                }
                 disabled={sending}
-                onClick={() => quickAction(qa.template)}
-              >
-                {qa.label}
+                maxLength={2000}
+              />
+              <button type="submit" className="btn btn-primary" disabled={sending || !request.trim()}>
+                {sending ? "Working..." : plan && plan.days.length > 0 ? "Ask AI" : "Craft Plan"}
               </button>
-            ))}
-          </div>
-        </form>
+            </div>
+            {sending && <ProgressBar />}
+            <div className="board-dock-actions">
+              {currentQuickActions.map((qa) => (
+                <button
+                  key={qa.label}
+                  type="button"
+                  className="assistant-suggestion-chip"
+                  disabled={sending}
+                  onClick={() => quickAction(qa.template)}
+                >
+                  {qa.label}
+                </button>
+              ))}
+            </div>
+          </form>
+        </div>
       </div>
     </AppShell>
   );

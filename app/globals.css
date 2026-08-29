@@ -1610,19 +1610,20 @@ footer {
   background-size: 22px 22px;
   border: 1px dashed rgba(148, 168, 255, 0.25);
   border-radius: 18px;
-  padding: 28px 24px 34px;
+  padding: 28px 24px 20px;
   position: relative;
   display: flex;
+  flex-direction: column;
   gap: 24px;
   flex: 1;
-  min-height: 60vh;
+  min-height: calc(100vh - 40px);
   width: 100%;
 }
 
 .board-canvas-empty {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .board-strategy {
@@ -1949,14 +1950,20 @@ footer {
   color: var(--text);
 }
 
-/* the input dock under the path — dotted tray like the rest of the board */
+/* the input dock floating over the whiteboard canvas */
 .board-dock {
-  margin-top: 22px;
-  background-image: radial-gradient(rgba(157, 184, 242, 0.14) 1.5px, transparent 1.5px);
-  background-size: 22px 22px;
-  border: 1px dashed rgba(148, 168, 255, 0.25);
+  margin-top: auto;
+  position: sticky;
+  bottom: 8px;
+  z-index: 10;
+  background: rgba(14, 16, 22, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(148, 168, 255, 0.22);
   border-radius: 16px;
   padding: 16px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 100%;
 }
 
 .board-dock-context {

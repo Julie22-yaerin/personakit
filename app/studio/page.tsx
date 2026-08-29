@@ -5,7 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { auth, db } from "../../lib/firebase";
-import { authedFetch } from "../../lib/api-client";
+import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
@@ -324,10 +324,10 @@ export default function StudioPage() {
     let sceneFailed = false;
     try {
       const res = await authedFetch("/api/studio/visual-scene", { imageDataUrl: frameToDataUrl(video) });
-      const data = await res.json();
-      if (res.ok) {
-        targets.lighting = { target: data.lighting, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
-        targets.background = { target: data.background, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
+      const parsed = await safeReadJson<{ lighting: number; background: number }>(res);
+      if (parsed.ok && parsed.data) {
+        targets.lighting = { target: parsed.data.lighting, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
+        targets.background = { target: parsed.data.background, acceptableRange: DEFAULT_ACCEPTABLE_RANGE };
       } else {
         sceneFailed = true;
       }
@@ -357,9 +357,9 @@ export default function StudioPage() {
     setScriptError(null);
     try {
       const res = await authedFetch("/api/studio/script/decompose", { sourceText: scriptText });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Script decomposition failed");
-      setScriptGraph(data);
+      const parsed = await safeReadJson<ScriptGraph>(res);
+      if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Script decomposition failed");
+      setScriptGraph(parsed.data);
     } catch (err) {
       setScriptError(err instanceof Error ? err.message : "Script decomposition failed");
     } finally {
@@ -389,9 +389,9 @@ export default function StudioPage() {
             topic: scriptGraph.sourceText,
             recentTranscript: transcriptRef.current.slice(-600),
           });
-          const data = await res.json();
-          if (res.ok) {
-            const driftSignal = buildDriftSignal(100 - data.relevance, lastCoachMessageRef.current);
+          const parsed = await safeReadJson<{ relevance: number }>(res);
+          if (parsed.ok && parsed.data) {
+            const driftSignal = buildDriftSignal(100 - parsed.data.relevance, lastCoachMessageRef.current);
             if (driftSignal) signals.push(driftSignal);
           }
         } catch {
@@ -426,8 +426,8 @@ export default function StudioPage() {
           personaVector,
           lastPlan,
         });
-        const data = await res.json();
-        if (res.ok && data.tip) showTip(data.tip);
+        const parsed = await safeReadJson<{ tip?: string }>(res);
+        if (parsed.ok && parsed.data?.tip) showTip(parsed.data.tip);
       } catch {
         // best-effort — a missed coaching tip shouldn't interrupt filming
       }
@@ -526,13 +526,13 @@ export default function StudioPage() {
       setDeliveryError(null);
       try {
         const res = await authedFetch("/api/studio/script/analyze", { graph: scriptGraph, transcript });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Delivery analysis failed");
-        setDeliveryReport(data);
+        const parsed = await safeReadJson<any>(res);
+        if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Delivery analysis failed");
+        setDeliveryReport(parsed.data);
         setEditSuggestions(
           generateEditSuggestions({
-            driftSegments: data.drift.segments,
-            missingCoverage: data.alignment.missing,
+            driftSegments: parsed.data.drift.segments,
+            missingCoverage: parsed.data.alignment.missing,
             speechSegments: speechSegmentsRef.current,
             fillerRate,
           }),
@@ -548,10 +548,10 @@ export default function StudioPage() {
     const measured: VisualMeasurements = { ...visualAccumulatorRef.current.summarize() };
     try {
       const res = await authedFetch("/api/studio/visual-scene", { imageDataUrl: frameToDataUrl(video) });
-      const data = await res.json();
-      if (res.ok) {
-        measured.lighting = data.lighting;
-        measured.background = data.background;
+      const parsed = await safeReadJson<{ lighting: number; background: number }>(res);
+      if (parsed.ok && parsed.data) {
+        measured.lighting = parsed.data.lighting;
+        measured.background = parsed.data.background;
       }
     } catch {
       // scene readings are best-effort — VCS still computes from geometry alone
@@ -608,14 +608,14 @@ export default function StudioPage() {
           durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
         },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Session planning failed");
-      setPlan(data.plan);
-      setLastPlan(data.plan);
+      const parsed = await safeReadJson<{ plan: SessionPlan }>(res);
+      if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Session planning failed");
+      setPlan(parsed.data.plan);
+      setLastPlan(parsed.data.plan);
       if (user) {
         await setDoc(
           doc(db, "users", user.uid),
-          { studio: { latestPlan: data.plan, updatedAt: serverTimestamp() } },
+          { studio: { latestPlan: parsed.data.plan, updatedAt: serverTimestamp() } },
           { merge: true },
         );
       }
