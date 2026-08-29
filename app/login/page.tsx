@@ -4,6 +4,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
 } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
@@ -52,7 +54,7 @@ function friendlyError(message: string): string {
     return "Google sign-in popup was closed.";
   }
   if (message.includes("auth/popup-blocked")) {
-    return "Popup blocked by browser. Please allow popups for this site.";
+    return "Popup blocked by browser. Please allow popups for this site or use redirect.";
   }
   if (message.includes("auth/unauthorized-domain")) {
     return "Domain not authorized in Firebase. Please add this domain in Firebase Console -> Auth -> Settings -> Authorized Domains.";
@@ -77,15 +79,43 @@ export default function LoginPage() {
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const locked = lockedUntil !== null && Date.now() < lockedUntil;
 
-  // If user is already authenticated, redirect automatically
+  // Handle redirect result and monitor auth state
   useEffect(() => {
+    let isMounted = true;
+
+    // Check if user is returning from a signInWithRedirect flow
+    getRedirectResult(auth)
+      .then(async (cred) => {
+        if (cred?.user && isMounted) {
+          await ensureUserDoc(cred.user.uid, cred.user.email);
+          const next = await nextRouteAfterAuth(cred.user.uid);
+          router.push(next);
+        }
+      })
+      .catch((err: unknown) => {
+        console.error("[Login Redirect Result Error]:", err);
+        if (isMounted) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          if (
+            !errMsg.includes("auth/popup-closed-by-user") &&
+            !errMsg.includes("auth/cancelled-popup-request")
+          ) {
+            setError(friendlyError(errMsg));
+          }
+        }
+      });
+
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      if (u) {
+      if (u && isMounted) {
         const next = await nextRouteAfterAuth(u.uid);
         router.push(next);
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [router]);
 
   async function handleGoogle() {
@@ -102,6 +132,25 @@ export default function LoginPage() {
     } catch (err: unknown) {
       console.error("[Login Google Auth Error]:", err);
       const errMsg = err instanceof Error ? err.message : String(err);
+
+      // If popup is blocked by the browser, fallback to signInWithRedirect
+      if (errMsg.includes("auth/popup-blocked")) {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          console.error("[Login Redirect Fallback Error]:", redirectErr);
+        }
+      }
+
+      // If user simply closed the popup or cancelled, do not display a blocking error
+      if (
+        errMsg.includes("auth/popup-closed-by-user") ||
+        errMsg.includes("auth/cancelled-popup-request")
+      ) {
+        return;
+      }
+
       setError(friendlyError(errMsg));
     } finally {
       setLoading(false);

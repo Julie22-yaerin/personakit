@@ -20,11 +20,12 @@
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://apis.google.com",
+  "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.googleusercontent.com",
   "font-src 'self'",
-  "connect-src 'self' https://securetoken.google.com https://securetoken.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://openrouter.ai/api https://integrate.api.nvidia.com https://dashscope-intl.aliyuncs.com https://generativelanguage.googleapis.com",
+  "frame-src 'self' https://pclick-9f190.firebaseapp.com https://*.firebaseapp.com https://accounts.google.com",
+  "connect-src 'self' https://securetoken.google.com https://securetoken.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://accounts.google.com https://openrouter.ai/api https://integrate.api.nvidia.com https://dashscope-intl.aliyuncs.com https://generativelanguage.googleapis.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -39,6 +40,8 @@ const securityHeaders = [
   // No page in this app is meant to be framed by another site.
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Allow popups (Google Auth) to retain window.opener communication with the main window
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   // Camera/mic stay available to this origin (onboarding face scan,
   // studio live filming both need them) but denied to any cross-origin
   // iframe.
