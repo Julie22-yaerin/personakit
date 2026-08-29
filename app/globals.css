@@ -1,5 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "./studio-hud.css";
+
+@font-face {
+  font-family: 'Gimola';
+  src: local('Gimola'), local('Syne-Bold'), url('https://fonts.gstatic.com/s/syne/v22/8vIS7w4qzmVysDAxl7N-r74.woff2') format('woff2');
+  font-weight: 600 700 800 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Coco';
+  src: local('Coco'), local('PlusJakartaSans-Regular'), url('https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsDxUFnMVeNM9PnfM.woff2') format('woff2');
+  font-weight: 300 400 500 600 700 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Black Mango';
+  src: local('Black Mango'), local('Cinzel-SemiBold'), url('https://fonts.gstatic.com/s/cinzel/v23/8vIJ7ww63mVu7gt79W7P.woff2') format('woff2');
+  font-weight: 500 600 700 800;
+  font-display: swap;
+}
 
 @theme inline {
   --color-background: var(--bg);
@@ -12,10 +34,13 @@
 }
 
 :root {
-  /* PERSONA brand tokens — kept in sync with app/persona-landing.css's
-     --p-* palette so the whole product reads as one system, not just
-     the marketing page. Accents follow the UnicornStudio "bloim"
-     background scene: electric blue bloom on near-black. */
+  /* Typography Tokens */
+  --font-title-1: 'Gimola', 'Syne', -apple-system, sans-serif;
+  --font-title-2: 'Black Mango', 'Cinzel', serif;
+  --font-body: 'Coco', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* PERSONA brand tokens */
   --bg: #050508;
   --bg-raised: #10121c;
   --border: rgba(148, 168, 255, 0.12);
@@ -26,22 +51,26 @@
   --success: #a8c0f0;
   --bad: #ff3b30;
   --warn: #f5a524;
-  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --serif: var(--font-title-2);
+  --sans: var(--font-body);
+  --mono: var(--font-mono);
 }
 
-* {
-  box-sizing: border-box;
+/* Global Typography Application */
+h1, .font-title-1, .title-1, .hero-title, .p-hero-title, .p-stage-title, .app-title {
+  font-family: var(--font-title-1) !important;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
+h2, h3, .font-title-2, .title-2, .wordmark, .section-title, .board-factor-name, .price-name {
+  font-family: var(--font-title-2) !important;
+}
+
+body, html, p, span, label, input, textarea, select, button, .subtitle, .description, .paragraph, .p-hero-subtitle, .p-card {
+  font-family: var(--font-body);
+}
+
+.mono, .p-mono, code, pre, .board-artifact-content {
+  font-family: var(--font-mono) !important;
 }
 
 a {

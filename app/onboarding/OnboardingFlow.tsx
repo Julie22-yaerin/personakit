@@ -26,6 +26,7 @@ import { Logo } from "../../components/landing/Logo";
 import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { ArrowRight, ArrowLeft, Check, Sparkles, AlertCircle } from "lucide-react";
 import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
+import { NeuroNoiseBackground } from "@/components/ui/neuro-noise-background";
 
 export default function OnboardingFlow() {
   const router = useRouter();
@@ -187,7 +188,10 @@ export default function OnboardingFlow() {
   };
 
   return (
-    <div className="p-page" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div className="p-page" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative" }}>
+      {/* Background Neural Noise Shader */}
+      <NeuroNoiseBackground className="opacity-65 pointer-events-none" />
+
       {/* Top Header & Progress */}
       <header className="p-nav" style={{ position: "sticky", top: 0, zIndex: 40 }}>
         <div className="p-nav-inner" style={{ padding: "14px 24px" }}>
@@ -461,25 +465,56 @@ export default function OnboardingFlow() {
                 </div>
 
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <label className="p-mono" style={{ fontSize: 12, fontWeight: 700, color: "#00f0ff" }}>
-                      Q2 · How much should your content challenge people?
+                      Q2 · Voice Positioning · Safe vs. Provocative
                     </label>
-                    <span className="p-mono" style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>
-                      Level {formData.challengeLevel}/10
-                    </span>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <span className="p-mono" style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "rgba(0, 240, 255, 0.12)", color: "#00f0ff", border: "1px solid rgba(0, 240, 255, 0.3)" }}>
+                        {100 - (typeof formData.challengeLevel === "number" && formData.challengeLevel <= 10 ? formData.challengeLevel * 10 : formData.challengeLevel)}% Safe
+                      </span>
+                      <span className="p-mono" style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+                        {typeof formData.challengeLevel === "number" && formData.challengeLevel <= 10 ? formData.challengeLevel * 10 : formData.challengeLevel}% Provocative
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span className="p-mono" style={{ fontSize: 11, color: "var(--p-text-secondary)" }}>Safe</span>
-                    <input
-                      type="range"
-                      min={1}
-                      max={10}
-                      value={formData.challengeLevel}
-                      onChange={(e) => updateField("challengeLevel", Number(e.target.value))}
-                      style={{ flex: 1 }}
-                    />
-                    <span className="p-mono" style={{ fontSize: 11, color: "#ef4444" }}>Provocative</span>
+
+                  <div style={{ padding: "14px 16px", background: "rgba(10, 14, 26, 0.7)", borderRadius: 12, border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
+                      <span className="p-mono" style={{ color: "#00f0ff", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+                        🛡️ Safe (Consensus)
+                      </span>
+                      <span className="p-mono" style={{ color: "#ef4444", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+                        ⚡ Provocative (High Signal)
+                      </span>
+                    </div>
+
+                    <div style={{ position: "relative", width: "100%", height: 32, display: "flex", alignItems: "center" }}>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={typeof formData.challengeLevel === "number" && formData.challengeLevel <= 10 ? formData.challengeLevel * 10 : formData.challengeLevel}
+                        onChange={(e) => updateField("challengeLevel", Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          accentColor: (formData.challengeLevel <= 10 ? formData.challengeLevel * 10 : formData.challengeLevel) > 50 ? "#ef4444" : "#00f0ff",
+                          cursor: "pointer",
+                          height: 8,
+                          borderRadius: 4,
+                          background: "linear-gradient(to right, #00f0ff 0%, #3b82f6 40%, #f59e0b 75%, #ef4444 100%)",
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11, color: "var(--p-text-secondary)" }}>
+                      <span>0% (Mainstream & Friendly)</span>
+                      <span className="p-mono" style={{ color: "#fff", fontWeight: 700, fontSize: 12 }}>
+                        {typeof formData.challengeLevel === "number" && formData.challengeLevel <= 10 ? formData.challengeLevel * 10 : formData.challengeLevel}% Challenge Ratio
+                      </span>
+                      <span>100% (Polarizing & Contrarian)</span>
+                    </div>
                   </div>
                 </div>
 

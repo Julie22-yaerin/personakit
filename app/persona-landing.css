@@ -17,7 +17,7 @@
   z-index: 1;
   background: var(--p-bg);
   color: var(--p-text);
-  font-family: var(--font-grotesk), -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body, 'Coco', 'Plus Jakarta Sans', -apple-system, sans-serif);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -27,8 +27,20 @@
   box-sizing: border-box;
 }
 
+.p-page h1, .p-hero-title {
+  font-family: var(--font-title-1, 'Gimola', 'Syne', sans-serif) !important;
+}
+
+.p-page h2, .p-page h3, .p-section-title {
+  font-family: var(--font-title-2, 'Black Mango', 'Cinzel', serif) !important;
+}
+
+.p-page p, .p-page span, .p-page label, .p-page button {
+  font-family: var(--font-body, 'Coco', 'Plus Jakarta Sans', sans-serif);
+}
+
 .p-mono {
-  font-family: var(--font-mono), "SF Mono", monospace;
+  font-family: var(--font-mono, 'JetBrains Mono', "SF Mono", monospace);
   font-variant-numeric: tabular-nums;
 }
 
