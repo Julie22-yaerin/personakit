@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 import {
   PERSONA_DIMENSIONS,
@@ -166,62 +165,10 @@ async function synthesizeWithNvidia(
   };
 }
 
-async function synthesizeWithOpenAI(
-  input: OnboardingSynthesisInput,
-): Promise<OnboardingSynthesisResult> {
-  const client = getOpenRouterClient();
-
-  const response = await client.chat.completions.create({
-    model: GPT_REASONING_MODEL,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserPrompt(input) },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "onboarding_analysis",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            personaVector: {
-              type: "object",
-              properties: PERSONA_VECTOR_PROPERTIES,
-              required: [...PERSONA_DIMENSIONS],
-              additionalProperties: false,
-            },
-            styleSuggestions: {
-              type: "object",
-              properties: STYLE_SUGGESTIONS_PROPERTIES,
-              required: ["visual", "voice", "content"],
-              additionalProperties: false,
-            },
-          },
-          required: ["personaVector", "styleSuggestions"],
-          additionalProperties: false,
-        },
-      },
-    },
-  });
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error("OpenAI returned no content.");
-  const parsed = JSON.parse(content) as OnboardingSynthesisResult;
-
-  return {
-    personaVector: PersonaVectorSchema.parse(parsed.personaVector),
-    styleSuggestions: StyleSuggestionsSchema.parse(parsed.styleSuggestions),
-  };
-}
-
 /**
- * NVIDIA's "stylist" role (bé 2, thinkingmachines/inkling) is the
+ * NVIDIA's "stylist" role (deepseek-ai/deepseek-v4-pro-0813) is the
  * default synthesis provider now — it's the one that actually produces
- * persona/style/voice output, receiving bé 1's (extractor) raw analysis
- * as input upstream in the onboarding flow. Anthropic and OpenRouter
- * remain as fallbacks so onboarding still works end-to-end if the
- * NVIDIA key isn't set.
+ * persona/style/voice output. Anthropic remains as fallback.
  */
 export async function synthesizeOnboarding(
   input: OnboardingSynthesisInput,
@@ -230,16 +177,14 @@ export async function synthesizeOnboarding(
     try {
       return await synthesizeWithNvidia(input);
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return synthesizeWithAnthropic(anthropicKey, input);
 
-  if (process.env.OPENROUTER_API_KEY) return synthesizeWithOpenAI(input);
-
   throw new Error(
-    "Neither NVIDIA_STYLIST_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Onboarding analysis needs one of them.",
+    "Neither NVIDIA_STYLIST_API_KEY nor ANTHROPIC_API_KEY is set. Onboarding analysis needs one of them.",
   );
 }

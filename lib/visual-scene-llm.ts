@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { GPT_VISION_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured } from "./nvidia";
 
 const SceneExtractionSchema = z.object({
@@ -56,57 +55,10 @@ async function extractWithNvidia(imageDataUrl: string): Promise<SceneExtraction>
   return SceneExtractionSchema.parse(result);
 }
 
-async function extractWithOpenAI(imageDataUrl: string): Promise<SceneExtraction> {
-  const client = getOpenRouterClient();
-
-  const response = await client.chat.completions.create({
-    model: GPT_VISION_MODEL,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "Extract raw scene readings from this filming frame." },
-          { type: "image_url", image_url: { url: imageDataUrl } },
-        ],
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "scene_readings",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            lighting: { type: "number", minimum: 0, maximum: 100 },
-            background: { type: "number", minimum: 0, maximum: 100 },
-            wardrobeContext: { type: "string" },
-            notes: { type: "string" },
-          },
-          required: ["lighting", "background", "wardrobeContext", "notes"],
-          additionalProperties: false,
-        },
-      },
-    },
-  });
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error("Scene extraction model returned no content.");
-  }
-  return SceneExtractionSchema.parse(JSON.parse(content));
-}
-
-/** Extracts raw scene readings from a single captured frame (data URL) — NVIDIA extractor by default, OpenRouter fallback. */
+/** Extracts raw scene readings from a single captured frame (data URL) — NVIDIA extractor (meta/llama-3.2-11b-vision-instruct). */
 export async function extractSceneReadings(imageDataUrl: string): Promise<SceneExtraction> {
   if (isNvidiaConfigured("extractor")) {
-    try {
-      return await extractWithNvidia(imageDataUrl);
-    } catch (err) {
-      if (!process.env.OPENROUTER_API_KEY) throw err;
-    }
+    return await extractWithNvidia(imageDataUrl);
   }
-  if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(imageDataUrl);
-  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY nor OPENROUTER_API_KEY is set. Scene extraction needs one of them.");
+  throw new Error("NVIDIA_EXTRACTOR_API_KEY is not set. Scene extraction needs it.");
 }

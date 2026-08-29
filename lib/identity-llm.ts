@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
 import { z } from "zod";
 import {
   CommunicationProfileSchema,
@@ -11,7 +10,6 @@ import {
   type IdentityCandidate,
   type InterviewAnswers,
 } from "./founder-identity";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 
 export interface IdentityExtractionResult {
@@ -216,56 +214,6 @@ async function extractWithNvidia(answers: InterviewAnswers): Promise<IdentityExt
   }
 }
 
-async function extractWithOpenAI(answers: InterviewAnswers): Promise<IdentityExtractionResult> {
-  const client = getOpenRouterClient();
-
-  const attempt = async (correction?: string): Promise<IdentityExtractionResult> => {
-    const response = await client.chat.completions.create({
-      model: GPT_REASONING_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: correction
-            ? `${buildUserPrompt(answers)}\n\n${correction}`
-            : buildUserPrompt(answers),
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "identity_extraction",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              candidates: { type: "array", items: CANDIDATE_ITEM_SCHEMA },
-              communicationProfile: COMMUNICATION_PROFILE_SCHEMA,
-              founderOrigin: FOUNDER_ORIGIN_SCHEMA,
-            },
-            required: ["candidates", "communicationProfile", "founderOrigin"],
-            additionalProperties: false,
-          },
-        },
-      },
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error("Model returned no content.");
-    return withIds(RAW_RESULT_SCHEMA.parse(JSON.parse(content)));
-  };
-
-  try {
-    return await attempt();
-  } catch (err) {
-    if (err instanceof OpenAI.APIError) throw err;
-    const reason = err instanceof Error ? err.message : String(err);
-    return attempt(
-      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present, and evidenceQuote copied verbatim from the answers above.`,
-    );
-  }
-}
-
 export async function extractIdentityCandidates(
   answers: InterviewAnswers,
 ): Promise<IdentityExtractionResult> {
@@ -273,16 +221,14 @@ export async function extractIdentityCandidates(
     try {
       return await extractWithNvidia(answers);
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, answers);
 
-  if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(answers);
-
   throw new Error(
-    "Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Identity extraction needs one of them.",
+    "Neither NVIDIA_EXTRACTOR_API_KEY nor ANTHROPIC_API_KEY is set. Identity extraction needs one of them.",
   );
 }

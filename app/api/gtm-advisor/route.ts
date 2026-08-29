@@ -8,7 +8,7 @@ import {
   getGtmHarnessCorePrompt,
   getGtmHarnessExtendedPrompt,
 } from "../../../lib/gtm-harness";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "../../../lib/openrouter";
+import { generateNvidiaJSON, isNvidiaConfigured } from "../../../lib/nvidia";
 
 export const runtime = "nodejs";
 
@@ -35,18 +35,15 @@ async function adviseWithAnthropic(apiKey: string, system: string, user: string)
     .join("\n");
 }
 
-async function adviseWithOpenRouter(system: string, user: string): Promise<string> {
-  const client = getOpenRouterClient();
-  const response = await client.chat.completions.create({
-    model: GPT_REASONING_MODEL,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
+async function adviseWithNvidia(system: string, user: string): Promise<string> {
+  const result = await generateNvidiaJSON({
+    role: "stylist",
+    systemInstruction: `${system}\n\nRespond with a JSON object shaped like: {"reply": "<your full advisory markdown response>"}`,
+    prompt: user,
   });
-  const text = response.choices[0]?.message?.content;
-  if (!text) throw new Error("Model returned no content.");
-  return text;
+  const parsed = z.object({ reply: z.string() }).safeParse(result);
+  if (parsed.success) return parsed.data.reply;
+  return JSON.stringify(result);
 }
 
 export async function POST(request: Request) {
@@ -69,11 +66,16 @@ export async function POST(request: Request) {
   const user = buildGtmUserPrompt(question, { model, stage, product, platforms });
 
   try {
+    if (isNvidiaConfigured("stylist")) {
+      const answer = await adviseWithNvidia(system, user);
+      return NextResponse.json({ reply: answer });
+    }
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    const answer = anthropicKey
-      ? await adviseWithAnthropic(anthropicKey, system, user)
-      : await adviseWithOpenRouter(system, user);
-    return NextResponse.json({ reply: answer });
+    if (anthropicKey) {
+      const answer = await adviseWithAnthropic(anthropicKey, system, user);
+      return NextResponse.json({ reply: answer });
+    }
+    throw new Error("No AI provider configured (NVIDIA_STYLIST_API_KEY or ANTHROPIC_API_KEY)");
   } catch (err) {
     console.error("GTM advisor failed:", err);
     return NextResponse.json({ error: "The advisor is unavailable right now — try again shortly." }, { status: 502 });

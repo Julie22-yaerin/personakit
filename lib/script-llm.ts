@@ -1,7 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
 import { z } from "zod";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 import { SCRIPT_NODE_TYPES, type DriftSegment, type ScriptGraph, type ScriptNodeCoverage } from "./script";
 
@@ -120,51 +118,16 @@ async function decomposeWithNvidia(sourceText: string): Promise<ScriptGraphExtra
   }
 }
 
-async function decomposeWithOpenAI(sourceText: string): Promise<ScriptGraphExtraction> {
-  const client = getOpenRouterClient();
-
-  const attempt = async (correction?: string): Promise<ScriptGraphExtraction> => {
-    const response = await client.chat.completions.create({
-      model: GPT_REASONING_MODEL,
-      messages: [
-        { role: "system", content: DECOMPOSE_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: correction
-            ? `Founder's script/topic:\n"""${sourceText}"""\n\n${correction}`
-            : `Founder's script/topic:\n"""${sourceText}"""`,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "script_graph", strict: true, schema: SCRIPT_GRAPH_JSON_SCHEMA },
-      },
-    });
-    const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error("Model returned no content.");
-    return ScriptGraphExtractionSchema.parse(JSON.parse(content));
-  };
-
-  try {
-    return await attempt();
-  } catch (err) {
-    if (err instanceof OpenAI.APIError) throw err;
-    const reason = err instanceof Error ? err.message : String(err);
-    return attempt(`Your previous response did not satisfy the required schema (${reason}). Respond again with all 7 nodes present.`);
-  }
-}
-
 async function decomposeWithFallback(sourceText: string): Promise<ScriptGraphExtraction> {
   if (isNvidiaConfigured("extractor")) {
     try {
       return await decomposeWithNvidia(sourceText);
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
   if (process.env.ANTHROPIC_API_KEY) return decomposeWithAnthropic(process.env.ANTHROPIC_API_KEY, sourceText);
-  if (process.env.OPENROUTER_API_KEY) return decomposeWithOpenAI(sourceText);
-  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Script decomposition needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY nor ANTHROPIC_API_KEY is set. Script decomposition needs one of them.");
 }
 
 export async function decomposeScript(sourceText: string): Promise<ScriptGraph> {
@@ -324,50 +287,15 @@ async function analyzeWithNvidia(graph: ScriptGraph, transcript: string): Promis
   }
 }
 
-async function analyzeWithOpenAI(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
-  const client = getOpenRouterClient();
-
-  const attempt = async (correction?: string): Promise<DeliveryAnalysis> => {
-    const response = await client.chat.completions.create({
-      model: GPT_REASONING_MODEL,
-      messages: [
-        { role: "system", content: ANALYSIS_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: correction
-            ? `${buildAnalysisPrompt(graph, transcript)}\n\n${correction}`
-            : buildAnalysisPrompt(graph, transcript),
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "delivery_analysis", strict: true, schema: ANALYSIS_JSON_SCHEMA },
-      },
-    });
-    const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error("Model returned no content.");
-    return DeliveryAnalysisSchema.parse(JSON.parse(content));
-  };
-
-  try {
-    return await attempt();
-  } catch (err) {
-    if (err instanceof OpenAI.APIError) throw err;
-    const reason = err instanceof Error ? err.message : String(err);
-    return attempt(`Your previous response did not satisfy the required schema (${reason}). Respond again with every field present.`);
-  }
-}
-
 export async function analyzeScriptDelivery(graph: ScriptGraph, transcript: string): Promise<DeliveryAnalysis> {
   if (isNvidiaConfigured("extractor")) {
     try {
       return await analyzeWithNvidia(graph, transcript);
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return analyzeWithAnthropic(anthropicKey, graph, transcript);
-  if (process.env.OPENROUTER_API_KEY) return analyzeWithOpenAI(graph, transcript);
-  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Delivery analysis needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY nor ANTHROPIC_API_KEY is set. Delivery analysis needs one of them.");
 }

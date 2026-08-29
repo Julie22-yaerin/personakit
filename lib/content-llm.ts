@@ -1,8 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
 import { z } from "zod";
 import type { CommunicationProfile, FounderOrigin, IdentityCategory } from "./founder-identity";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 
 export interface IdentitySummary {
@@ -254,43 +252,6 @@ async function extractWithNvidia(content: string, identity: IdentitySummary): Pr
   }
 }
 
-async function extractWithOpenAI(content: string, identity: IdentitySummary): Promise<ContentExtractionResult> {
-  const client = getOpenRouterClient();
-
-  const attempt = async (correction?: string): Promise<ContentExtractionResult> => {
-    const response = await client.chat.completions.create({
-      model: GPT_REASONING_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: correction
-            ? `${buildUserPrompt(content, identity)}\n\n${correction}`
-            : buildUserPrompt(content, identity),
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "content_scoring", strict: true, schema: TOP_LEVEL_JSON_SCHEMA },
-      },
-    });
-
-    const responseContent = response.choices[0]?.message?.content;
-    if (!responseContent) throw new Error("Model returned no content.");
-    return RAW_RESULT_SCHEMA.parse(JSON.parse(responseContent));
-  };
-
-  try {
-    return await attempt();
-  } catch (err) {
-    if (err instanceof OpenAI.APIError) throw err;
-    const reason = err instanceof Error ? err.message : String(err);
-    return attempt(
-      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present.`,
-    );
-  }
-}
-
 export async function extractContentScoring(
   content: string,
   identity: IdentitySummary,
@@ -299,16 +260,14 @@ export async function extractContentScoring(
     try {
       return await extractWithNvidia(content, identity);
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, content, identity);
 
-  if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(content, identity);
-
   throw new Error(
-    "Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Content scoring needs one of them.",
+    "Neither NVIDIA_EXTRACTOR_API_KEY nor ANTHROPIC_API_KEY is set. Content scoring needs one of them.",
   );
 }

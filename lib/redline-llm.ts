@@ -1,8 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
 import { z } from "zod";
 import type { CompanyContext } from "./company-context";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured } from "./nvidia";
 import { RED_LINE_ZONES } from "./redline-scoring";
 
@@ -194,43 +192,6 @@ async function extractWithNvidia(content: string, companyContext?: CompanyContex
   }
 }
 
-async function extractWithOpenAI(content: string, companyContext?: CompanyContext): Promise<RedLineExtraction> {
-  const client = getOpenRouterClient();
-
-  const attempt = async (correction?: string): Promise<RedLineExtraction> => {
-    const response = await client.chat.completions.create({
-      model: GPT_REASONING_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: correction
-            ? `${buildUserPrompt(content, companyContext)}\n\n${correction}`
-            : buildUserPrompt(content, companyContext),
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "redline_assessment", strict: true, schema: TOP_LEVEL_JSON_SCHEMA },
-      },
-    });
-
-    const responseContent = response.choices[0]?.message?.content;
-    if (!responseContent) throw new Error("Model returned no content.");
-    return RedLineExtractionSchema.parse(JSON.parse(responseContent));
-  };
-
-  try {
-    return await attempt();
-  } catch (err) {
-    if (err instanceof OpenAI.APIError) throw err;
-    const reason = err instanceof Error ? err.message : String(err);
-    return attempt(
-      `Your previous response did not satisfy the required schema (${reason}). Respond again with every field present.`,
-    );
-  }
-}
-
 export async function extractRedLineAssessment(
   content: string,
   companyContext?: CompanyContext,
@@ -239,11 +200,10 @@ export async function extractRedLineAssessment(
     try {
       return await extractWithNvidia(content, companyContext);
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey) return extractWithAnthropic(anthropicKey, content, companyContext);
-  if (process.env.OPENROUTER_API_KEY) return extractWithOpenAI(content, companyContext);
-  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY, ANTHROPIC_API_KEY, nor OPENROUTER_API_KEY is set. Redline assessment needs one of them.");
+  throw new Error("Neither NVIDIA_EXTRACTOR_API_KEY nor ANTHROPIC_API_KEY is set. Redline assessment needs one of them.");
 }

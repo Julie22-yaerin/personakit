@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { GPT_REASONING_MODEL, getOpenRouterClient } from "./openrouter";
 import { generateNvidiaJSON, isNvidiaConfigured, describeJsonShape } from "./nvidia";
 import { generateQwenJSON, isQwenConfigured } from "./qwen";
 import {
@@ -213,13 +212,12 @@ Vietnamese request gets Vietnamese questions).
 Respond with JSON only.`;
 
 async function callLlmJson(system: string, prompt: string): Promise<unknown> {
-  // Ladder: Qwen first (fastest to iterate on), then NVIDIA stylist,
-  // then Anthropic, then OpenRouter.
+  // Ladder: Qwen first (fastest to iterate on), then NVIDIA stylist, then Anthropic.
   if (isQwenConfigured()) {
     try {
       return await generateQwenJSON({ systemInstruction: system, prompt });
     } catch (err) {
-      const canFallthrough = isNvidiaConfigured("stylist") || process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY;
+      const canFallthrough = isNvidiaConfigured("stylist") || process.env.ANTHROPIC_API_KEY;
       if (!canFallthrough) throw err;
     }
   }
@@ -232,7 +230,7 @@ async function callLlmJson(system: string, prompt: string): Promise<unknown> {
         prompt,
       });
     } catch (err) {
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) throw err;
+      if (!process.env.ANTHROPIC_API_KEY) throw err;
     }
   }
 
@@ -252,22 +250,7 @@ async function callLlmJson(system: string, prompt: string): Promise<unknown> {
     return JSON.parse(text);
   }
 
-  if (process.env.OPENROUTER_API_KEY) {
-    const client = getOpenRouterClient();
-    const response = await client.chat.completions.create({
-      model: GPT_REASONING_MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-    });
-    const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error("OpenAI returned no content.");
-    return JSON.parse(content);
-  }
-
-  throw new Error("No LLM provider configured for the board.");
+  throw new Error("No LLM provider configured for the board (NVIDIA_STYLIST_API_KEY / QWEN_API_KEY / ANTHROPIC_API_KEY).");
 }
 
 export type CraftOrAskResult = ContentPlan | CraftClarifyResult;

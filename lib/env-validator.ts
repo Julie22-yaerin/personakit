@@ -18,7 +18,6 @@ const REQUIRED_ENV_VARS: EnvConfig[] = [
 
   // API keys (sensitive)
   { name: "ANTHROPIC_API_KEY", required: false, sensitive: true },
-  { name: "OPENROUTER_API_KEY", required: false, sensitive: true },
   { name: "NVIDIA_EXTRACTOR_API_KEY", required: false, sensitive: true },
   { name: "NVIDIA_STYLIST_API_KEY", required: false, sensitive: true },
   { name: "QWEN_API_KEY", required: false, sensitive: true },

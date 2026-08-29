@@ -8,6 +8,9 @@ import { auth, db } from "../../lib/firebase";
 import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
+import { StudioHudOverlay } from "../../components/studio/StudioHudOverlay";
+import { StudioTelemetrySimulator } from "../../components/studio/StudioTelemetrySimulator";
+import { INITIAL_OVERLAY_STATE, type FilmingOverlayState } from "../../lib/studio-overlay-types";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
@@ -119,6 +122,8 @@ export default function StudioPage() {
   // The live-metrics overlay shows by default during recording; this
   // small toggle only hides it.
   const [overlayVisible, setOverlayVisible] = useState(true);
+  const [overlayState, setOverlayState] = useState<FilmingOverlayState>(INITIAL_OVERLAY_STATE);
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
   const [scriptLoading, setScriptLoading] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
@@ -258,7 +263,28 @@ export default function StudioPage() {
       const fillerRate = computeFillerRate(speechSegmentsRef.current);
       setLiveWpm(wpm);
       setLiveFillerRate(fillerRate);
-      liveFillerRateRef.current = fillerRate;
+      const smileScore = Math.round(metrics.smile * 100);
+      const mood = smileScore > 65 ? "smile" : metrics.expressiveness > 0.6 ? "excited" : smileScore < 20 ? "serious" : "neutral";
+      const pace = wpm < 100 ? "slow" : wpm > 180 ? "fast" : "optimal";
+      
+      setOverlayState((prev) => ({
+        ...prev,
+        expression: {
+          smileIntensity: smileScore,
+          currentMood: mood,
+          targetMoodMatch: smileScore >= 50,
+        },
+        telemetry: {
+          ...prev.telemetry,
+          speechPace: pace,
+        },
+        recordingStatus: {
+          ...prev.recordingStatus,
+          isRecording: true,
+          elapsedSeconds: Math.round(elapsedMs / 1000),
+          autoCutTriggered: Math.round(elapsedMs / 1000) >= prev.recordingStatus.maxDuration - 3,
+        },
+      }));
 
       livePacingSignalRef.current = buildPacingSignal(wpm, lastCoachMessageRef.current);
       liveFillerSignalRef.current = buildFillerSignal(fillerRate, lastCoachMessageRef.current);
@@ -434,6 +460,15 @@ export default function StudioPage() {
     }, COACH_INTERVAL_MS);
   }
 
+  const handleToggleChecklist = (id: string) => {
+    setOverlayState((prev) => ({
+      ...prev,
+      checklist: prev.checklist.map((c) =>
+        c.id === id ? { ...c, completed: !c.completed } : c,
+      ),
+    }));
+  };
+
   function handleStartRecording() {
     if (!streamRef.current) return;
     chunksRef.current = [];
@@ -457,6 +492,15 @@ export default function StudioPage() {
     setLiveFillerRate(0);
     setLiveVolume(0);
     sessionStartRef.current = Date.now();
+    setOverlayState((prev) => ({
+      ...prev,
+      recordingStatus: {
+        ...prev.recordingStatus,
+        isRecording: true,
+        elapsedSeconds: 0,
+        autoCutTriggered: false,
+      },
+    }));
 
     try {
       volumeSamplerRef.current = new VolumeSampler(streamRef.current);
@@ -490,6 +534,13 @@ export default function StudioPage() {
     const video = videoRef.current;
     mediaRecorderRef.current?.stop();
     setIsRecording(false);
+    setOverlayState((prev) => ({
+      ...prev,
+      recordingStatus: {
+        ...prev.recordingStatus,
+        isRecording: false,
+      },
+    }));
     if (metricsIntervalRef.current) clearInterval(metricsIntervalRef.current);
     if (coachIntervalRef.current) clearInterval(coachIntervalRef.current);
     transcriptionRef.current?.stop();
@@ -687,33 +738,34 @@ export default function StudioPage() {
           {cameraError ? (
             <p className="error">{cameraError}</p>
           ) : (
-            <div className="camera-frame" style={{ position: "relative", aspectRatio: "16 / 9" }}>
-              <video ref={videoRef} autoPlay playsInline muted />
-              {liveMetrics && overlayVisible && (
-                <div className="studio-metrics-overlay">
-                  <MetricBar label="Eye contact" value={liveMetrics.eyeContact} />
-                  <MetricBar label="Smile" value={liveMetrics.smile} />
-                  <MetricBar label="Expressiveness" value={liveMetrics.expressiveness} />
-                  <MetricBar label="Volume" value={liveVolume} />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#fff", marginTop: 3 }}>
-                    <span>{Math.round(liveWpm)} wpm</span>
-                    <span>{liveFillerRate.toFixed(1)}/100w</span>
-                  </div>
-                </div>
+            <div className="camera-frame" style={{ position: "relative", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: 12 }}>
+              <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              {overlayVisible && (
+                <StudioHudOverlay
+                  state={overlayState}
+                  coachingTip={coachingTip}
+                  onToggleChecklist={handleToggleChecklist}
+                />
               )}
-              {isRecording && (
-                <button
-                  type="button"
-                  className="studio-overlay-toggle"
-                  onClick={() => setOverlayVisible((v) => !v)}
-                  title={overlayVisible ? "Hide live metrics overlay" : "Show live metrics overlay"}
-                >
-                  {overlayVisible ? "Hide overlay" : "Show overlay"}
-                </button>
-              )}
-              {coachingTip && <div className="studio-tip-toast">{coachingTip}</div>}
+              <button
+                type="button"
+                className="studio-overlay-toggle"
+                onClick={() => setOverlayVisible((v) => !v)}
+                title={overlayVisible ? "Hide HUD overlay" : "Show HUD overlay"}
+                style={{ zIndex: 30 }}
+              >
+                {overlayVisible ? "Hide HUD" : "Show HUD"}
+              </button>
             </div>
           )}
+
+          {/* Telemetry Mock / Event Simulator Test Panel */}
+          <StudioTelemetrySimulator
+            state={overlayState}
+            onChange={setOverlayState}
+            isOpen={simulatorOpen}
+            onToggleOpen={() => setSimulatorOpen((v) => !v)}
+          />
 
           <div style={{ marginTop: 14 }}>
             {!isRecording ? (
