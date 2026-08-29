@@ -134,6 +134,22 @@ img {
   cursor: not-allowed;
 }
 
+.btn-danger {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 59, 48, 0.35);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 59, 48, 0.28);
+  color: #fff;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-ghost {
   background: transparent;
   border-color: var(--border);

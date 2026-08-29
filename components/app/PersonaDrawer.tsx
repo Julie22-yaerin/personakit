@@ -3,13 +3,18 @@
 import {
   sendEmailVerification,
   verifyBeforeUpdateEmail,
-  EmailAuthProvider,
+  sendPasswordResetEmail,
+  signOut,
+  deleteUser,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  EmailAuthProvider,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { auth, db } from "../../lib/firebase";
+import { auth, db, googleProvider } from "../../lib/firebase";
 import { PERSONA_DIMENSIONS, classifyRivalry, type PersonaVector, type StyleSuggestions } from "../../lib/persona";
 import { CATEGORY_LABELS, type IdentityCategory, type IdentityCandidate } from "../../lib/founder-identity";
 
@@ -209,8 +214,8 @@ export function PersonaDrawer({ open, onClose, uid }: { open: boolean; onClose: 
               )}
             </div>
 
-            {/* ---- account settings: email verification & change ---- */}
-            <AccountSettingsSection uid={uid} />
+            {/* ---- account settings: email verification, reset, change, logout, delete ---- */}
+            <AccountSettingsSection uid={uid} onClose={onClose} />
 
             <Link href="/studio" className="btn btn-ghost btn-block" style={{ marginTop: 16 }} onClick={onClose}>
               Edit visual style in Studio
@@ -222,13 +227,18 @@ export function PersonaDrawer({ open, onClose, uid }: { open: boolean; onClose: 
   );
 }
 
-function AccountSettingsSection({ uid }: { uid: string | null }) {
+function AccountSettingsSection({ uid, onClose }: { uid: string | null; onClose: () => void }) {
+  const router = useRouter();
   const user = auth.currentUser;
   const isPasswordProvider = user?.providerData.some((p) => p.providerId === "password");
 
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+
   const [actionLoading, setActionLoading] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -248,6 +258,22 @@ function AccountSettingsSection({ uid }: { uid: string | null }) {
     }
   }
 
+  async function handlePasswordReset() {
+    if (!user?.email) return;
+    setActionLoading(true);
+    setMsg(null);
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      setMsg({ text: `Password reset link sent to ${user.email}. Check your inbox!`, type: "success" });
+    } catch (err: unknown) {
+      console.error("Password reset error:", err);
+      const m = err instanceof Error ? err.message : String(err);
+      setMsg({ text: m.replace("Firebase: ", "") || "Failed to send password reset email.", type: "error" });
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleChangeEmail(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !newEmail.trim()) return;
@@ -259,7 +285,7 @@ function AccountSettingsSection({ uid }: { uid: string | null }) {
         await reauthenticateWithCredential(user, cred);
       }
 
-      // verifyBeforeUpdateEmail sends confirmation to new email
+      // verifyBeforeUpdateEmail sends confirmation link to new email
       await verifyBeforeUpdateEmail(user, newEmail.trim());
 
       if (uid) {
@@ -290,6 +316,66 @@ function AccountSettingsSection({ uid }: { uid: string | null }) {
     }
   }
 
+  async function handleLogout() {
+    try {
+      await signOut(auth);
+      onClose();
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  }
+
+  async function handleDeleteAccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setActionLoading(true);
+    setMsg(null);
+    try {
+      if (isPasswordProvider) {
+        if (!deletePassword) {
+          setMsg({ text: "Please enter your password to confirm account deletion.", type: "error" });
+          setActionLoading(false);
+          return;
+        }
+        const cred = EmailAuthProvider.credential(user.email || "", deletePassword);
+        await reauthenticateWithCredential(user, cred);
+      } else {
+        try {
+          await reauthenticateWithPopup(user, googleProvider);
+        } catch {
+          // If popup is closed or blocked, attempt deleteUser directly if session is fresh
+        }
+      }
+
+      // Delete user's document in Firestore
+      if (uid) {
+        try {
+          await deleteDoc(doc(db, "users", uid));
+        } catch (dbErr) {
+          console.warn("Firestore user cleanup warning:", dbErr);
+        }
+      }
+
+      // Delete Firebase Auth user
+      await deleteUser(user);
+      onClose();
+      router.push("/login");
+    } catch (err: unknown) {
+      console.error("Delete account error:", err);
+      const m = err instanceof Error ? err.message : String(err);
+      if (m.includes("auth/wrong-password") || m.includes("auth/invalid-credential")) {
+        setMsg({ text: "Wrong password. Account was not deleted.", type: "error" });
+      } else if (m.includes("auth/requires-recent-login")) {
+        setMsg({ text: "Please log in again before deleting this account.", type: "error" });
+      } else {
+        setMsg({ text: m.replace("Firebase: ", "") || "Failed to delete account.", type: "error" });
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   if (!user) return null;
 
   return (
@@ -298,7 +384,7 @@ function AccountSettingsSection({ uid }: { uid: string | null }) {
         <span className="price-name">Account & Security</span>
       </div>
 
-      <div style={{ fontSize: 13, marginBottom: 10 }}>
+      <div style={{ fontSize: 13, marginBottom: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <span style={{ color: "var(--muted)" }}>Email</span>
           {user.emailVerified ? (
@@ -310,24 +396,12 @@ function AccountSettingsSection({ uid }: { uid: string | null }) {
         <div style={{ fontWeight: 500, wordBreak: "break-all" }}>{user.email || "—"}</div>
       </div>
 
-      {!user.emailVerified && isPasswordProvider && (
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          disabled={actionLoading}
-          onClick={handleSendVerification}
-          style={{ width: "100%", marginBottom: 12 }}
-        >
-          {actionLoading ? "Sending..." : "Send Verification Email"}
-        </button>
-      )}
-
       {msg && (
         <div
           style={{
             fontSize: 12,
-            padding: "6px 10px",
-            borderRadius: 4,
+            padding: "8px 10px",
+            borderRadius: 5,
             marginBottom: 12,
             background: msg.type === "success" ? "rgba(51, 86, 219, 0.12)" : "rgba(255, 80, 80, 0.1)",
             border: `1px solid ${msg.type === "success" ? "rgba(148, 168, 255, 0.3)" : "rgba(255, 80, 80, 0.3)"}`,
@@ -338,63 +412,148 @@ function AccountSettingsSection({ uid }: { uid: string | null }) {
         </div>
       )}
 
-      {!isChangingEmail ? (
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={() => { setIsChangingEmail(true); setMsg(null); }}
-          style={{ width: "100%" }}
-        >
-          Change email address
-        </button>
-      ) : (
-        <form onSubmit={handleChangeEmail} style={{ marginTop: 10, background: "rgba(255, 255, 255, 0.02)", padding: 12, borderRadius: 6, border: "1px solid var(--border)" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Change Email Address</div>
-          <div className="field" style={{ marginBottom: 8 }}>
-            <label htmlFor="drawer-new-email" style={{ fontSize: 11 }}>New email</label>
-            <input
-              id="drawer-new-email"
-              type="email"
-              required
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="new@company.com"
-              style={{ fontSize: 12, padding: "7px 10px" }}
-            />
-          </div>
-          {isPasswordProvider && (
-            <div className="field" style={{ marginBottom: 10 }}>
-              <label htmlFor="drawer-cur-pwd" style={{ fontSize: 11 }}>Current password</label>
+      {/* Action Buttons */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+        {!user.emailVerified && isPasswordProvider && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={actionLoading}
+            onClick={handleSendVerification}
+            style={{ width: "100%", justifyContent: "flex-start" }}
+          >
+            ✉️ {actionLoading ? "Sending..." : "Resend Verification Email"}
+          </button>
+        )}
+
+        {isPasswordProvider && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={actionLoading}
+            onClick={handlePasswordReset}
+            style={{ width: "100%", justifyContent: "flex-start" }}
+          >
+            🔑 {actionLoading ? "Sending..." : "Reset Password via Email"}
+          </button>
+        )}
+
+        {!isChangingEmail ? (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => { setIsChangingEmail(true); setIsDeletingAccount(false); setMsg(null); }}
+            style={{ width: "100%", justifyContent: "flex-start" }}
+          >
+            ✏️ Change Email Address
+          </button>
+        ) : (
+          <form onSubmit={handleChangeEmail} style={{ background: "rgba(255, 255, 255, 0.02)", padding: 12, borderRadius: 6, border: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Change Email Address</div>
+            <div className="field" style={{ marginBottom: 8 }}>
+              <label htmlFor="drawer-new-email" style={{ fontSize: 11 }}>New email</label>
               <input
-                id="drawer-cur-pwd"
-                type="password"
+                id="drawer-new-email"
+                type="email"
                 required
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Confirm password"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="new@company.com"
                 style={{ fontSize: 12, padding: "7px 10px" }}
               />
             </div>
-          )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="submit"
-              disabled={actionLoading}
-              className="btn btn-primary btn-sm"
-              style={{ flex: 1 }}
-            >
-              {actionLoading ? "Updating..." : "Send Verification"}
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => { setIsChangingEmail(false); setMsg(null); }}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+            {isPasswordProvider && (
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label htmlFor="drawer-cur-pwd" style={{ fontSize: 11 }}>Current password</label>
+                <input
+                  id="drawer-cur-pwd"
+                  type="password"
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Confirm password"
+                  style={{ fontSize: 12, padding: "7px 10px" }}
+                />
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="btn btn-primary btn-sm"
+                style={{ flex: 1 }}
+              >
+                {actionLoading ? "Updating..." : "Send Verification"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setIsChangingEmail(false); setMsg(null); }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={handleLogout}
+          style={{ width: "100%", justifyContent: "flex-start", color: "var(--muted)" }}
+        >
+          🚪 Sign Out / Logout
+        </button>
+
+        {!isDeletingAccount ? (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => { setIsDeletingAccount(true); setIsChangingEmail(false); setMsg(null); }}
+            style={{ width: "100%", justifyContent: "flex-start", color: "#ff8f8f" }}
+          >
+            🗑️ Delete Account
+          </button>
+        ) : (
+          <form onSubmit={handleDeleteAccount} style={{ background: "rgba(255, 59, 48, 0.05)", padding: 12, borderRadius: 6, border: "1px solid rgba(255, 59, 48, 0.3)" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#ff8f8f", marginBottom: 6 }}>Delete Account</div>
+            <p style={{ fontSize: 11, color: "var(--muted)", margin: "0 0 8px", lineHeight: 1.4 }}>
+              This will permanently delete your account, saved identity, roadmaps, and analytics. This action cannot be undone.
+            </p>
+            {isPasswordProvider && (
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label htmlFor="drawer-del-pwd" style={{ fontSize: 11, color: "#ff8f8f" }}>Confirm password</label>
+                <input
+                  id="drawer-del-pwd"
+                  type="password"
+                  required
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Enter current password"
+                  style={{ fontSize: 12, padding: "7px 10px" }}
+                />
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="btn btn-danger btn-sm"
+                style={{ flex: 1 }}
+              >
+                {actionLoading ? "Deleting..." : "Permanently Delete"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setIsDeletingAccount(false); setMsg(null); }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

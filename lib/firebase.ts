@@ -2,8 +2,8 @@
 
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
-import { GoogleAuthProvider, getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { GoogleAuthProvider, getAuth, sendEmailVerification, type User } from "firebase/auth";
+import { getFirestore, doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAU7tndPshfmNNClBNZA3WbBBGzbmzRWI4",
@@ -31,4 +31,49 @@ export function getFirebaseAnalytics(): Promise<Analytics | null> {
     );
   }
   return analyticsPromise;
+}
+
+/**
+ * Ensures new device / uncached login automatically registers device session
+ * and enables email verification sending.
+ */
+export async function handleNewDeviceAuth(user: User | null): Promise<boolean> {
+  if (typeof window === "undefined" || !user) return false;
+
+  const deviceCacheKey = `personakit_device_${user.uid}`;
+  const isExistingDevice = localStorage.getItem(deviceCacheKey);
+
+  if (!isExistingDevice) {
+    localStorage.setItem(deviceCacheKey, new Date().toISOString());
+
+    if (!user.emailVerified && user.email) {
+      try {
+        await sendEmailVerification(user);
+        console.log("[New Device Login] Verification email sent to:", user.email);
+      } catch (err) {
+        console.warn("[New Device Login] Verification email notice:", err);
+      }
+    }
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          lastDeviceLoginAt: serverTimestamp(),
+          deviceSession: {
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+            platform: typeof navigator !== "undefined" ? navigator.platform : "unknown",
+            language: typeof navigator !== "undefined" ? navigator.language : "unknown",
+            firstSeenAt: serverTimestamp(),
+          },
+        },
+        { merge: true },
+      );
+    } catch (err) {
+      console.warn("[New Device Login] Firestore device sync fallback:", err);
+    }
+    return true;
+  }
+
+  return false;
 }

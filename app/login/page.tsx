@@ -14,7 +14,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { auth, db, googleProvider } from "../../lib/firebase";
+import { auth, db, googleProvider, handleNewDeviceAuth } from "../../lib/firebase";
 import { Logo } from "../../components/landing/Logo";
 
 type Mode = "signup" | "signin" | "reset";
@@ -94,6 +94,7 @@ export default function LoginPage() {
       .then(async (cred) => {
         if (cred?.user && isMounted) {
           await ensureUserDoc(cred.user.uid, cred.user.email);
+          await handleNewDeviceAuth(cred.user);
           const next = await nextRouteAfterAuth(cred.user.uid);
           router.push(next);
         }
@@ -113,6 +114,7 @@ export default function LoginPage() {
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u && isMounted) {
+        await handleNewDeviceAuth(u);
         const next = await nextRouteAfterAuth(u.uid);
         router.push(next);
       }

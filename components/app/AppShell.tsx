@@ -3,8 +3,8 @@
 import { signOut, sendEmailVerification } from "firebase/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
-import { auth } from "../../lib/firebase";
+import { useEffect, useState, type ReactNode } from "react";
+import { auth, handleNewDeviceAuth } from "../../lib/firebase";
 import { Logo } from "../landing/Logo";
 import { PixelCat } from "./PixelCat";
 import { PersonaDrawer } from "./PersonaDrawer";
@@ -55,6 +55,12 @@ export function AppShell({
   const user = auth.currentUser;
   const isPasswordUser = user?.providerData.some((p) => p.providerId === "password");
   const isUnverified = user && isPasswordUser && !user.emailVerified;
+
+  useEffect(() => {
+    if (user) {
+      handleNewDeviceAuth(user);
+    }
+  }, [user]);
 
   async function handleResendVerification() {
     if (!user) return;
