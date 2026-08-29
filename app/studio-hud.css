@@ -525,35 +525,107 @@
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
 }
 
-.hud-status-chip {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
+/* Quality Gauge Bars ("dạng thanh") */
+.hud-quality-gauge-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 7px;
 }
 
-.chip-good,
-.chip-clean,
-.chip-optimal {
-  background: rgba(16, 185, 129, 0.18);
-  color: #10b981;
+.hud-quality-gauge-item:last-child {
+  margin-bottom: 0;
 }
 
-.chip-warn,
-.chip-slow,
-.chip-fast,
-.chip-distracting {
-  background: rgba(245, 158, 11, 0.18);
-  color: #f59e0b;
+.hud-quality-gauge-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+
+.hud-bar-track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hud-bar-center-aligned {
+  position: relative;
+}
+
+.hud-center-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
+}
+
+.fill-good {
+  background: linear-gradient(to right, #00f0ff, #10b981);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.fill-warn {
+  background: linear-gradient(to right, #f59e0b, #ef4444);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.fill-slow {
+  background: linear-gradient(to right, #3b82f6, #00f0ff);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+.hud-bar-indicator {
+  position: absolute;
+  top: -2px;
+  width: 4px;
+  height: 10px;
+  background: #ffffff;
+  border-radius: 1px;
+  box-shadow: 0 0 6px #fff;
+  transform: translateX(-50%);
+  transition: left 0.35s ease;
+}
+
+.hud-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 1px;
 }
 
 .val-poor,
-.val-overexposed {
+.val-overexposed,
+.val-fast,
+.val-warn {
   color: #f59e0b;
   font-weight: 700;
 }
 
-.val-good {
+.val-slow {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.val-good,
+.val-clean,
+.val-optimal,
+.val-centered {
   color: #10b981;
   font-weight: 700;
 }

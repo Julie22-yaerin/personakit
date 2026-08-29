@@ -6,17 +6,17 @@
   --p-bg-secondary: rgba(11, 14, 28, 0.85);
   --p-card: rgba(16, 20, 38, 0.85);
   --p-card-elevated: rgba(22, 27, 48, 0.92);
-  --p-text: #ffffff;
-  --p-text-secondary: #cbd5e1;
+  --p-text: #F5EFEB;
+  --p-text-secondary: #8FB3E2;
   --p-border: rgba(148, 168, 255, 0.2);
   --p-accent: #3b82f6;
-  --p-accent-secondary: #93c5fd;
+  --p-accent-secondary: #8FB3E2;
   --p-success: #60a5fa;
 
   position: relative;
   z-index: 1;
   background: var(--p-bg);
-  color: var(--p-text);
+  color: var(--p-text-secondary);
   font-family: var(--font-body, 'Coco', 'Plus Jakarta Sans', -apple-system, sans-serif);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -27,6 +27,10 @@
   box-sizing: border-box;
 }
 
+.p-page h1, .p-page h2, .p-page h3, .p-hero-title, .p-section-title, .p-card-title {
+  color: #F5EFEB !important;
+}
+
 .p-page h1, .p-hero-title {
   font-family: var(--font-title-1, 'Gimola', 'Syne', sans-serif) !important;
 }
@@ -35,8 +39,9 @@
   font-family: var(--font-title-2, 'Black Mango', 'Cinzel', serif) !important;
 }
 
-.p-page p, .p-page span, .p-page label, .p-page button {
+.p-page p, .p-page span, .p-page label, .p-page button, .p-page .p-after-hero, .p-card p {
   font-family: var(--font-body, 'Coco', 'Plus Jakarta Sans', sans-serif);
+  color: #8FB3E2;
 }
 
 .p-mono {

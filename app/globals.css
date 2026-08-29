@@ -40,14 +40,18 @@
   --font-body: 'Coco', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
+  /* Color Palette — Headline: #F5EFEB, Paragraph / Main Idea: #8FB3E2 */
+  --headline: #F5EFEB;
+  --paragraph: #8FB3E2;
+
   /* PERSONA brand tokens */
   --bg: rgba(4, 5, 12, 0.75);
   --bg-raised: rgba(14, 18, 34, 0.72);
   --border: rgba(148, 168, 255, 0.16);
-  --text: #f5f5f5;
-  --muted: #9aa3b8;
+  --text: #F5EFEB;
+  --muted: #8FB3E2;
   --accent: #3356db;
-  --accent-dim: #9db8f2;
+  --accent-dim: #8FB3E2;
   --success: #a8c0f0;
   --bad: #ff3b30;
   --warn: #f5a524;
@@ -56,7 +60,14 @@
   --mono: var(--font-mono);
 }
 
-/* Global Typography Application */
+/* Global Typography & Color Rules */
+h1, h2, h3, h4, h5, h6,
+.font-title-1, .title-1, .hero-title, .p-hero-title, .p-stage-title, .app-title,
+.font-title-2, .title-2, .wordmark, .section-title, .board-factor-name, .price-name,
+.dashboard-title, .dash-card-head h2, .auth-title, strong {
+  color: var(--headline, #F5EFEB) !important;
+}
+
 h1, .font-title-1, .title-1, .hero-title, .p-hero-title, .p-stage-title, .app-title {
   font-family: var(--font-title-1) !important;
 }
@@ -65,8 +76,11 @@ h2, h3, .font-title-2, .title-2, .wordmark, .section-title, .board-factor-name, 
   font-family: var(--font-title-2) !important;
 }
 
-body, html, p, span, label, input, textarea, select, button, .subtitle, .description, .paragraph, .p-hero-subtitle, .p-card {
+body, html, p, span, label, input, textarea, select, button,
+.subtitle, .description, .paragraph, .p-hero-subtitle, .p-card,
+.dashboard-caption, .auth-caption, .stat-card-label, .board-strategy {
   font-family: var(--font-body);
+  color: var(--paragraph, #8FB3E2);
 }
 
 .mono, .p-mono, code, pre, .board-artifact-content {

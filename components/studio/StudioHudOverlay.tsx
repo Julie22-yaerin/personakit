@@ -139,132 +139,149 @@ export function StudioHudOverlay({
         </div>
       </header>
 
-      {/* 3. Left Telemetry Stack (Facial & Environmental Indicators) */}
+      {/* 3. Left Telemetry Stack (Unified QUALITY Panel — Bar/Gauge Format) */}
       <aside className="hud-left-stack">
-        {/* Smile & Expression Meter */}
-        <div className="hud-telemetry-panel">
+        <div className="hud-telemetry-panel hud-quality-panel">
           <div className="hud-panel-header">
-            <span className="hud-panel-title">EXPRESSION & MOOD</span>
-            {expression.targetMoodMatch && (
-              <span className="hud-badge-matched">MATCHED</span>
-            )}
+            <span className="hud-panel-title">QUALITY</span>
+            <span className={`hud-status-chip ${
+              telemetry.lighting === "good" && telemetry.speechPace === "optimal" && telemetry.positioning === "centered"
+                ? "chip-good"
+                : "chip-warn"
+            }`}>
+              {telemetry.lighting === "good" && telemetry.speechPace === "optimal" && telemetry.positioning === "centered"
+                ? "OPTIMAL"
+                : "ADJUSTING"}
+            </span>
           </div>
-          <div className="hud-gauge-row">
-            <div className="hud-arc-gauge">
-              <svg viewBox="0 0 60 60" className="hud-gauge-svg">
-                <circle
-                  cx="30"
-                  cy="30"
-                  r="24"
-                  className="hud-gauge-track"
-                />
-                <circle
-                  cx="30"
-                  cy="30"
-                  r="24"
-                  className="hud-gauge-bar"
-                  style={{
-                    strokeDashoffset: 150 - (150 * expression.smileIntensity) / 100,
-                  }}
-                />
-              </svg>
-              <div className="hud-gauge-value">{expression.smileIntensity}%</div>
-            </div>
-            <div className="hud-gauge-info">
-              <span className="hud-label">Current Mood</span>
-              <div className={`hud-mood-tag mood-${expression.currentMood}`}>
-                {expression.currentMood.toUpperCase()}
-              </div>
-              <span className="hud-sub-metric">
-                {expression.targetMoodMatch
-                  ? "Optimal shot energy"
-                  : "Match shot mood"}
+
+          {/* 1. Speech Speed / Pacing Bar */}
+          <div className="hud-quality-gauge-item">
+            <div className="hud-quality-gauge-meta">
+              <span className="hud-metric-name">Speed / Pacing</span>
+              <span className={`hud-metric-status val-${telemetry.speechPace}`}>
+                {telemetry.speechPace.toUpperCase()}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Environmental & Quality Telemetry */}
-        <div className="hud-telemetry-panel">
-          <div className="hud-panel-header">
-            <span className="hud-panel-title">ENVIRONMENT QUALITY</span>
-          </div>
-
-          {/* Lighting */}
-          <div className="hud-metric-row">
-            <span className="hud-metric-name">Lighting</span>
-            <div className="hud-meter-bars">
-              <span
-                className={`hud-meter-seg ${
-                  telemetry.lighting === "poor" ? "active-warn" : "active-good"
+            <div className="hud-bar-track">
+              <div
+                className={`hud-bar-fill ${
+                  telemetry.speechPace === "optimal"
+                    ? "fill-good"
+                    : telemetry.speechPace === "fast"
+                    ? "fill-warn"
+                    : "fill-slow"
                 }`}
+                style={{
+                  width:
+                    telemetry.speechPace === "slow"
+                      ? "30%"
+                      : telemetry.speechPace === "optimal"
+                      ? "65%"
+                      : "95%",
+                }}
               />
               <span
-                className={`hud-meter-seg ${
-                  telemetry.lighting === "good" || telemetry.lighting === "overexposed"
-                    ? telemetry.lighting === "good"
-                      ? "active-good"
-                      : "active-warn"
-                    : ""
-                }`}
-              />
-              <span
-                className={`hud-meter-seg ${
-                  telemetry.lighting === "overexposed" ? "active-warn" : ""
-                }`}
+                className="hud-bar-indicator"
+                style={{
+                  left:
+                    telemetry.speechPace === "slow"
+                      ? "30%"
+                      : telemetry.speechPace === "optimal"
+                      ? "65%"
+                      : "95%",
+                }}
               />
             </div>
-            <span className={`hud-metric-status val-${telemetry.lighting}`}>
-              {telemetry.lighting.toUpperCase()}
-            </span>
+            <div className="hud-bar-labels">
+              <span>Slow</span>
+              <span>130–160 WPM</span>
+              <span>Fast</span>
+            </div>
           </div>
 
-          {/* Background Clutter */}
-          <div className="hud-metric-row">
-            <span className="hud-metric-name">Background</span>
-            <span
-              className={`hud-status-chip ${
-                telemetry.backgroundQuality === "clean" ? "chip-good" : "chip-warn"
-              }`}
-            >
-              {telemetry.backgroundQuality === "clean" ? "Clean / Ready" : "Distracting"}
-            </span>
+          {/* 2. Lighting Bar */}
+          <div className="hud-quality-gauge-item">
+            <div className="hud-quality-gauge-meta">
+              <span className="hud-metric-name">Lighting</span>
+              <span className={`hud-metric-status val-${telemetry.lighting}`}>
+                {telemetry.lighting.toUpperCase()}
+              </span>
+            </div>
+            <div className="hud-bar-track">
+              <div
+                className={`hud-bar-fill ${
+                  telemetry.lighting === "good" ? "fill-good" : "fill-warn"
+                }`}
+                style={{
+                  width:
+                    telemetry.lighting === "poor"
+                      ? "25%"
+                      : telemetry.lighting === "good"
+                      ? "85%"
+                      : "98%",
+                }}
+              />
+            </div>
           </div>
 
-          {/* Positioning / Framing Guide */}
-          <div className="hud-metric-row">
-            <span className="hud-metric-name">Positioning</span>
-            <span
-              className={`hud-status-chip ${
-                telemetry.positioning === "centered" ? "chip-good" : "chip-warn"
-              }`}
-            >
-              {telemetry.positioning === "centered" && "Centered"}
-              {telemetry.positioning === "off-center" && "Off-Center"}
-              {telemetry.positioning === "too-close" && "Too Close"}
-              {telemetry.positioning === "too-far" && "Too Far"}
-            </span>
+          {/* 3. Positioning / Framing Bar */}
+          <div className="hud-quality-gauge-item">
+            <div className="hud-quality-gauge-meta">
+              <span className="hud-metric-name">Framing</span>
+              <span className={`hud-metric-status ${telemetry.positioning === "centered" ? "val-good" : "val-warn"}`}>
+                {telemetry.positioning.toUpperCase()}
+              </span>
+            </div>
+            <div className="hud-bar-track hud-bar-center-aligned">
+              <span className="hud-center-marker" />
+              <div
+                className={`hud-bar-fill ${
+                  telemetry.positioning === "centered" ? "fill-good" : "fill-warn"
+                }`}
+                style={{
+                  width: telemetry.positioning === "centered" ? "88%" : "45%",
+                }}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Voice & Speech Pacing Meter */}
-        <div className="hud-telemetry-panel">
-          <div className="hud-panel-header">
-            <span className="hud-panel-title">SPEECH PACING & AUDIO</span>
-            <span className={`hud-status-chip chip-${telemetry.speechPace}`}>
-              {telemetry.speechPace.toUpperCase()}
-            </span>
+          {/* 4. Background Clarity Bar */}
+          <div className="hud-quality-gauge-item">
+            <div className="hud-quality-gauge-meta">
+              <span className="hud-metric-name">Background</span>
+              <span className={`hud-metric-status ${telemetry.backgroundQuality === "clean" ? "val-good" : "val-warn"}`}>
+                {telemetry.backgroundQuality === "clean" ? "CLEAN" : "CLUTTER"}
+              </span>
+            </div>
+            <div className="hud-bar-track">
+              <div
+                className={`hud-bar-fill ${
+                  telemetry.backgroundQuality === "clean" ? "fill-good" : "fill-warn"
+                }`}
+                style={{
+                  width: telemetry.backgroundQuality === "clean" ? "85%" : "35%",
+                }}
+              />
+            </div>
           </div>
-          {/* Simulated 8-bar audio spectrum visualizer */}
-          <div className="hud-audio-spectrum" aria-hidden="true">
-            <span className="hud-audio-bar" style={{ height: "40%" }} />
-            <span className="hud-audio-bar" style={{ height: "70%" }} />
-            <span className="hud-audio-bar" style={{ height: "95%" }} />
-            <span className="hud-audio-bar" style={{ height: "60%" }} />
-            <span className="hud-audio-bar" style={{ height: "85%" }} />
-            <span className="hud-audio-bar" style={{ height: "50%" }} />
-            <span className="hud-audio-bar" style={{ height: "75%" }} />
-            <span className="hud-audio-bar" style={{ height: "30%" }} />
+
+          {/* 5. Live Audio Visualizer Bar Strip */}
+          <div className="hud-quality-gauge-item" style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="hud-quality-gauge-meta" style={{ marginBottom: 4 }}>
+              <span className="hud-metric-name">Audio Input</span>
+              <span className="hud-pill-label" style={{ fontSize: 9, color: "rgba(0,240,255,0.8)" }}>ACTIVE</span>
+            </div>
+            <div className="hud-audio-spectrum" aria-hidden="true" style={{ height: 16 }}>
+              <span className="hud-audio-bar" style={{ height: "40%" }} />
+              <span className="hud-audio-bar" style={{ height: "75%" }} />
+              <span className="hud-audio-bar" style={{ height: "95%" }} />
+              <span className="hud-audio-bar" style={{ height: "60%" }} />
+              <span className="hud-audio-bar" style={{ height: "85%" }} />
+              <span className="hud-audio-bar" style={{ height: "50%" }} />
+              <span className="hud-audio-bar" style={{ height: "70%" }} />
+              <span className="hud-audio-bar" style={{ height: "35%" }} />
+            </div>
           </div>
         </div>
       </aside>
