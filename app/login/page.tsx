@@ -6,6 +6,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  sendPasswordResetEmail,
+  sendEmailVerification,
   onAuthStateChanged,
 } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
@@ -15,7 +17,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { auth, db, googleProvider } from "../../lib/firebase";
 import { Logo } from "../../components/landing/Logo";
 
-type Mode = "signup" | "signin";
+type Mode = "signup" | "signin" | "reset";
 
 async function ensureUserDoc(uid: string, email: string | null) {
   try {
@@ -50,6 +52,9 @@ function friendlyError(message: string): string {
     return "Wrong email or password.";
   }
   if (message.includes("auth/weak-password")) return "Password needs at least 6 characters.";
+  if (message.includes("auth/invalid-email")) return "Please enter a valid email address.";
+  if (message.includes("auth/missing-email")) return "Please enter your email address.";
+  if (message.includes("auth/too-many-requests")) return "Too many attempts. Please try again later.";
   if (message.includes("auth/popup-closed-by-user") || message.includes("auth/cancelled-popup-request")) {
     return "Google sign-in popup was closed.";
   }
@@ -74,6 +79,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
@@ -122,6 +128,7 @@ export default function LoginPage() {
     if (loading) return;
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       const cred = await signInWithPopup(auth, googleProvider);
       if (cred?.user) {
@@ -157,23 +164,61 @@ export default function LoginPage() {
     }
   }
 
+  async function handlePasswordReset(e: FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Please enter your email address to receive reset instructions.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setSuccessMsg("Password reset email sent! Check your inbox and spam folder for instructions.");
+    } catch (err: unknown) {
+      console.error("[Password Reset Error]:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(friendlyError(message));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (locked || loading) return;
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
     try {
-      const cred =
-        mode === "signup"
-          ? await createUserWithEmailAndPassword(auth, email.trim(), password)
-          : await signInWithEmailAndPassword(auth, email.trim(), password);
-      
-      setFailedAttempts(0);
-      setLockedUntil(null);
-      if (cred?.user) {
-        await ensureUserDoc(cred.user.uid, cred.user.email);
-        const next = await nextRouteAfterAuth(cred.user.uid);
-        router.push(next);
+      if (mode === "signup") {
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        // Trigger verification email for new account
+        try {
+          if (cred.user) {
+            await sendEmailVerification(cred.user);
+          }
+        } catch (vErr) {
+          console.warn("Verification email notice:", vErr);
+        }
+
+        setFailedAttempts(0);
+        setLockedUntil(null);
+        if (cred?.user) {
+          await ensureUserDoc(cred.user.uid, cred.user.email);
+          const next = await nextRouteAfterAuth(cred.user.uid);
+          router.push(next);
+        }
+      } else {
+        const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+        setFailedAttempts(0);
+        setLockedUntil(null);
+        if (cred?.user) {
+          await ensureUserDoc(cred.user.uid, cred.user.email);
+          const next = await nextRouteAfterAuth(cred.user.uid);
+          router.push(next);
+        }
       }
     } catch (err: unknown) {
       console.error("[Login Email Auth Error]:", err);
@@ -204,27 +249,44 @@ export default function LoginPage() {
           <Logo size={26} />
         </Link>
         <p className="auth-caption">
-          {mode === "signup" ? "Two fields. One click. In." : "Welcome back. We kept the lights on."}
+          {mode === "signup"
+            ? "Two fields. One click. In."
+            : mode === "signin"
+            ? "Welcome back. We kept the lights on."
+            : "Reset your password."}
         </p>
 
-        <div className="auth-tabs">
-          <button
-            type="button"
-            className={`auth-tab ${mode === "signup" ? "active" : ""}`}
-            onClick={() => { setMode("signup"); setError(null); }}
-            style={{ cursor: "pointer", pointerEvents: "auto" }}
-          >
-            Sign up
-          </button>
-          <button
-            type="button"
-            className={`auth-tab ${mode === "signin" ? "active" : ""}`}
-            onClick={() => { setMode("signin"); setError(null); }}
-            style={{ cursor: "pointer", pointerEvents: "auto" }}
-          >
-            Log in
-          </button>
-        </div>
+        {mode !== "reset" ? (
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`auth-tab ${mode === "signup" ? "active" : ""}`}
+              onClick={() => { setMode("signup"); setError(null); setSuccessMsg(null); }}
+              style={{ cursor: "pointer", pointerEvents: "auto" }}
+            >
+              Sign up
+            </button>
+            <button
+              type="button"
+              className={`auth-tab ${mode === "signin" ? "active" : ""}`}
+              onClick={() => { setMode("signin"); setError(null); setSuccessMsg(null); }}
+              style={{ cursor: "pointer", pointerEvents: "auto" }}
+            >
+              Log in
+            </button>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 18, textAlign: "left" }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => { setMode("signin"); setError(null); setSuccessMsg(null); }}
+              style={{ fontSize: 12, padding: "4px 8px" }}
+            >
+              ← Back to log in
+            </button>
+          </div>
+        )}
 
         {locked ? (
           <div className="auth-error">Too many failed attempts. Try again in a few seconds.</div>
@@ -232,57 +294,98 @@ export default function LoginPage() {
           error && <div className="auth-error">{error}</div>
         )}
 
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loading}
-          className="btn btn-ghost btn-block"
-          style={{ marginBottom: 4, cursor: loading ? "wait" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
-        >
-          <GoogleMark /> {loading ? "Connecting..." : "Continue with Google"}
-        </button>
+        {successMsg && <div className="auth-success">{successMsg}</div>}
 
-        <div className="auth-divider">or</div>
+        {mode === "reset" ? (
+          <form onSubmit={handlePasswordReset} style={{ pointerEvents: "auto" }}>
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                style={{ pointerEvents: "auto" }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary btn-block"
+              style={{ cursor: loading ? "not-allowed" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
+            >
+              {loading ? "Sending link..." : "Send reset instructions"}
+            </button>
+          </form>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={loading}
+              className="btn btn-ghost btn-block"
+              style={{ marginBottom: 4, cursor: loading ? "wait" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
+            >
+              <GoogleMark /> {loading ? "Connecting..." : "Continue with Google"}
+            </button>
 
-        <form onSubmit={handleSubmit} style={{ pointerEvents: "auto" }}>
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              style={{ pointerEvents: "auto" }}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={{ pointerEvents: "auto" }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || locked}
-            className="btn btn-primary btn-block"
-            style={{ cursor: loading || locked ? "not-allowed" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
-          >
-            {loading ? "One sec..." : mode === "signup" ? "Create account" : "Log in"}
-          </button>
-        </form>
+            <div className="auth-divider">or</div>
 
-        <p className="auth-steps">step {mode === "signup" ? "2 of 2" : "1 of 1"} · that&apos;s the whole thing</p>
+            <form onSubmit={handleSubmit} style={{ pointerEvents: "auto" }}>
+              <div className="field">
+                <label htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  style={{ pointerEvents: "auto" }}
+                />
+              </div>
+              <div className="field">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <label htmlFor="password" style={{ margin: 0 }}>Password</label>
+                  {mode === "signin" && (
+                    <button
+                      type="button"
+                      className="auth-forgot-link"
+                      onClick={() => { setMode("reset"); setError(null); setSuccessMsg(null); }}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ pointerEvents: "auto" }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || locked}
+                className="btn btn-primary btn-block"
+                style={{ cursor: loading || locked ? "not-allowed" : "pointer", pointerEvents: "auto", position: "relative", zIndex: 100 }}
+              >
+                {loading ? "One sec..." : mode === "signup" ? "Create account" : "Log in"}
+              </button>
+            </form>
+
+            <p className="auth-steps">step {mode === "signup" ? "2 of 2" : "1 of 1"} · that&apos;s the whole thing</p>
+          </>
+        )}
       </div>
     </div>
   );

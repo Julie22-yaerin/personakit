@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { AppShell } from "../../components/app/AppShell";
+import { AuthProgress } from "../../components/app/AuthProgress";
 import {
   classifyFDS,
   computeEDS,
@@ -120,11 +121,7 @@ export default function DistributionPage() {
   }
 
   if (user === undefined) {
-    return (
-      <div className="app-shell">
-        <p style={{ color: "var(--muted)" }}>One sec...</p>
-      </div>
-    );
+    return <AuthProgress />;
   }
   if (!user) return null;
 

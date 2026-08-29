@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { auth, db } from "../../lib/firebase";
 import { AppShell } from "../../components/app/AppShell";
+import { AuthProgress } from "../../components/app/AuthProgress";
 import {
   DEFAULT_EDS_WEIGHTS,
   classifyFDS,
@@ -130,11 +131,7 @@ export default function AppHome() {
   }, [distributionLog, edsWeights]);
 
   if (user === undefined) {
-    return (
-      <div className="app-shell">
-        <p style={{ color: "var(--muted)" }}>Checking if you're actually in...</p>
-      </div>
-    );
+    return <AuthProgress />;
   }
 
   if (!user) return null;

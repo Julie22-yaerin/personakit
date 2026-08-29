@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { EMPTY_COMPANY_CONTEXT, isCompanyContextSubstantive, type CompanyContext } from "../../lib/company-context";
 import { AppShell } from "../../components/app/AppShell";
+import { AuthProgress } from "../../components/app/AuthProgress";
 
 function linesToClaims(text: string): string[] {
   return text
@@ -80,11 +81,7 @@ export default function CompanyPage() {
   }
 
   if (user === undefined) {
-    return (
-      <div className="app-shell">
-        <p style={{ color: "var(--muted)" }}>One sec...</p>
-      </div>
-    );
+    return <AuthProgress />;
   }
   if (!user) return null;
 

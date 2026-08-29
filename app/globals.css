@@ -2350,3 +2350,181 @@ footer {
   color: var(--p-text-secondary, var(--muted));
   margin: 0 0 12px;
 }
+
+/* ---------- Auth Progress Screen ---------- */
+
+.auth-progress-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 45%, rgba(51, 86, 219, 0.08) 0%, transparent 60%), var(--bg);
+  position: relative;
+  z-index: 50;
+}
+
+.auth-progress-card {
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  border-radius: 12px;
+  padding: 32px 28px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.auth-progress-logo {
+  margin-bottom: 24px;
+}
+
+.auth-progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(148, 168, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.auth-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3356db 0%, #7b9bf9 50%, #a8c0f0 100%);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.auth-progress-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: authShimmer 1.5s infinite;
+}
+
+@keyframes authShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.auth-progress-text {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.auth-progress-label {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.auth-progress-percentage {
+  color: var(--accent-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.auth-progress-sublabel {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ---------- Auth Links & Banners ---------- */
+
+.auth-forgot-link {
+  background: none;
+  border: none;
+  color: var(--accent-dim);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 4px;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.auth-forgot-link:hover {
+  color: var(--text);
+}
+
+.auth-success {
+  background: rgba(51, 86, 219, 0.12);
+  border: 1px solid rgba(148, 168, 255, 0.3);
+  color: #c7d7fc;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.email-verify-banner {
+  background: rgba(245, 165, 36, 0.1);
+  border-bottom: 1px solid rgba(245, 165, 36, 0.25);
+  color: #fed7aa;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  gap: 12px;
+}
+
+.email-verify-btn {
+  background: rgba(245, 165, 36, 0.2);
+  border: 1px solid rgba(245, 165, 36, 0.4);
+  color: #fff;
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.email-verify-btn:hover {
+  background: rgba(245, 165, 36, 0.3);
+}
+
+.badge-verified {
+  background: rgba(51, 180, 100, 0.15);
+  color: #5ce69a;
+  border: 1px solid rgba(51, 180, 100, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge-unverified {
+  background: rgba(245, 165, 36, 0.15);
+  color: #f5a524;
+  border: 1px solid rgba(245, 165, 36, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+

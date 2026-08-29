@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
+import { AuthProgress } from "../../components/app/AuthProgress";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
@@ -626,11 +627,7 @@ export default function StudioPage() {
   }
 
   if (user === undefined) {
-    return (
-      <div className="app-shell">
-        <p style={{ color: "var(--muted)" }}>One sec...</p>
-      </div>
-    );
+    return <AuthProgress />;
   }
   if (!user) return null;
 

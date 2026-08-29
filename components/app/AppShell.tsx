@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "firebase/auth";
+import { signOut, sendEmailVerification } from "firebase/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -48,6 +48,26 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [personaOpen, setPersonaOpen] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+
+  const user = auth.currentUser;
+  const isPasswordUser = user?.providerData.some((p) => p.providerId === "password");
+  const isUnverified = user && isPasswordUser && !user.emailVerified;
+
+  async function handleResendVerification() {
+    if (!user) return;
+    setResending(true);
+    try {
+      await sendEmailVerification(user);
+      setResendStatus("Verification email sent! Check your inbox.");
+    } catch {
+      setResendStatus("Failed to send. Try again in a minute.");
+    } finally {
+      setResending(false);
+    }
+  }
 
   return (
     <div className="app-layout">
@@ -88,7 +108,36 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="app-main">{children}</main>
+      <main className="app-main">
+        {isUnverified && !bannerDismissed && (
+          <div className="email-verify-banner">
+            <span>
+              ✉️ {resendStatus || "Please verify your email address to secure your account."}
+            </span>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {!resendStatus && (
+                <button
+                  type="button"
+                  className="email-verify-btn"
+                  disabled={resending}
+                  onClick={handleResendVerification}
+                >
+                  {resending ? "Sending..." : "Resend Verification"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setBannerDismissed(true)}
+                style={{ background: "none", border: "none", color: "#fed7aa", cursor: "pointer", fontSize: 14, padding: "0 4px" }}
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+        {children}
+      </main>
 
       <PersonaDrawer open={personaOpen} onClose={() => setPersonaOpen(false)} uid={uid ?? null} />
     </div>

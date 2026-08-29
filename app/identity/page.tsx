@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
+import { AuthProgress } from "../../components/app/AuthProgress";
 import {
   CATEGORY_LABELS,
   INTERVIEW_QUESTIONS,
@@ -209,11 +210,7 @@ export default function IdentityPage() {
   }
 
   if (user === undefined) {
-    return (
-      <div className="app-shell">
-        <p style={{ color: "var(--muted)" }}>One sec...</p>
-      </div>
-    );
+    return <AuthProgress />;
   }
   if (!user) return null;
 

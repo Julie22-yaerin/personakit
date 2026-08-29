@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { auth, db } from "../../lib/firebase";
 import { authedFetch } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
+import { AuthProgress } from "../../components/app/AuthProgress";
 import {
   ARTIFACT_KIND_LABELS,
   type ArtifactKind,
@@ -338,11 +339,7 @@ export default function BoardPage() {
   }
 
   if (user === undefined) {
-    return (
-      <div className="app-shell">
-        <p style={{ color: "var(--muted)" }}>One sec...</p>
-      </div>
-    );
+    return <AuthProgress />;
   }
   if (!user) return null;
 
