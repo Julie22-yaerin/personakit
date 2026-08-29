@@ -35,8 +35,10 @@ export function isNvidiaConfigured(role: NvidiaRole): boolean {
   return Boolean(process.env[envVarFor(role)]);
 }
 
-export const NVIDIA_EXTRACTOR_MODEL = process.env.NVIDIA_EXTRACTOR_MODEL ?? "meta/muse-glimmer-30b";
-export const NVIDIA_STYLIST_MODEL = process.env.NVIDIA_STYLIST_MODEL ?? "thinkingmachines/inkling";
+export const NVIDIA_EXTRACTOR_MODEL =
+  process.env.NVIDIA_EXTRACTOR_MODEL ?? "meta/llama-3.2-11b-vision-instruct";
+export const NVIDIA_STYLIST_MODEL =
+  process.env.NVIDIA_STYLIST_MODEL ?? "deepseek-ai/deepseek-v4-pro-0813";
 
 function stripJsonFence(text: string): string {
   const trimmed = text.trim();
