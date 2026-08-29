@@ -1,24 +1,21 @@
+import React from "react";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import {
   ArrowRight,
-  Camera,
   Sparkles,
-  Video,
   Target,
-  ShieldCheck,
-  UserCheck,
-  Mic,
-  BrainCircuit,
   CheckCircle2,
-  XCircle,
-  AlertCircle,
+  AlertTriangle,
+  Zap,
+  LayoutGrid,
+  Camera,
+  Layers,
+  Flame,
+  Check,
+  ShieldAlert,
 } from "lucide-react";
 import { Logo } from "../components/landing/Logo";
-import { MetricCard } from "../components/landing/MetricCard";
-import { FlowDiagram, WorkflowSteps } from "../components/landing/ContentAnalysis";
-import { PersonaTimeline } from "../components/landing/PersonaTimeline";
-import { PerformanceChart } from "../components/landing/PerformanceChart";
 import { Reveal } from "../components/landing/Reveal";
 import { HeroScrollContainer } from "../components/landing/ScrollHero";
 import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
@@ -29,49 +26,37 @@ import { PageTracker } from "../components/landing/PageTracker";
 import "./persona-landing.css";
 
 const grotesk = Geist({ subsets: ["latin"], variable: "--font-grotesk" });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-mono" });
 
-const FAQ_ITEMS: Array<{ q: string; a: string }> = [
+const FAQ_ITEMS = [
   {
-    q: "How does PersonaKit help me prepare for shots more easily?",
-    a: "PersonaKit removes all filming friction. It turns your authentic thoughts into graph-based script teleprompter nodes, tracks camera distance (1.4m optimal) and eye contact via computer vision, monitors speech pace (WPM), and provides real-time drift protection if you start rambling off-topic.",
+    q: "Does this generate fake AI video avatars?",
+    a: "No. Fake AI talking heads destroy founder credibility. Your audience buys into you — your face, your raw opinions, your quirks. We don't generate the video; we eliminate the cognitive overload before and during recording so you can film real takes in minutes.",
   },
   {
-    q: "What does 'stop being a 35-year-old CEO in a fleece vest' mean?",
-    a: "Most generic branding advice turns founders into sterile corporate clones posting robotic LinkedIn platitudes ('Excited to share...'). PersonaKit calibrates your natural humor, contrarian stances, technical edge, and raw debate style so you perform as who you actually are.",
+    q: "How is this different from an AI script generator?",
+    a: "AI script generators hand you 500-word walls of text that force you to memorize lines or read stiffly off a teleprompter. PersonaKit turns your ideas into a graph of single-shot actions. You film one 15-second thought at a time.",
   },
   {
-    q: "How does it turn any moment I enjoy into high-converting content?",
-    a: "Whether you're debugging at 2 AM, passionate about an architectural breakthrough, or talking with early users, PersonaKit extracts the core tension and curiosity, anchors it against your startup's true value proposition, and generates ready-to-shoot scripts.",
+    q: "What does the Live Studio HUD actually do while I'm filming?",
+    a: "It runs in-browser computer vision that checks eye contact, smile intensity, lighting quality, background clutter, and speech pacing in real time. If you wander off-topic, it guides you back. If your take runs too long, it triggers an auto-cut before you waste time.",
   },
   {
-    q: "Is my video recording or facial data stored on servers?",
-    a: "Never. Camera frames, facial geometry, and speech analysis are processed entirely in-memory on your local browser during recording. No video files or biometric data are ever sent to or stored on our servers.",
+    q: "Are my camera feed or biometrics sent to your servers?",
+    a: "Never. All computer vision telemetry (face landmarks, expression tracking, pacing) runs 100% locally in your browser memory. No raw video or facial biometric data is ever stored on our backend.",
   },
   {
-    q: "Do I have to connect my social media accounts or share passwords?",
-    a: "No. PersonaKit requires zero social API permissions or passwords. You can log performance metrics directly to close the reality feedback loop, keeping your credentials 100% private.",
-  },
-  {
-    q: "How does the closed reality feedback loop work?",
-    a: "Before you post, PersonaKit predicts audience curiosity, comment probability, and profile intent. When you log actual results, the system compares hypothesis against reality and recalibrates your persona model for subsequent scripts.",
+    q: "I'm a technical founder with zero filming experience. Will this work for me?",
+    a: "This was built specifically for you. You don't need filming gear, lighting crews, or a teleprompter. You drop your thoughts onto The Board, approve the shot sequence, and record one simple action at a time.",
   },
 ];
-
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
-    "@type": "Question",
-    name: q,
-    acceptedAnswer: { "@type": "Answer", text: a },
-  })),
-};
 
 export default function LandingPage() {
   return (
     <>
+      {/* 1. Neuro Noise WebGL1 Animated Shader Background */}
       <AnimationBackground />
+
       <div className={`p-page ${grotesk.variable} ${mono.variable}`}>
         {/* ---------- NAVIGATION ---------- */}
         <nav className="p-nav">
@@ -80,11 +65,12 @@ export default function LandingPage() {
               <Logo />
             </Link>
             <div className="p-nav-links">
+              <a href="#the-problem">The Problem</a>
+              <a href="#pre-framing">Pre-Framing</a>
+              <a href="#the-shoot">The Shoot</a>
+              <a href="#studio-hud">Studio HUD</a>
               <a href="#philosophy">Philosophy</a>
-              <a href="#identity-engine">Identity Engine</a>
-              <a href="#board-feature">Content Board</a>
-              <a href="#studio-feature">Live AI Studio</a>
-              <a href="#reality-loop">Reality Loop</a>
+              <a href="#founder-positioning">Positioning</a>
               <a href="#faq">FAQ</a>
             </div>
             <div className="p-nav-actions">
@@ -92,505 +78,318 @@ export default function LandingPage() {
                 Sign in
               </Link>
               <Link href="/login" className="p-btn p-btn-primary p-btn-sm">
-                Build your persona
+                Build My First Shoot
               </Link>
             </div>
           </div>
         </nav>
 
-        {/* ---------- DUAL-SECTION HERO SCROLL MOTION ---------- */}
+        {/* ---------- HERO & THE REAL PROBLEM (DUAL SCROLL MOTION) ---------- */}
         <HeroScrollContainer />
 
-        {/* ---------- MAIN BODY: STATS & FEATURE DEEP DIVES ---------- */}
-        <main className="p-after-hero" id="main">
-          {/* ---------- STATS PROOF STRIP ---------- */}
-          <section className="p-section-tight" style={{ borderBottom: "1px solid var(--p-border)" }}>
+        {/* ---------- MAIN NARRATIVE SECTIONS ---------- */}
+        <main className="p-after-hero" id="the-problem">
+          {/* ---------- SECTION 2: PRE-FRAMING (THE BOARD) ---------- */}
+          <section className="p-section" id="pre-framing">
             <div className="p-wrap">
-              <div className="p-stat-grid">
-                <Reveal delay={0}>
-                  <div className="p-stat-box">
-                    <div className="p-stat-value">94.8%</div>
-                    <div className="p-stat-label">Persona Stability Score</div>
+              <Reveal>
+                <div className="p-section-head">
+                  <div className="p-hero-badge-pill" style={{ marginBottom: 12 }}>
+                    <LayoutGrid size={13} color="#00f0ff" />
+                    <span>PRE-FRAMING ENGINE</span>
                   </div>
-                </Reveal>
-                <Reveal delay={0.06}>
-                  <div className="p-stat-box">
-                    <div className="p-stat-value">&lt; 5 min</div>
-                    <div className="p-stat-label">From Idea to Filmed Shot</div>
-                  </div>
-                </Reveal>
-                <Reveal delay={0.12}>
-                  <div className="p-stat-box">
-                    <div className="p-stat-value">3.8x</div>
-                    <div className="p-stat-label">Higher Comment Engagement</div>
-                  </div>
-                </Reveal>
-                <Reveal delay={0.18}>
-                  <div className="p-stat-box">
-                    <div className="p-stat-value">0%</div>
-                    <div className="p-stat-label">Corporate Posturing</div>
-                  </div>
-                </Reveal>
+                  <TextMotion as="h2" text="Think before you film. Not while you're filming." />
+                  <TextMotion
+                    as="p"
+                    delay={0.15}
+                    text="Start with a blank board. Build your content your way. Drop in hooks, script nodes, visual ideas, and editing suggestions. Mix them. Delete them. Rearrange them."
+                  />
+                </div>
+              </Reveal>
+
+              {/* Interactive Visual Cards Grid */}
+              <div className="p-grid-3" style={{ gap: 16, marginTop: 32 }}>
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.88)", border: "1px solid rgba(0, 240, 255, 0.22)", padding: 22 }}>
+                  <div className="p-mono" style={{ fontSize: 11, color: "#00f0ff", marginBottom: 8 }}>01 · HOOK GENERATION</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#fff" }}>High-Contrast Hooks</h3>
+                  <p style={{ fontSize: 13.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Zero platitudes. 0-3 second scroll-stoppers anchored in your contrarian beliefs and technical edge.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.88)", border: "1px solid rgba(0, 240, 255, 0.22)", padding: 22 }}>
+                  <div className="p-mono" style={{ fontSize: 11, color: "#00f0ff", marginBottom: 8 }}>02 · 7-STAGE GRAPH</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#fff" }}>Structured Script Nodes</h3>
+                  <p style={{ fontSize: 13.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Never memorize essays. Decompose your take into Hook → Claim → Reason → Example → Experience → Product → Ending.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.88)", border: "1px solid rgba(0, 240, 255, 0.22)", padding: 22 }}>
+                  <div className="p-mono" style={{ fontSize: 11, color: "#00f0ff", marginBottom: 8 }}>03 · VISUAL & PROPS</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#fff" }}>Action & Prop Triggers</h3>
+                  <p style={{ fontSize: 13.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Whiteboard sketches, terminal screen recordings, coffee mug hand gestures — planned before recording starts.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.88)", border: "1px solid rgba(255, 255, 255, 0.12)", padding: 22 }}>
+                  <div className="p-mono" style={{ fontSize: 11, color: "#f59e0b", marginBottom: 8 }}>04 · SHOT BREAKDOWN</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#fff" }}>Take Duration Limits</h3>
+                  <p style={{ fontSize: 13.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Each shot gets an explicit job and a strict 15-45s duration cap so you never ramble into tangents.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.88)", border: "1px solid rgba(255, 255, 255, 0.12)", padding: 22 }}>
+                  <div className="p-mono" style={{ fontSize: 11, color: "#f59e0b", marginBottom: 8 }}>05 · EDIT SUGGESTIONS</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#fff" }}>Pre-Planned Jump Cuts</h3>
+                  <p style={{ fontSize: 13.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Know exactly where the cut lands before you shoot, removing 90% of downstream post-production headaches.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.88)", border: "1px solid rgba(255, 255, 255, 0.12)", padding: 22 }}>
+                  <div className="p-mono" style={{ fontSize: 11, color: "#f59e0b", marginBottom: 8 }}>06 · RAW REFERENCES</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#fff" }}>Founder Truths & Quotes</h3>
+                  <p style={{ fontSize: 13.5, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Pin user testimonials, architecture benchmarks, and real anecdotes directly onto the canvas.
+                  </p>
+                </div>
+              </div>
+
+              {/* Callout Statement */}
+              <div className="p-card" style={{ marginTop: 24, padding: "24px 32px", background: "rgba(10, 14, 26, 0.92)", border: "1px solid rgba(0, 240, 255, 0.35)", textAlign: "center" }}>
+                <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px" }}>
+                  The AI doesn&apos;t decide what your video should be. <span style={{ color: "#00f0ff" }}>You do.</span>
+                </p>
+                <p style={{ fontSize: 14, color: "var(--p-text-secondary)", margin: 0 }}>
+                  It simply turns your decisions into a filming plan you can actually execute.
+                </p>
               </div>
             </div>
           </section>
 
-          {/* ---------- PHILOSOPHY / THE CONTRAST ---------- */}
-          <section className="p-section" id="philosophy">
+          {/* ---------- SECTION 3: THE HANDOFF ---------- */}
+          <section className="p-section" id="the-shoot" style={{ borderTop: "1px solid var(--p-border)", borderBottom: "1px solid var(--p-border)" }}>
             <div className="p-wrap">
               <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">The Founder Reality</p>
-                  <TextMotion
-                    as="h2"
-                    text="Your content is boring because you're trying to act like a corporate executive."
-                  />
+                <div className="p-section-head" style={{ textAlign: "center", maxWidth: 760, margin: "0 auto 48px" }}>
+                  <div className="p-hero-badge-pill" style={{ marginBottom: 12 }}>
+                    <Layers size={13} color="#10b981" />
+                    <span style={{ color: "#10b981" }}>DECOUPLED EXECUTION</span>
+                  </div>
+                  <TextMotion as="h2" text="Then the plan becomes a shoot." />
                   <TextMotion
                     as="p"
-                    delay={0.2}
-                    text="Nobody follows a startup because of press releases. They follow the raw, unfiltered obsession of the founder building it. When you try to sound professional, you sound like background noise."
+                    delay={0.15}
+                    text="Once you've approved your framing, your content moves into filming mode. Now you don't have to remember the entire video. You only have to make one shot happen."
                   />
                 </div>
               </Reveal>
 
-              <div className="p-contrast-grid">
-                <Reveal delay={0.05}>
-                  <div className="p-contrast-card-bad">
-                    <div className="p-contrast-header" style={{ color: "#ff453a" }}>
-                      <XCircle size={20} />
-                      <span>The Fleece Vest Trap (What Fails)</span>
-                    </div>
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "var(--p-text-secondary)" }}>
-                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ color: "#ff453a", fontWeight: 700 }}>✕</span>
-                        <span><strong>Canned AI Threads:</strong> &ldquo;Here are 10 ChatGPT prompts to scale your B2B SaaS in 2026&rdquo; (Zero differentiation, zero authority).</span>
-                      </li>
-                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ color: "#ff453a", fontWeight: 700 }}>✕</span>
-                        <span><strong>Corporate Cosplay:</strong> Speaking in sterile press-release language because you&apos;re afraid of looking unprofessional.</span>
-                      </li>
-                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ color: "#ff453a", fontWeight: 700 }}>✕</span>
-                        <span><strong>Shooting Paralysis:</strong> Staring into the lens for 45 minutes, stumbling over words, editing for 3 hours, then deleting the draft.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </Reveal>
+              <div className="p-grid-3" style={{ gap: 20 }}>
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.85)", padding: 28, textAlign: "center", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <div className="p-mono" style={{ fontSize: 28, fontWeight: 800, color: "#00f0ff", marginBottom: 12 }}>01</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>One Action</h3>
+                  <p style={{ fontSize: 14, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Point to the architecture diagram, grab your mug, or look directly into the camera.
+                  </p>
+                </div>
 
-                <Reveal delay={0.12}>
-                  <div className="p-contrast-card-good">
-                    <div className="p-contrast-header" style={{ color: "var(--p-accent-secondary)" }}>
-                      <CheckCircle2 size={20} />
-                      <span>The PersonaKit Engine (What Converts)</span>
-                    </div>
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "var(--p-text-secondary)" }}>
-                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ color: "var(--p-success)", fontWeight: 700 }}>✓</span>
-                        <span><strong>Radical Authenticity:</strong> PersonaKit calibrates your real speech cadence, contrarian beliefs, humor, and debate style.</span>
-                      </li>
-                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ color: "var(--p-success)", fontWeight: 700 }}>✓</span>
-                        <span><strong>Effortless Moments:</strong> Turn 2 AM debugging rants or whiteboard breakthroughs into high-tension content tied directly to your product.</span>
-                      </li>
-                      <li style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ color: "var(--p-success)", fontWeight: 700 }}>✓</span>
-                        <span><strong>1-Take AI Studio:</strong> Real-time teleprompter, live drift protection, speech pacing, and visual framing keep you confident on camera.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </Reveal>
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.85)", padding: 28, textAlign: "center", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <div className="p-mono" style={{ fontSize: 28, fontWeight: 800, color: "#10b981", marginBottom: 12 }}>02</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>One Line</h3>
+                  <p style={{ fontSize: 14, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Deliver the single core insight cleanly without wandering into a 5-minute monologue.
+                  </p>
+                </div>
+
+                <div className="p-card" style={{ background: "rgba(12, 16, 28, 0.85)", padding: 28, textAlign: "center", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <div className="p-mono" style={{ fontSize: 28, fontWeight: 800, color: "#f59e0b", marginBottom: 12 }}>03</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>One Moment</h3>
+                  <p style={{ fontSize: 14, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+                    Finish the take in under 30 seconds. Hit stop. Then move immediately to the next shot.
+                  </p>
+                </div>
               </div>
             </div>
           </section>
 
-          {/* ---------- FEATURE 1: FOUNDER IDENTITY ENGINE ---------- */}
-          <section className="p-section" id="identity-engine">
+          {/* ---------- SECTION 4: STUDIO HUD FILMING ---------- */}
+          <section className="p-section" id="studio-hud">
             <div className="p-wrap">
-              <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">Deep Dive 01 · Identity Calibration</p>
-                  <TextMotion as="h2" text="Extracting your voice — never inventing a fake one." />
-                  <TextMotion
-                    as="p"
-                    delay={0.2}
-                    text="Most tools generate generic personality labels. PersonaKit runs a substantive interview into your real origins, beliefs, and debate style. You confirm, reject, or modify every signal."
-                  />
-                </div>
-              </Reveal>
+              <div className="p-hero-grid" style={{ alignItems: "center" }}>
+                <div>
+                  <div className="p-hero-badge-pill" style={{ marginBottom: 12 }}>
+                    <Camera size={13} color="#00f0ff" />
+                    <span>SMART UI OVERLAY HUD</span>
+                  </div>
+                  <h2 style={{ fontSize: "clamp(26px, 3.8vw, 42px)", fontWeight: 800, margin: "0 0 16px", color: "#fff", lineHeight: 1.2 }}>
+                    Filming shouldn&apos;t feel like performing surgery.
+                  </h2>
+                  <p style={{ fontSize: 16, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 20px" }}>
+                    Your shot has a job. Do it. The system follows the basic structure of what you&apos;re recording and helps you stay on track.
+                  </p>
 
-              <div className="p-feature-deep-dive">
-                <Reveal delay={0.05}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                    <div className="p-card">
-                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <BrainCircuit size={14} color="var(--p-accent-secondary)" />
-                        <span>SELF-KNOWLEDGE SCORE (SKS)</span>
-                      </div>
-                      <h3 style={{ fontSize: 18, margin: "0 0 8px", fontWeight: 600 }}>
-                        Calibrated Clarity: 92 / 100
-                      </h3>
-                      <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
-                        Specifics beat polish. PersonaKit scores your core beliefs and ensures your content is anchored in verifiable experience, not empty buzzwords.
-                      </p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        <span className="p-badge" style={{ color: "var(--p-success)", borderColor: "rgba(148,168,255,0.3)" }}>
-                          ✓ Contrarian Stance Confirmed
-                        </span>
-                        <span className="p-badge" style={{ color: "var(--p-accent-secondary)", borderColor: "rgba(59,130,246,0.3)" }}>
-                          ✓ Dry Technical Humor
-                        </span>
-                        <span className="p-badge" style={{ color: "var(--p-text)", borderColor: "rgba(255,255,255,0.2)" }}>
-                          ✓ High Authority Pacing
-                        </span>
-                      </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, color: "#fff" }}>
+                      <span style={{ color: "#ef4444", fontWeight: 700 }}>Too long?</span> Cut.
                     </div>
-
-                    <div className="p-card">
-                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <UserCheck size={14} color="var(--p-accent-secondary)" />
-                        <span>HUMAN CONFIRMATION WORKFLOW</span>
-                      </div>
-                      <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: 0 }}>
-                        Every extracted trait comes with a &ldquo;Yes / No / Modify&rdquo; control. You have total veto power over your persona model before a single script is ever drafted.
-                      </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, color: "#fff" }}>
+                      <span style={{ color: "#f59e0b", fontWeight: 700 }}>Missed the point?</span> Try again.
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, color: "#fff" }}>
+                      <span style={{ color: "#10b981", fontWeight: 700 }}>Finished the shot?</span> Move on.
                     </div>
                   </div>
-                </Reveal>
 
-                <Reveal delay={0.15}>
-                  <MetricCard
-                    metrics={[
-                      { label: "CONTRARIANISM", value: 94 },
-                      { label: "AUTHORITY", value: 89 },
-                      { label: "MEMORABILITY", value: 92 },
-                      { label: "WARMTH", value: 62 },
-                      { label: "VULNERABILITY", value: 68 },
-                      { label: "HUMOR", value: 76 },
-                      { label: "AGGRESSION", value: 45 },
-                      { label: "PRODUCT RELEVANCE", value: 96 },
-                    ]}
-                  />
-                </Reveal>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", margin: 0, lineHeight: 1.55 }}>
+                    You don&apos;t need twenty takes because your brain wandered into another paragraph halfway through. <strong>The system keeps the shoot moving.</strong>
+                  </p>
+                </div>
+
+                {/* Live HUD Visual Showcase */}
+                <div className="p-card" style={{ background: "rgba(10, 13, 24, 0.92)", border: "1px solid rgba(0, 240, 255, 0.4)", padding: 20, borderRadius: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div className="hud-pill hud-pill-scene creator_face">
+                      <span className="hud-indicator-dot" />
+                      <span className="hud-pill-label">Face-to-Cam</span>
+                    </div>
+                    <div className="hud-timer-card">
+                      <span className="p-mono" style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>REC 00:18 / 00:45</span>
+                    </div>
+                  </div>
+
+                  <div style={{ position: "relative", height: 200, background: "rgba(0, 0, 0, 0.45)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", border: "1px dashed rgba(255,255,255,0.15)", overflow: "hidden" }}>
+                    <div className="hud-match-glow-ring" />
+                    <div style={{ textAlign: "center" }}>
+                      <div className="p-mono" style={{ fontSize: 12, color: "#10b981", fontWeight: 700, marginBottom: 4 }}>
+                        TARGET MOOD MATCHED
+                      </div>
+                      <div className="p-mono" style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                        SMILE: 78% · EYE CONTACT: OPTIMAL
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+                    <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                      <span className="p-mono" style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>LIGHTING & BG</span>
+                      <div style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>Good · Clean Frame</div>
+                    </div>
+                    <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                      <span className="p-mono" style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>PACING & AUDIO</span>
+                      <div style={{ fontSize: 12, color: "#00f0ff", fontWeight: 600 }}>142 WPM (Optimal)</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
 
-          {/* ---------- FEATURE 2: 30-DAY CONTENT BOARD ---------- */}
-          <section className="p-section" id="board-feature">
+          {/* ---------- SECTION 5: PHILOSOPHY (HUMAN-FIRST) ---------- */}
+          <section className="p-section" id="philosophy" style={{ borderTop: "1px solid var(--p-border)" }}>
             <div className="p-wrap">
               <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">Deep Dive 02 · The Content Board</p>
-                  <TextMotion as="h2" text="From casual thoughts to 30 days of high-tension content." />
+                <div className="p-section-head" style={{ textAlign: "center", maxWidth: 760, margin: "0 auto 48px" }}>
+                  <div className="p-hero-badge-pill" style={{ marginBottom: 12 }}>
+                    <Flame size={13} color="#f59e0b" />
+                    <span style={{ color: "#f59e0b" }}>HUMAN-FIRST RADICAL AUTHENTICITY</span>
+                  </div>
+                  <TextMotion as="h2" text="We don't create the content for you." />
                   <TextMotion
                     as="p"
-                    delay={0.2}
-                    text="A visual, Duolingo-style roadmap that maps your founder moments into structured content milestones. Every day produces ready-to-use artifacts tuned to your exact voice."
+                    delay={0.15}
+                    text="That's the whole point. Your face. Your voice. Your story. Your weird little habits. Your opinions. Your life. Still yours."
                   />
                 </div>
               </Reveal>
 
-              <WorkflowSteps
-                steps={[
-                  {
-                    index: "01",
-                    title: "Moment Capture & Crafting",
-                    description: "Jot down a quick thought or ask the AI to craft your 30-day roadmap. PersonaKit asks clarifying questions to pin down your narrative angle.",
-                  },
-                  {
-                    index: "02",
-                    title: "Redline Fluff Stripping",
-                    description: "Our Redline engine removes corporate jargon, predictable hooks, and generic phrasing, replacing them with sharp curiosity gaps and tension.",
-                  },
-                  {
-                    index: "03",
-                    title: "Multi-Artifact Generation",
-                    description: "Each day delivers 4 distinct assets: Full Spoken Script, Visual Scene Direction, Edit Styling Presets, and Strategic Growth Notes.",
-                  },
-                  {
-                    index: "04",
-                    title: "Organic Product Anchoring",
-                    description: "Naturally weaves your company's value proposition into the narrative without turning your video into a sleazy sales pitch.",
-                  },
-                ]}
-              />
-
-              <Reveal delay={0.15}>
-                <div style={{ marginTop: 40 }}>
-                  <FlowDiagram
-                    steps={[
-                      ["FOUNDER MOMENT", "CORE BELIEF", "COMPANY CONTEXT"],
-                      "REDLINE SCRIPT ENGINE",
-                      "TENSION & CURIOSITY GAP",
-                      "READY-TO-SHOOT SHOT LIST",
-                    ]}
-                    accent
-                  />
-                </div>
-              </Reveal>
-            </div>
-          </section>
-
-          {/* ---------- FEATURE 3: THE LIVE AI VIDEO STUDIO ---------- */}
-          <section className="p-section" id="studio-feature">
-            <div className="p-wrap">
-              <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">Deep Dive 03 · The Live AI Studio</p>
-                  <TextMotion as="h2" text="Prepare for shots easily. Film in one clean take." />
-                  <TextMotion
-                    as="p"
-                    delay={0.2}
-                    text="The hardest part of founder-led content is staring into a lens and freezing up. PersonaKit's Live Studio gives you real-time visual coaching, teleprompter pacing, and live drift protection."
-                  />
-                </div>
-              </Reveal>
-
-              <div className="p-feature-deep-dive">
-                <Reveal delay={0.05}>
-                  <div className="p-teleprompter-box">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, borderBottom: "1px solid var(--p-border)", paddingBottom: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--p-accent-secondary)" }}>
-                        <Video size={14} />
-                        <span>LIVE SCRIPT TELEPROMPTER</span>
-                      </div>
-                      <span className="p-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,0.3)" }}>
-                        NODE 02 / 04 ACTIVE
-                      </span>
-                    </div>
-                    <p style={{ margin: "0 0 12px", color: "var(--p-text-secondary)" }}>
-                      [HOOK] Most founders waste 20 hours a week building features nobody asked for...
-                    </p>
-                    <p className="p-teleprompter-highlight" style={{ margin: "0 0 12px" }}>
-                      [TENSION] Here is the brutal mistake we made last month that cost us $40,000 before we realized our onboarding was completely broken.
-                    </p>
-                    <p style={{ margin: 0, color: "rgba(245,245,245,0.5)" }}>
-                      [PROOF & RESOLUTION] We tore down the entire flow and rebuilt it around raw user intent...
-                    </p>
+              <div className="p-grid-3" style={{ gap: 14 }}>
+                {["Your Face", "Your Voice", "Your Story", "Your Habits", "Your Opinions", "Your Life"].map((item) => (
+                  <div key={item} className="p-card" style={{ background: "rgba(12, 16, 28, 0.85)", padding: 18, display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>{item}</span>
                   </div>
-                </Reveal>
+                ))}
+              </div>
 
-                <Reveal delay={0.15}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div className="p-card">
-                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <Camera size={13} />
-                        <span>LIVE COMPUTER VISION FRAMING</span>
-                      </div>
-                      <SpecRow label="Camera Distance" value="1.4m (Optimal)" />
-                      <SpecRow label="Framing Height" value="Eye-Level" />
-                      <SpecRow label="Eye Contact Score" value="94% Steady" />
-                    </div>
-
-                    <div className="p-card">
-                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <Mic size={13} />
-                        <span>SPEECH & PACE DIAGNOSTICS</span>
-                      </div>
-                      <SpecRow label="Speaking Rate" value="142 WPM (Sweet Spot)" />
-                      <SpecRow label="Filler Word Rate" value="0.4 / min (Low)" />
-                      <SpecRow label="Vocal Variation" value="Dynamic / Engaging" />
-                    </div>
-
-                    <div className="p-card">
-                      <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <AlertCircle size={13} color="var(--p-accent-secondary)" />
-                        <span>LIVE DRIFT PROTECTION</span>
-                      </div>
-                      <p style={{ fontSize: 13, color: "var(--p-text-secondary)", lineHeight: 1.5, margin: 0 }}>
-                        If you start rambling off-topic during recording, a subtle coaching toast gently guides you back to your hook before you ruin the take.
-                      </p>
-                    </div>
-                  </div>
-                </Reveal>
+              <div style={{ textAlign: "center", marginTop: 32 }}>
+                <p style={{ fontSize: 16, color: "var(--p-text-secondary)", maxWidth: 680, margin: "0 auto", lineHeight: 1.6 }}>
+                  We handle the part that makes you stare at your camera for ten minutes wondering what the hell you&apos;re supposed to do next.
+                </p>
               </div>
             </div>
           </section>
 
-          {/* ---------- FEATURE 4: COMPANY CONTEXT & PRODUCT GUARDRAILS ---------- */}
-          <section className="p-section" id="company-feature">
+          {/* ---------- SECTION 6: FOUNDER POSITIONING ---------- */}
+          <section className="p-section" id="founder-positioning" style={{ borderTop: "1px solid var(--p-border)", borderBottom: "1px solid var(--p-border)" }}>
             <div className="p-wrap">
               <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">Deep Dive 04 · Zero-BS Guardrails</p>
-                  <TextMotion as="h2" text="Turn attention into product pipeline with zero cringe." />
-                  <TextMotion
-                    as="p"
-                    delay={0.2}
-                    text="Your content shouldn't feel like a disconnected comedy sketch or a boring sales pitch. PersonaKit anchors your personal stories into your company's verified value proposition."
-                  />
-                </div>
-              </Reveal>
-
-              <div className="p-grid-2">
-                <Reveal delay={0.05}>
-                  <div className="p-card">
-                    <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <ShieldCheck size={14} color="var(--p-success)" />
-                      <span>ACCURATE CLAIMS GUARDRAIL</span>
-                    </div>
-                    <h3 style={{ fontSize: 17, margin: "0 0 10px", fontWeight: 600 }}>
-                      Compliance & Truth Alignment
-                    </h3>
-                    <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
-                      Store your company&apos;s verified capabilities and explicit false claims to avoid. PersonaKit guarantees your scripts never overpromise or make compliance mistakes.
-                    </p>
-                    <div style={{ padding: "10px 14px", background: "rgba(59, 130, 246, 0.12)", border: "1px solid rgba(148, 168, 255, 0.25)", borderRadius: 6, fontSize: 12.5, color: "var(--p-text)" }}>
-                      ✓ &ldquo;All face tracking is 100% in-memory and client-side.&rdquo;
-                    </div>
+                <div className="p-section-head" style={{ maxWidth: 840 }}>
+                  <div className="p-hero-badge-pill" style={{ marginBottom: 12 }}>
+                    <Target size={13} color="#00f0ff" />
+                    <span>FOUNDER-NATIVE</span>
                   </div>
-                </Reveal>
-
-                <Reveal delay={0.12}>
-                  <div className="p-card">
-                    <div className="p-tag" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <Target size={14} color="var(--p-accent-secondary)" />
-                      <span>FOUNDER DISTRIBUTION VALUE</span>
-                    </div>
-                    <h3 style={{ fontSize: 17, margin: "0 0 10px", fontWeight: 600 }}>
-                      Organic Inbound Engine
-                    </h3>
-                    <p style={{ fontSize: 14, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
-                      Turn viewers into trial signups, enterprise demo requests, and investor inbounds by making your technical perspective the definitive industry standard.
-                    </p>
-                    <div style={{ padding: "10px 14px", background: "rgba(59, 130, 246, 0.12)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: 6, fontSize: 12.5, color: "var(--p-accent-secondary)" }}>
-                      → 3.2x Higher conversion from founder content vs company ads
-                    </div>
-                  </div>
-                </Reveal>
-              </div>
-            </div>
-          </section>
-
-          {/* ---------- FEATURE 5: THE CLOSED REALITY FEEDBACK LOOP ---------- */}
-          <section className="p-section" id="reality-loop">
-            <div className="p-wrap">
-              <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">Deep Dive 05 · The Closed Reality Loop</p>
-                  <TextMotion as="h2" text="Hypothesis vs reality: a model that gets smarter every time you post." />
-                  <TextMotion
-                    as="p"
-                    delay={0.2}
-                    text="Every post you create tests a hypothesis. Did high contrarianism generate comments? Did vulnerability drive profile visits? Log real outcomes to refine your persona vector continuously."
-                  />
-                </div>
-              </Reveal>
-
-              <Reveal delay={0.1}>
-                <PerformanceChart
-                  rows={[
-                    { label: "Curiosity Index", predicted: 95, actual: 92 },
-                    { label: "Authority Signal", predicted: 89, actual: 86 },
-                    { label: "Comment Depth", predicted: 88, actual: 94 },
-                    { label: "Profile Visit Intent", predicted: 91, actual: 90 },
-                    { label: "Inbound Pipeline", predicted: 82, actual: 88 },
-                  ]}
-                />
-              </Reveal>
-
-              <Reveal delay={0.15}>
-                <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
-                  <FlowDiagram
-                    steps={["PREDICTED RESPONSE", "POST TO SOCIAL", "LOG ACTUAL OUTCOMES", "RECALIBRATE MODEL"]}
-                    accent
-                  />
+                  <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800, margin: "0 0 16px", color: "#fff", lineHeight: 1.2 }}>
+                    You are not a content creator first.
+                  </h2>
+                  <p style={{ fontSize: 17, color: "var(--p-text-secondary)", lineHeight: 1.6, margin: "0 0 16px" }}>
+                    You&apos;re building something. A company. A product. A reputation. A point of view. Content is how people discover it.
+                  </p>
+                  <p style={{ fontSize: 17, color: "#fff", fontWeight: 600, margin: 0 }}>
+                    So stop treating every video like a full production. Make content fit your life. Not the other way around.
+                  </p>
                 </div>
               </Reveal>
             </div>
           </section>
 
-          {/* ---------- PERSONA EVOLUTION TIMELINE ---------- */}
+          {/* ---------- SECTION 7: PRODUCT PROMISE & COMMAND FLOW ---------- */}
           <section className="p-section">
             <div className="p-wrap">
               <Reveal>
-                <div className="p-section-head" style={{ margin: "0 auto 56px", textAlign: "center" }}>
-                  <p className="p-eyebrow">Long-Term Compounding</p>
-                  <TextMotion as="h2" text="Your founder persona is an evolving asset." />
-                  <TextMotion
-                    as="p"
-                    delay={0.2}
-                    text="Watch your identity clarity, memorability, and organic distribution scale as your audience connects with who you actually are."
-                  />
+                <div className="p-section-head" style={{ textAlign: "center", maxWidth: 760, margin: "0 auto 48px" }}>
+                  <div className="p-hero-badge-pill" style={{ marginBottom: 12 }}>
+                    <Zap size={13} color="#00f0ff" />
+                    <span>THE COMMAND FLOW</span>
+                  </div>
+                  <TextMotion as="h2" text="From “I should make a video” to “I'm filming.”" />
                 </div>
               </Reveal>
 
-              <Reveal delay={0.1}>
-                <PersonaTimeline
-                  points={[
-                    {
-                      label: "WEEK 01 · CALIBRATION",
-                      metrics: [
-                        { label: "Contrarianism", value: 74 },
-                        { label: "Authority", value: 68 },
-                        { label: "Memorability", value: 70 },
-                      ],
-                    },
-                    {
-                      label: "WEEK 04 · TRACTION",
-                      metrics: [
-                        { label: "Contrarianism", value: 88 },
-                        { label: "Authority", value: 82 },
-                        { label: "Memorability", value: 86 },
-                      ],
-                    },
-                    {
-                      label: "WEEK 08 · AUTHORITY",
-                      metrics: [
-                        { label: "Contrarianism", value: 94 },
-                        { label: "Authority", value: 91 },
-                        { label: "Memorability", value: 95 },
-                      ],
-                    },
-                  ]}
-                />
-              </Reveal>
+              {/* 5-Step Flow Pill Bar */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, padding: "20px 28px", background: "rgba(12, 16, 30, 0.88)", border: "1px solid rgba(0, 240, 255, 0.3)", borderRadius: 16 }}>
+                {["Idea", "Framing", "Shot", "Record", "Done"].map((step, idx, arr) => (
+                  <React.Fragment key={step}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className="p-mono" style={{ fontSize: 12, color: "#00f0ff", fontWeight: 700 }}>0{idx + 1}</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>{step}</span>
+                    </div>
+                    {idx < arr.length - 1 && (
+                      <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 18 }}>→</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: 32 }}>
+                <p style={{ fontSize: 16, color: "var(--p-text-secondary)", margin: 0, lineHeight: 1.6 }}>
+                  The fewer decisions you have to make while filming, the more likely you are to actually film. <br />
+                  <strong style={{ color: "#fff" }}>That&apos;s the entire philosophy.</strong>
+                </p>
+              </div>
             </div>
           </section>
 
-          {/* ---------- COMPARISON TABLE ---------- */}
-          <section className="p-section">
+          {/* ---------- SECTION 8: FAQ ---------- */}
+          <section className="p-section" id="faq" style={{ borderTop: "1px solid var(--p-border)" }}>
             <div className="p-wrap">
               <Reveal>
                 <div className="p-section-head">
-                  <p className="p-eyebrow">Comparison</p>
-                  <TextMotion as="h2" text="Why PersonaKit is in a category of its own." />
-                </div>
-              </Reveal>
-
-              <Reveal delay={0.1}>
-                <div className="p-table-wrap">
-                  <table className="p-table">
-                    <thead>
-                      <tr>
-                        <th>Feature</th>
-                        <th>Generic AI Prompts</th>
-                        <th>Ghostwriting Agency</th>
-                        <th>PersonaKit</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <ComparisonRow3 label="Authentic Voice Calibration" c1="cross" c2="limited" c3="check" />
-                      <ComparisonRow3 label="Real-Time Teleprompter & Filming Coach" c1="cross" c2="cross" c3="check" />
-                      <ComparisonRow3 label="Computer Vision Eye & Face Framing" c1="cross" c2="cross" c3="check" />
-                      <ComparisonRow3 label="Live Off-Topic Drift Protection" c1="cross" c2="cross" c3="check" />
-                      <ComparisonRow3 label="Accurate Product Claims Guardrail" c1="cross" c2="limited" c3="check" />
-                      <ComparisonRow3 label="Closed Reality Feedback Loop" c1="cross" c2="cross" c3="check" />
-                      <ComparisonRow3 label="Zero Biometric Video Storage (Privacy)" c1="limited" c2="cross" c3="check" />
-                    </tbody>
-                  </table>
-                </div>
-              </Reveal>
-            </div>
-          </section>
-
-          {/* ---------- FAQ ---------- */}
-          <section className="p-section" id="faq">
-            <div className="p-wrap">
-              <Reveal>
-                <div className="p-section-head">
-                  <p className="p-eyebrow">Common Questions</p>
-                  <TextMotion as="h2" text="Everything you need to know." />
+                  <p className="p-eyebrow">Frequently Answered</p>
+                  <TextMotion as="h2" text="Built for founders who value their time." />
                 </div>
               </Reveal>
               <Reveal delay={0.1}>
@@ -603,10 +402,6 @@ export default function LandingPage() {
                   ))}
                 </div>
               </Reveal>
-              <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-              />
             </div>
           </section>
 
@@ -615,31 +410,31 @@ export default function LandingPage() {
             <div className="p-wrap">
               <Reveal>
                 <div className="p-hero-badge-pill" style={{ marginBottom: 16 }}>
-                  <Sparkles size={14} color="var(--p-accent-secondary)" />
-                  <span>EARLY ACCESS OPEN</span>
+                  <Sparkles size={14} color="#00f0ff" />
+                  <span>START FILMING NOW</span>
                 </div>
-                <TextMotion as="h2" text="Be recognizable before you become famous." />
-                <TextMotion
-                  as="p"
-                  delay={0.25}
-                  text="Build the version of yourself people remember. Turn authentic thoughts into distribution today."
-                />
+                <h2 style={{ fontSize: "clamp(30px, 4.5vw, 52px)", fontWeight: 800, margin: "0 0 12px", color: "#fff", lineHeight: 1.15 }}>
+                  Stop planning to make content. <br />
+                  <span style={{ background: "linear-gradient(to right, #00e5ff, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", color: "transparent" }}>
+                    Make the next shot.
+                  </span>
+                </h2>
+                <p style={{ fontSize: 16, color: "var(--p-text-secondary)", margin: "0 auto 28px", maxWidth: 540 }}>
+                  Your content doesn&apos;t need more complexity. It needs a system that gets you to the camera.
+                </p>
                 <div className="p-final-actions">
                   <Link href="/login" className="p-btn p-btn-primary">
-                    Build My Persona <ArrowRight size={15} />
+                    Build My First Shoot <ArrowRight size={15} />
                   </Link>
-                  <a href="#how-it-works" className="p-btn p-btn-ghost">
-                    Explore Architecture
-                  </a>
                 </div>
-                <span className="p-mono" style={{ fontSize: 12, color: "var(--p-text-secondary)" }}>
-                  PERSONAKIT ENGINE v1.0 · FOUNDER-LED DISTRIBUTION
+                <span className="p-mono" style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 14, display: "block" }}>
+                  PERSONAKIT ENGINE · THE CONTENT COMMAND CENTER
                 </span>
               </Reveal>
             </div>
           </section>
 
-          {/* ---------- GIANT SCROLL WORDMARK ---------- */}
+          {/* ---------- FOOTER WORDMARK ---------- */}
           <div className="p-wordmark-band" aria-hidden>
             <FooterWordmark text="PERSONA" />
             <div className="p-wordmark-arch" />
@@ -651,70 +446,26 @@ export default function LandingPage() {
               <div className="p-footer-top">
                 <Logo size={24} />
                 <div className="p-footer-links">
-                  <a href="#identity-engine">Identity Engine</a>
-                  <a href="#board-feature">Content Board</a>
-                  <a href="#studio-feature">Live AI Studio</a>
-                  <a href="#company-feature">Company Context</a>
-                  <a href="#reality-loop">Reality Loop</a>
+                  <a href="#the-problem">The Problem</a>
+                  <a href="#pre-framing">The Board</a>
+                  <a href="#studio-hud">Studio HUD</a>
+                  <a href="#philosophy">Philosophy</a>
                   <a href="#faq">FAQ</a>
                   <Link href="/privacy">Privacy</Link>
                   <Link href="/terms">Terms</Link>
                 </div>
               </div>
               <div className="p-footer-bottom">
-                Built for founders and creators who refuse to sound like everyone else.
+                Built for founders and builders who already know what to say.
               </div>
             </div>
           </footer>
         </main>
       </div>
+
       <PageTracker />
       <FeedbackWidget />
       <CookieConsent />
     </>
   );
-}
-
-function SpecRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}>
-      <span style={{ color: "var(--p-text-secondary)" }}>{label}</span>
-      <span className="p-mono" style={{ color: "var(--p-text)" }}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function ComparisonRow3({
-  label,
-  c1,
-  c2,
-  c3,
-}: {
-  label: string;
-  c1: "check" | "cross" | "limited";
-  c2: "check" | "cross" | "limited";
-  c3: "check" | "cross" | "limited";
-}) {
-  return (
-    <tr>
-      <td style={{ fontWeight: 500 }}>{label}</td>
-      <td>
-        <ComparisonMark kind={c1} />
-      </td>
-      <td>
-        <ComparisonMark kind={c2} />
-      </td>
-      <td>
-        <ComparisonMark kind={c3} />
-      </td>
-    </tr>
-  );
-}
-
-function ComparisonMark({ kind }: { kind: "check" | "cross" | "limited" }) {
-  if (kind === "check") return <span className="p-check" style={{ fontWeight: 700 }}>✓</span>;
-  if (kind === "cross") return <span className="p-cross">✕</span>;
-  return <span className="p-limited">limited</span>;
 }
