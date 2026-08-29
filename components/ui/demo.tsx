@@ -1,11 +1,7 @@
-import React from 'react';
-import Component from '@/components/ui/hero-scroll-animation';
+"use client";
 
-function ComponentDemo() {
-  return (
-    <Component />
-  );
+import PricingSection from "@/components/ui/pricing-section";
+
+export default function DemoOne() {
+  return <PricingSection />;
 }
-
-export { ComponentDemo as DemoOne };
-export default ComponentDemo;

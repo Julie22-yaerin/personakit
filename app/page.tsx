@@ -20,6 +20,7 @@ import { Reveal } from "../components/landing/Reveal";
 import { HeroScrollContainer } from "../components/landing/ScrollHero";
 import { TextMotion, FooterWordmark } from "../components/landing/TextMotion";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
+import PricingSection from "@/components/ui/pricing-section";
 import { CookieConsent } from "../components/landing/CookieConsent";
 import { FeedbackWidget } from "../components/landing/FeedbackWidget";
 import { PageTracker } from "../components/landing/PageTracker";
@@ -70,7 +71,7 @@ export default function LandingPage() {
               <a href="#the-shoot">The Shoot</a>
               <a href="#studio-hud">Studio HUD</a>
               <a href="#philosophy">Philosophy</a>
-              <a href="#founder-positioning">Positioning</a>
+              <a href="#pricing">Pricing</a>
               <a href="#faq">FAQ</a>
             </div>
             <div className="p-nav-actions">
@@ -382,6 +383,9 @@ export default function LandingPage() {
               </div>
             </div>
           </section>
+
+          {/* ---------- STARTUP PRICING (PADDLE CHECKOUT) ---------- */}
+          <PricingSection />
 
           {/* ---------- SECTION 8: FAQ ---------- */}
           <section className="p-section" id="faq" style={{ borderTop: "1px solid var(--p-border)" }}>
