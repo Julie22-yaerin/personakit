@@ -27,10 +27,6 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/studio", label: "Studio", hint: "live filming + real-time coaching" },
     ],
   },
-  {
-    title: "Analytics",
-    items: [{ href: "/distribution", label: "Distribution", hint: "reach & impact" }],
-  },
 ];
 
 export function AppShell({
