@@ -19,9 +19,15 @@ export type OnboardingStageId =
   | 'appearance'
   | 'filming'
   | 'goal'
+  | 'schedule'
   | 'signal';
 
 export interface NewOnboardingData {
+  // STAGE 07 - Schedule
+  postingFrequency: number | '';
+  preferredDays: string[];
+  idealVideoDuration: string;
+
   // STAGE 01 — What are you building?
   buildingType: string;
   stage: string;
@@ -59,6 +65,9 @@ export interface NewOnboardingData {
 }
 
 export const INITIAL_ONBOARDING_DATA: NewOnboardingData = {
+  postingFrequency: 3,
+  preferredDays: [],
+  idealVideoDuration: '',
   buildingType: '',
   stage: '',
   buildingDescription: '',
@@ -94,49 +103,56 @@ export const STAGE_CONFIGS: readonly StageConfig[] = [
   {
     id: 'building',
     stageNumber: 1,
-    eyebrow: 'STAGE 01 OF 07',
+    eyebrow: 'STAGE 01 OF 08',
     title: 'What are you building?',
     subtitle: 'Context for your foundation. No fluff, just the core.',
   },
   {
     id: 'audience',
     stageNumber: 2,
-    eyebrow: 'STAGE 02 OF 07',
+    eyebrow: 'STAGE 02 OF 08',
     title: 'Who should care?',
     subtitle: 'The exact audience signal and the thought you want to leave behind.',
   },
   {
     id: 'voice',
     stageNumber: 3,
-    eyebrow: 'STAGE 03 OF 07',
+    eyebrow: 'STAGE 03 OF 08',
     title: 'Your voice & sharpest edge',
     subtitle: 'How you naturally sound and what you believe that others avoid saying.',
   },
   {
     id: 'appearance',
     stageNumber: 4,
-    eyebrow: 'STAGE 04 OF 07',
+    eyebrow: 'STAGE 04 OF 08',
     title: 'How should you appear?',
     subtitle: 'What people remember about you and what your content should never feel like.',
   },
   {
     id: 'filming',
     stageNumber: 5,
-    eyebrow: 'STAGE 05 OF 07',
+    eyebrow: 'STAGE 05 OF 08',
     title: 'What can you actually film?',
     subtitle: 'Content that fits into your actual day — zero studio production required.',
   },
   {
     id: 'goal',
     stageNumber: 6,
-    eyebrow: 'STAGE 06 OF 07',
+    eyebrow: 'STAGE 06 OF 08',
     title: 'Your content goal',
     subtitle: 'What real success looks like for you right now.',
   },
   {
-    id: 'signal',
+    id: 'schedule',
     stageNumber: 7,
-    eyebrow: 'STAGE 07 OF 07',
+    eyebrow: 'STAGE 07 OF 08',
+    title: 'Your Schedule',
+    subtitle: 'How often and when you want to post, and your ideal video duration.',
+  },
+  {
+    id: 'signal',
+    stageNumber: 8,
+    eyebrow: 'STAGE 08 OF 08',
     title: 'The final signal',
     subtitle: 'The immediate thought you want to share with the world today.',
   },
@@ -276,6 +292,9 @@ export interface Tier1StableIdentity {
 }
 
 export interface Tier2ContentPreferences {
+  postingFrequency: number | '';
+  preferredDays: string[];
+  idealVideoDuration: string;
   filmingLocation: string;
   cameraComfort: string;
   dailyRoutineAction: string;
@@ -319,6 +338,9 @@ export function structureOnboardingData(raw: NewOnboardingData): StructuredOnboa
       primaryGoal: raw.primaryGoal,
       preferredContentType: raw.preferredContentType,
       successDefinition: raw.successDefinition,
+      postingFrequency: raw.postingFrequency,
+      preferredDays: raw.preferredDays,
+      idealVideoDuration: raw.idealVideoDuration,
     },
     tier3_context: {
       currentMessage: raw.currentMessage,
@@ -327,3 +349,20 @@ export function structureOnboardingData(raw: NewOnboardingData): StructuredOnboa
     },
   };
 }
+
+export const POSTING_DAY_OPTIONS: readonly Option[] = [
+  { value: 'monday', label: 'Monday' },
+  { value: 'tuesday', label: 'Tuesday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'thursday', label: 'Thursday' },
+  { value: 'friday', label: 'Friday' },
+  { value: 'saturday', label: 'Saturday' },
+  { value: 'sunday', label: 'Sunday' },
+];
+
+export const VIDEO_DURATION_OPTIONS: readonly Option[] = [
+  { value: 'under_1_min', label: 'Under 1 minute (Shorts/Reels/TikTok)' },
+  { value: '1_to_3_mins', label: '1 to 3 minutes (Quick thoughts)' },
+  { value: '3_to_5_mins', label: '3 to 5 minutes (Deep dives)' },
+  { value: 'over_5_mins', label: 'Over 5 minutes (Long form)' },
+];

@@ -29,6 +29,9 @@ const StructuredOnboardingSchema = z.object({
     primaryGoal: z.string(),
     preferredContentType: z.string(),
     successDefinition: z.string(),
+    postingFrequency: z.union([z.number(), z.literal("")]),
+    preferredDays: z.array(z.string()),
+    idealVideoDuration: z.string(),
   }),
   tier3_context: z.object({
     currentMessage: z.string(),

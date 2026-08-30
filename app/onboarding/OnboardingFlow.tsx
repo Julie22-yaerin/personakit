@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   STAGE_CONFIGS,
-  INITIAL_ONBOARDING_DATA,
+  INITIAL_ONBOARDING_DATA, POSTING_DAY_OPTIONS, VIDEO_DURATION_OPTIONS,
   BUILDING_TYPE_OPTIONS,
   STAGE_OPTIONS,
   AUDIENCE_OPTIONS,
@@ -808,7 +808,101 @@ export default function OnboardingFlow() {
               </div>
             )}
 
-            {/* STAGE 07 — The final signal */}
+            {/* STAGE 07 — Your Schedule */}
+            {stageConfig.id === "schedule" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <div>
+                  <label className="p-mono" style={{ fontSize: 12, fontWeight: 700, color: "#00f0ff", display: "block", marginBottom: 6 }}>
+                    Q1 · How many times do you want to post per week?
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="14"
+                    value={formData.postingFrequency}
+                    onChange={(e) => updateField("postingFrequency", e.target.value === "" ? "" : parseInt(e.target.value))}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      background: "#121726",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      borderRadius: 8,
+                      color: "#fff",
+                      fontSize: 13.5,
+                      fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="p-mono" style={{ fontSize: 12, fontWeight: 700, color: "#00f0ff", display: "block", marginBottom: 10 }}>
+                    Q2 · What days of the week do you want to post? (Select multiple)
+                  </label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {POSTING_DAY_OPTIONS.map((opt) => {
+                      const isSelected = formData.preferredDays.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            const newDays = isSelected
+                              ? formData.preferredDays.filter((d: string) => d !== opt.value)
+                              : [...formData.preferredDays, opt.value];
+                            updateField("preferredDays", newDays);
+                          }}
+                          style={{
+                            padding: "8px 14px",
+                            background: isSelected ? "rgba(0, 240, 255, 0.16)" : "rgba(255, 255, 255, 0.04)",
+                            border: `1px solid ${isSelected ? "#00f0ff" : "rgba(255, 255, 255, 0.1)"}`,
+                            borderRadius: 20,
+                            color: "#fff",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="p-mono" style={{ fontSize: 12, fontWeight: 700, color: "#00f0ff", display: "block", marginBottom: 10 }}>
+                    Q3 · What is your ideal video duration?
+                  </label>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+                    {VIDEO_DURATION_OPTIONS.map((opt) => {
+                      const selected = formData.idealVideoDuration === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => updateField("idealVideoDuration", opt.value)}
+                          style={{
+                            padding: "10px 14px",
+                            background: selected ? "rgba(0, 240, 255, 0.16)" : "rgba(255, 255, 255, 0.04)",
+                            border: `1px solid ${selected ? "#00f0ff" : "rgba(255, 255, 255, 0.1)"}`,
+                            borderRadius: 8,
+                            color: "#fff",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            textAlign: "left",
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STAGE 08 — The final signal */}
             {stageConfig.id === "signal" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 <div>
