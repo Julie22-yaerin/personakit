@@ -1,0 +1,348 @@
+:root {
+  --pb-bg: #000;
+  --pb-text: #fff;
+  --pb-accent: #00f0ff;
+  --pb-good: #00e676;
+  --pb-warn: #ff9100;
+  --pb-bad: #ff1744;
+  --pb-panel-bg: rgba(0, 0, 0, 0.6);
+  --pb-border: rgba(255, 255, 255, 0.1);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.pb-page {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: var(--pb-bg);
+  color: var(--pb-text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* Studio Area (Left) */
+.pb-studio-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.pb-camera-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pb-camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror */
+}
+
+.pb-camera-error {
+  color: var(--pb-bad);
+  font-size: 1.2rem;
+}
+
+/* UI HUD Layer */
+.pb-hud-container {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Top Header */
+.pb-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.pb-status-badge {
+  background: var(--pb-panel-bg);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--pb-border);
+  font-weight: bold;
+  letter-spacing: 1px;
+  backdrop-filter: blur(10px);
+}
+
+.pb-rec-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--pb-bad);
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  border-radius: 8px;
+  animation: pulse-red 2s infinite;
+}
+
+.pb-rec-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--pb-bad);
+  border-radius: 50%;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+}
+
+/* Ghost Overlay */
+.pb-ghost-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pb-ghost-image {
+  height: 80%;
+  max-width: 80%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.5));
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.pb-ghost-image.aligned {
+  filter: drop-shadow(0 0 30px rgba(0, 230, 118, 0.8));
+}
+
+/* Alignment Gauge */
+.pb-alignment-gauge {
+  position: absolute;
+  top: 50%;
+  left: 24px;
+  transform: translateY(-50%);
+  background: var(--pb-panel-bg);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--pb-border);
+  width: 200px;
+  backdrop-filter: blur(10px);
+}
+
+.pb-gauge-label {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.pb-gauge-track {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pb-gauge-fill {
+  height: 100%;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.pb-gauge-fill.adjusting { background: var(--pb-warn); }
+.pb-gauge-fill.good { background: var(--pb-good); }
+
+
+/* Environment HUD */
+.pb-environment-hud {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+}
+
+.pb-hud-panel {
+  background: var(--pb-panel-bg);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--pb-border);
+  width: 200px;
+  backdrop-filter: blur(10px);
+}
+
+.pb-panel-title {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.pb-metric {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pb-metric:last-child { margin-bottom: 0; }
+
+.pb-metric-name {
+  font-size: 0.85rem;
+}
+
+.pb-metric-val {
+  font-size: 1rem;
+  font-weight: bold;
+}
+.pb-metric-val.good { color: var(--pb-good); }
+.pb-metric-val.bad { color: var(--pb-warn); }
+
+.pb-mic-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pb-mic-fill {
+  height: 100%;
+  transition: width 0.1s linear, background 0.2s ease;
+}
+
+/* Teleprompter */
+.pb-teleprompter {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 800px;
+  background: var(--pb-panel-bg);
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--pb-border);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.pb-teleprompter-text {
+  font-size: 2rem;
+  line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.pb-word {
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.pb-word-past {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.pb-word-current {
+  color: var(--pb-accent);
+  text-shadow: 0 0 10px var(--pb-accent);
+  font-weight: bold;
+}
+
+/* Simulator Panel (Right) */
+.pb-simulator-panel {
+  width: 350px;
+  background: #1a1a1a;
+  border-left: 1px solid var(--pb-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 30; /* Above HUD */
+}
+
+.pb-sim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--pb-border);
+}
+
+.pb-sim-title {
+  font-weight: bold;
+}
+
+.pb-sim-badge {
+  background: var(--pb-warn);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.pb-sim-group {
+  margin-bottom: 24px;
+}
+
+.pb-sim-label {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.pb-sim-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pb-sim-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--pb-border);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+
+.pb-sim-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.pb-sim-btn.active {
+  background: var(--pb-accent);
+  color: #000;
+  border-color: var(--pb-accent);
+  font-weight: bold;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--pb-accent);
+}
+
+.pb-sim-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pb-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
