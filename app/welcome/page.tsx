@@ -17,8 +17,8 @@ export default function WelcomePage() {
             <Link href="/" style={{ textDecoration: "none" }}>
               <Logo />
             </Link>
-            <Link href="/board" className="p-btn p-btn-primary p-btn-sm">
-              Open The Board
+            <Link href="/studio" className="p-btn p-btn-primary p-btn-sm">
+              Open Studio
             </Link>
           </div>
         </header>
@@ -42,30 +42,18 @@ export default function WelcomePage() {
               Your subscription is active. Your authentic founder voice model is calibrated and ready to turn ideas into structured single-shot takes.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-left">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-2.5 text-cyan-400 font-bold text-sm mb-1.5">
-                  <LayoutGrid size={16} />
-                  <span>The Board</span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Drop hooks, scripts, and visual triggers on your whiteboard canvas.
-                </p>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 mb-8 text-left">
+              <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-sm mb-1.5">
+                <Camera size={16} />
+                <span>Live Studio HUD</span>
               </div>
-
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-sm mb-1.5">
-                  <Camera size={16} />
-                  <span>Live Studio HUD</span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Record with real-time CV framing, smile matching, and auto-cut.
-                </p>
-              </div>
+              <p className="text-xs text-slate-300">
+                Record with real-time CV framing, smile matching, and auto-cut.
+              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/board" className="p-btn p-btn-primary">
+              <Link href="/studio" className="p-btn p-btn-primary">
                 Launch My First Shoot <ArrowRight size={15} />
               </Link>
               <Link href="/onboarding" className="p-btn p-btn-ghost">

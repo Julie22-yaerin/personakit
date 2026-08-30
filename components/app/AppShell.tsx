@@ -22,10 +22,6 @@ interface NavItem {
 // want, so the AI never re-asks for data that's already saved.
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
-    title: "Plan",
-    items: [{ href: "/board", label: "The Board", hint: "30-day roadmap graph" }],
-  },
-  {
     title: "Film",
     items: [
       { href: "/studio", label: "Studio", hint: "live filming + real-time coaching" },

@@ -48,7 +48,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "I'm a technical founder with zero filming experience. Will this work for me?",
-    a: "This was built specifically for you. You don't need filming gear, lighting crews, or a teleprompter. You drop your thoughts onto The Board, approve the shot sequence, and record one simple action at a time.",
+    a: "This was built specifically for you. You don't need filming gear, lighting crews, or a teleprompter. You structure your thoughts in pre-framing, approve the shot sequence, and record one simple action at a time.",
   },
 ];
 
@@ -87,7 +87,7 @@ export default function LandingPage() {
 
         {/* ---------- MAIN NARRATIVE SECTIONS ---------- */}
         <main className="p-after-hero" id="the-problem">
-          {/* ---------- SECTION 2: PRE-FRAMING (THE BOARD) ---------- */}
+          {/* ---------- SECTION 2: PRE-FRAMING ---------- */}
           <section className="p-section" id="pre-framing">
             <div className="p-wrap">
               <Reveal>
@@ -100,7 +100,7 @@ export default function LandingPage() {
                   <TextMotion
                     as="p"
                     delay={0.15}
-                    text="Start with a blank board. Build your content your way. Drop in hooks, script nodes, visual ideas, and editing suggestions. Mix them. Delete them. Rearrange them."
+                    text="Build your content your way. Structure hooks, script nodes, visual triggers, and high-impact ideas. Mix them. Refine them. Rearrange them."
                   />
                 </div>
               </Reveal>
@@ -448,7 +448,7 @@ export default function LandingPage() {
                 <Logo size={24} />
                 <div className="p-footer-links">
                   <a href="#the-problem">The Problem</a>
-                  <a href="#pre-framing">The Board</a>
+                  <a href="#pre-framing">Pre-Framing</a>
                   <a href="#studio-hud">Studio HUD</a>
                   <a href="#philosophy">Philosophy</a>
                   <a href="#faq">FAQ</a>

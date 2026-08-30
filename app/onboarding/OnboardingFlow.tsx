@@ -179,7 +179,7 @@ export default function OnboardingFlow() {
       }
 
       // Redirect to the newly calibrated workspace
-      router.replace("/board");
+      router.replace("/app");
     } catch (err) {
       console.error("Onboarding failed:", err);
       setErrorMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
