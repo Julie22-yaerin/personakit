@@ -178,8 +178,8 @@ export default function OnboardingFlow() {
         throw new Error(completeJson.data?.error || "Failed to complete onboarding.");
       }
 
-      // Redirect to the newly calibrated workspace
-      router.replace("/board");
+      // Redirect to face scan for doodle generation
+      router.replace("/onboarding/face-scan");
     } catch (err) {
       console.error("Onboarding failed:", err);
       setErrorMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
