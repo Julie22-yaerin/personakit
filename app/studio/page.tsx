@@ -10,10 +10,13 @@ import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
 import { StudioHudOverlay } from "../../components/studio/StudioHudOverlay";
 import { StudioTelemetrySimulator } from "../../components/studio/StudioTelemetrySimulator";
+import { PreFilmingPane } from "../../components/studio/PreFilmingPane";
 import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
 import { INITIAL_OVERLAY_STATE, type FilmingOverlayState } from "../../lib/studio-overlay-types";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
+import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
+import { Clapperboard, Camera, ArrowLeft, ArrowRight, Play, CheckCircle2 } from "lucide-react";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
   classifySpeechRate,
@@ -117,8 +120,13 @@ export default function StudioPage() {
   const [liveVolume, setLiveVolume] = useState(0);
   const [speechResult, setSpeechResult] = useState<SpeechResult | null>(null);
 
+  const [founderContext, setFounderContext] = useState<FounderContext>({});
+  const [activePlan, setActivePlan] = useState<PreFilmingPlan | null>(null);
+  const [currentShotIndex, setCurrentShotIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<"prefilming" | "filming">("filming");
+
   const [scriptText, setScriptText] = useState("");
-  // Script handed over from The Board — waits for explicit "Use it".
+  // Script handed over from Pre-Filming AI Director — waits for explicit "Use it".
   const [receivedScript, setReceivedScript] = useState<{ title: string; content: string } | null>(null);
   // The live-metrics overlay shows by default during recording; this
   // small toggle only hides it.
@@ -163,6 +171,21 @@ export default function StudioPage() {
     transcriptRef.current = transcript;
   }, [transcript]);
 
+  function handleLoadPlanIntoFilming(planToLoad: PreFilmingPlan) {
+    setActivePlan(planToLoad);
+    setScriptText(planToLoad.fullScript);
+    setCurrentShotIndex(0);
+    setActiveTab("filming");
+    setOverlayState((prev) => ({
+      ...prev,
+      checklist: planToLoad.shots.map((shot, idx) => ({
+        id: `shot-${shot.shotNumber}`,
+        label: `${shot.timeRange}: ${shot.label}`,
+        completed: idx === 0,
+      })),
+    }));
+  }
+
   // Auth + onboarding gate, and pull the persona baseline / last session plan.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -181,15 +204,22 @@ export default function StudioPage() {
       setLastPlan(data.studio?.latestPlan);
       setVisualTargets(data.visualSignature?.targets ?? null);
       setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
-      // A script sent over from The Board (right-click → Studio) waits
-      // at the top of the frame as a "received script" card until the
-      // founder chooses to use it.
+
+      const fContext: FounderContext = {
+        personaVector: data.onboarding?.personaVector,
+        communicationProfile: data.onboarding?.communicationProfile || data.identity?.communicationProfile,
+        founderOrigin: data.identity?.founderOrigin || data.onboarding?.founderOrigin,
+        companyContext: data.companyContext || data.onboarding?.companyContext,
+        savedStyleSuggestions: data.savedStyleSuggestions,
+      };
+      setFounderContext(fContext);
+
       try {
         const handed = sessionStorage.getItem("persona.studio.script");
         if (handed) {
           const parsed = JSON.parse(handed) as { title?: string; content?: string };
           if (parsed.content) {
-            setReceivedScript({ title: parsed.title ?? "Script from The Board", content: parsed.content });
+            setReceivedScript({ title: parsed.title ?? "Script from Pre-Filming", content: parsed.content });
           }
           sessionStorage.removeItem("persona.studio.script");
         }
@@ -686,122 +716,206 @@ export default function StudioPage() {
   return (
     <AppShell userEmail={user.email} uid={user.uid}>
       <div className="app-main-inner-wide studio-page">
-        <p className="onboarding-step-label">Studio · live filming</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <p className="onboarding-step-label" style={{ margin: 0 }}>Studio · Pre-Filming Director & Live Filming HUD</p>
+        </div>
 
-        <FrostedGlassCard
-          containerClassName="w-full mb-4"
-          className="auth-card p-6 rounded-2xl border border-border"
-          glowColor="rgba(51, 86, 219, 0.2)"
-          tiltIntensity={3}
-        >
-          <div className="price-name" style={{ marginBottom: 8 }}>Script (optional)</div>
-          <p className="auth-caption" style={{ textAlign: "left", marginBottom: 10 }}>
-            Paste your talking points or topic — never memorize it. Scripts made on The Board
-            (right-click → Studio) land here automatically. We&apos;ll check afterward whether your
-            delivery covered the ground it needed to, not whether you said it word for word.
-          </p>
-          <textarea
-            rows={3}
-            value={scriptText}
-            onChange={(e) => setScriptText(e.target.value)}
-            placeholder="What's this take about?"
-            disabled={isRecording}
-          />
+        {/* Tab switcher for mobile / responsive */}
+        <div className="studio-view-tabs">
           <button
-            className="btn btn-ghost btn-block"
-            onClick={handlePrepareScript}
-            disabled={scriptLoading || isRecording || !scriptText.trim()}
+            type="button"
+            className={`studio-tab-btn ${activeTab === "prefilming" ? "tab-active" : ""}`}
+            onClick={() => setActiveTab("prefilming")}
           >
-            {scriptLoading ? "Structuring..." : scriptGraph ? "Re-structure Script" : "Prepare Script"}
+            <Clapperboard size={15} /> Pre-Filming AI Director
           </button>
-          {scriptError && <p className="error" style={{ marginTop: 8 }}>{scriptError}</p>}
-          {scriptGraph && (
-            <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-              Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
-            </div>
-          )}
-        </FrostedGlassCard>
+          <button
+            type="button"
+            className={`studio-tab-btn ${activeTab === "filming" ? "tab-active" : ""}`}
+            onClick={() => setActiveTab("filming")}
+          >
+            <Camera size={15} /> Live Filming Studio
+          </button>
+        </div>
 
-        <div className="studio-canvas-wrap">
-          {receivedScript && (
-            <div className="studio-received-script">
-              <div className="studio-received-script-head">
-                <span className="board-artifact-kind board-kind-script">Received script</span>
-                <strong>{receivedScript.title}</strong>
-              </div>
-              <pre className="studio-received-script-preview">{receivedScript.content.slice(0, 220)}{receivedScript.content.length > 220 ? "…" : ""}</pre>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => {
-                  setScriptText(receivedScript.content);
-                  setReceivedScript(null);
-                }}
-              >
-                Use it
-              </button>
-            </div>
-          )}
-          {cameraError ? (
-            <p className="error">{cameraError}</p>
-          ) : (
-            <div className="studio-camera-canvas" style={{ position: "relative", width: "100%", minHeight: "calc(100vh - 200px)", height: "72vh", maxHeight: "860px", overflow: "hidden", borderRadius: 18, border: "1px dashed rgba(148, 168, 255, 0.3)", background: "#060812" }}>
-              <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              {overlayVisible && (
-                <StudioHudOverlay
-                  state={overlayState}
-                  coachingTip={coachingTip}
-                  onToggleChecklist={handleToggleChecklist}
-                />
-              )}
-              <button
-                type="button"
-                className="studio-overlay-toggle"
-                onClick={() => setOverlayVisible((v) => !v)}
-                title={overlayVisible ? "Hide HUD overlay" : "Show HUD overlay"}
-                style={{ zIndex: 30 }}
-              >
-                {overlayVisible ? "Hide HUD" : "Show HUD"}
-              </button>
-            </div>
-          )}
-
-          {/* Telemetry Mock / Event Simulator Test Panel */}
-          <StudioTelemetrySimulator
-            state={overlayState}
-            onChange={setOverlayState}
-            isOpen={simulatorOpen}
-            onToggleOpen={() => setSimulatorOpen((v) => !v)}
-          />
-
-          <div style={{ marginTop: 14 }}>
-            {!isRecording ? (
-              <button className="btn btn-primary btn-block" onClick={handleStartRecording} disabled={!!cameraError}>
-                Start Recording
-              </button>
-            ) : (
-              <button className="btn btn-primary btn-block" onClick={handleStopRecording}>
-                Stop Recording
-              </button>
-            )}
+        <div className="studio-split-screen">
+          {/* LEFT PANE: Pre-Filming AI Director */}
+          <div className={`studio-pane-prefilming ${activeTab !== "prefilming" ? "max-lg:hidden" : ""}`}>
+            <PreFilmingPane
+              founderContext={founderContext}
+              onLoadScriptIntoFilming={handleLoadPlanIntoFilming}
+            />
           </div>
 
-          {!isSpeechRecognitionSupported() && (
-            <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
-              Live transcript isn&apos;t supported in this browser — recording still works.
-            </p>
-          )}
+          {/* RIGHT PANE: Filming Studio, Teleprompter & Live HUD */}
+          <div className={`studio-pane-filming ${activeTab !== "filming" ? "max-lg:hidden" : ""}`}>
+            {/* Active Teleprompter Shot Tracker (if plan is loaded) */}
+            {activePlan && (
+              <div className="teleprompter-active-card">
+                <div className="teleprompter-head">
+                  <div className="teleprompter-plan-title">
+                    🎬 Take: {activePlan.title} ({activePlan.totalDuration})
+                  </div>
+                  <div className="teleprompter-shot-nav">
+                    <button
+                      type="button"
+                      className="teleprompter-nav-btn"
+                      disabled={currentShotIndex === 0}
+                      onClick={() => setCurrentShotIndex((i) => Math.max(0, i - 1))}
+                    >
+                      ← Shot trước
+                    </button>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                      {currentShotIndex + 1} / {activePlan.shots.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="teleprompter-nav-btn"
+                      disabled={currentShotIndex >= activePlan.shots.length - 1}
+                      onClick={() => setCurrentShotIndex((i) => Math.min(activePlan.shots.length - 1, i + 1))}
+                    >
+                      Shot tiếp →
+                    </button>
+                  </div>
+                </div>
 
-          {!isRecording && (
-            <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
-              {visualTargets
-                ? "Visual signature calibrated — the live overlay compares against it automatically."
-                : calibrating
-                  ? "Calibrating your visual signature from your last take..."
-                  : "Visual signature not calibrated yet — record a take and it calibrates automatically."}
-            </p>
-          )}
-          {calibrationError && <p className="error" style={{ marginTop: 8 }}>{calibrationError}</p>}
-        </div>
+                {activePlan.shots[currentShotIndex] && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span className="prefilming-shot-num">Shot {activePlan.shots[currentShotIndex].shotNumber}</span>
+                      <span className="prefilming-shot-timerange">{activePlan.shots[currentShotIndex].timeRange}</span>
+                      <span className="prefilming-shot-label">{activePlan.shots[currentShotIndex].label}</span>
+                      {activePlan.shots[currentShotIndex].hookCode && (
+                        <span className="prefilming-shot-hookcode">{activePlan.shots[currentShotIndex].hookCode}</span>
+                      )}
+                    </div>
+                    <div className="teleprompter-shot-dialogue">
+                      &ldquo;{activePlan.shots[currentShotIndex].dialogue}&rdquo;
+                    </div>
+                    <div className="teleprompter-shot-action">
+                      <span>🎬 <strong>Hành động:</strong> {activePlan.shots[currentShotIndex].action}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Manual Script fallback card */}
+            <FrostedGlassCard
+              containerClassName="w-full mb-2"
+              className="auth-card p-4 rounded-xl border border-border"
+              glowColor="rgba(51, 86, 219, 0.15)"
+              tiltIntensity={2}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                <div className="price-name" style={{ fontSize: 13 }}>Script & Teleprompter Text</div>
+                {scriptGraph && (
+                  <span style={{ fontSize: 11, color: "var(--accent-dim)" }}>
+                    Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
+                  </span>
+                )}
+              </div>
+              <textarea
+                rows={2}
+                value={scriptText}
+                onChange={(e) => setScriptText(e.target.value)}
+                placeholder="Script content loaded from Pre-Filming or typed manually..."
+                disabled={isRecording}
+                style={{ fontSize: 12 }}
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={handlePrepareScript}
+                  disabled={scriptLoading || isRecording || !scriptText.trim()}
+                  style={{ flex: 1 }}
+                >
+                  {scriptLoading ? "Structuring..." : scriptGraph ? "Re-structure Script" : "Prepare Script"}
+                </button>
+              </div>
+              {scriptError && <p className="error" style={{ marginTop: 6, fontSize: 12 }}>{scriptError}</p>}
+            </FrostedGlassCard>
+
+            <div className="studio-canvas-wrap" style={{ minHeight: "auto" }}>
+              {receivedScript && (
+                <div className="studio-received-script">
+                  <div className="studio-received-script-head">
+                    <span className="prefilming-shot-num">Received Script</span>
+                    <strong>{receivedScript.title}</strong>
+                  </div>
+                  <pre className="studio-received-script-preview">{receivedScript.content.slice(0, 220)}{receivedScript.content.length > 220 ? "…" : ""}</pre>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      setScriptText(receivedScript.content);
+                      setReceivedScript(null);
+                    }}
+                  >
+                    Use it
+                  </button>
+                </div>
+              )}
+              {cameraError ? (
+                <p className="error">{cameraError}</p>
+              ) : (
+                <div className="studio-camera-canvas" style={{ position: "relative", width: "100%", height: "58vh", maxHeight: "640px", overflow: "hidden", borderRadius: 16, border: "1px dashed rgba(148, 168, 255, 0.3)", background: "#060812" }}>
+                  <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {overlayVisible && (
+                    <StudioHudOverlay
+                      state={overlayState}
+                      coachingTip={coachingTip}
+                      onToggleChecklist={handleToggleChecklist}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    className="studio-overlay-toggle"
+                    onClick={() => setOverlayVisible((v) => !v)}
+                    title={overlayVisible ? "Hide HUD overlay" : "Show HUD overlay"}
+                    style={{ zIndex: 30 }}
+                  >
+                    {overlayVisible ? "Hide HUD" : "Show HUD"}
+                  </button>
+                </div>
+              )}
+
+              {/* Telemetry Mock / Event Simulator Test Panel */}
+              <StudioTelemetrySimulator
+                state={overlayState}
+                onChange={setOverlayState}
+                isOpen={simulatorOpen}
+                onToggleOpen={() => setSimulatorOpen((v) => !v)}
+              />
+
+              <div style={{ marginTop: 10 }}>
+                {!isRecording ? (
+                  <button className="btn btn-primary btn-block" onClick={handleStartRecording} disabled={!!cameraError}>
+                    Start Recording
+                  </button>
+                ) : (
+                  <button className="btn btn-primary btn-block" onClick={handleStopRecording}>
+                    Stop Recording
+                  </button>
+                )}
+              </div>
+
+              {!isSpeechRecognitionSupported() && (
+                <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+                  Live transcript isn&apos;t supported in this browser — recording still works.
+                </p>
+              )}
+
+              {!isRecording && (
+                <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+                  {visualTargets
+                    ? "Visual signature calibrated — the live overlay compares against it automatically."
+                    : calibrating
+                      ? "Calibrating your visual signature from your last take..."
+                      : "Visual signature not calibrated yet — record a take and it calibrates automatically."}
+                </p>
+              )}
+              {calibrationError && <p className="error" style={{ marginTop: 6 }}>{calibrationError}</p>}
+            </div>
 
         {(transcript || isRecording) && (
           <FrostedGlassCard
@@ -1003,6 +1117,8 @@ export default function StudioPage() {
             <PlanBlock label="Pacing" text={plan.pacing} />
           </div>
         )}
+          </div>
+        </div>
       </div>
     </AppShell>
   );

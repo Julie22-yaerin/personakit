@@ -2090,3 +2090,554 @@ footer {
   min-height: calc(100vh - 180px);
   object-fit: cover;
 }
+
+/* ==========================================================================
+   STUDIO SPLIT-SCREEN LAYOUT & PRE-FILMING AI DIRECTOR
+   ========================================================================== */
+
+.studio-split-screen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  min-height: calc(100vh - 60px);
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .studio-split-screen {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.studio-view-tabs {
+  display: none;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: rgba(12, 16, 28, 0.7);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 1024px) {
+  .studio-view-tabs {
+    display: flex;
+  }
+}
+
+.studio-tab-btn {
+  flex: 1;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.studio-tab-btn.tab-active {
+  background: rgba(0, 240, 255, 0.15);
+  color: #00f0ff;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+/* ---------- Pre-Filming Pane ---------- */
+
+.studio-pane-prefilming {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  max-height: calc(100vh - 60px);
+  position: sticky;
+  top: 20px;
+}
+
+.prefilming-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.22);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.prefilming-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(14, 19, 36, 0.7);
+}
+
+.prefilming-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+}
+
+.prefilming-badge-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prefilming-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.prefilming-quick-prompts {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: rgba(7, 10, 20, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  scrollbar-width: thin;
+}
+
+.prefilming-prompt-chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(0, 240, 255, 0.08);
+  color: #b0e5ff;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.prefilming-prompt-chip:hover:not(:disabled) {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.prefilming-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+}
+
+.prefilming-msg-row {
+  display: flex;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.prefilming-msg-row.msg-user {
+  flex-direction: row-reverse;
+}
+
+.prefilming-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.msg-user .prefilming-avatar {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00f0ff;
+  border-color: rgba(0, 240, 255, 0.4);
+}
+
+.msg-assistant .prefilming-avatar {
+  background: rgba(51, 86, 219, 0.25);
+  color: #9db8f2;
+  border-color: rgba(51, 86, 219, 0.5);
+}
+
+.prefilming-msg-bubble {
+  max-width: 88%;
+  background: rgba(18, 24, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.msg-user .prefilming-msg-bubble {
+  background: rgba(0, 80, 160, 0.3);
+  border-color: rgba(0, 240, 255, 0.3);
+  color: #fff;
+}
+
+.prefilming-loading-bubble {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #00f0ff;
+  font-style: italic;
+}
+
+.prefilming-timestamp {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* ---------- Plan Breakdown Card ---------- */
+
+.prefilming-plan-card {
+  margin-top: 12px;
+  background: rgba(10, 14, 28, 0.95);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prefilming-plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.prefilming-plan-tag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #00f0ff;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.prefilming-plan-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+}
+
+.prefilming-plan-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.prefilming-load-btn {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.prefilming-plan-hook-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  background: rgba(245, 165, 36, 0.12);
+  border: 1px dashed rgba(245, 165, 36, 0.4);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #f5c26b;
+}
+
+.prefilming-shots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.prefilming-shot-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prefilming-shot-item-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.prefilming-shot-num {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.prefilming-shot-timerange {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--mono);
+  background: rgba(0, 240, 255, 0.15);
+  color: #00f0ff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.prefilming-shot-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.prefilming-shot-hookcode {
+  font-size: 10px;
+  background: rgba(245, 165, 36, 0.2);
+  color: #f5c26b;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: auto;
+}
+
+.prefilming-shot-dialogue {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #8fb3e2;
+  font-style: italic;
+}
+
+.prefilming-shot-action {
+  font-size: 12px;
+  color: #b0e5ff;
+  background: rgba(0, 240, 255, 0.05);
+  border-left: 2px solid #00f0ff;
+  padding: 4px 8px;
+  border-radius: 0 4px 4px 0;
+}
+
+.prefilming-shot-mood {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.prefilming-plan-footer {
+  margin-top: 6px;
+}
+
+/* ---------- Hook Suggestions Grid ---------- */
+
+.prefilming-hooks-suggestions {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.prefilming-hooks-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.prefilming-hooks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prefilming-hook-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.prefilming-hook-chip:hover {
+  background: rgba(245, 165, 36, 0.12);
+  border-color: rgba(245, 165, 36, 0.4);
+  color: #f5c26b;
+}
+
+.hook-chip-code {
+  font-weight: 700;
+  color: #f5c26b;
+}
+
+.hook-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Input Dock ---------- */
+
+.prefilming-input-dock {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(14, 19, 36, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.prefilming-input-dock textarea {
+  flex: 1;
+  background: rgba(7, 10, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  padding: 8px 12px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.prefilming-input-dock textarea:focus {
+  border-color: #00f0ff;
+  box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+}
+
+.prefilming-send-btn {
+  align-self: flex-end;
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+
+/* ---------- Filming Pane & Teleprompter Shot HUD ---------- */
+
+.studio-pane-filming {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.teleprompter-active-card {
+  background: rgba(12, 18, 36, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.teleprompter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.teleprompter-plan-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #00f0ff;
+}
+
+.teleprompter-shot-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teleprompter-nav-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+
+.teleprompter-nav-btn:hover:not(:disabled) {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+}
+
+.teleprompter-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.teleprompter-shot-dialogue {
+  font-size: 16px;
+  line-height: 1.45;
+  color: #fff;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid #00f0ff;
+}
+
+.teleprompter-shot-action {
+  font-size: 12px;
+  color: #b0e5ff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
