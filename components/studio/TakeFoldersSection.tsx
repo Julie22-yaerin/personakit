@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { FolderOpen, Plus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { FolderOpen, Plus, Trash2, Edit2, Play } from "lucide-react";
 import type { FolderShotItem } from "@/components/ui/folder-interaction";
 
 export interface TakeMaterialProject {
@@ -19,6 +19,7 @@ interface TakeFoldersSectionProps {
   onAddTakeFolder: (title: string, scriptText: string) => void;
   onLoadTakeToTeleprompter: (take: TakeMaterialProject) => void;
   onUpdateTakeFolder?: (id: string, newTitle: string) => void;
+  onDeleteTakeFolder?: (id: string) => void;
 }
 
 const SimpleFolderIcon = ({ size = 80 }) => (
@@ -33,6 +34,7 @@ export function TakeFoldersSection({
   onAddTakeFolder,
   onLoadTakeToTeleprompter,
   onUpdateTakeFolder,
+  onDeleteTakeFolder,
 }: TakeFoldersSectionProps) {
   const [selectedTake, setSelectedTake] = useState<TakeMaterialProject | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -40,6 +42,19 @@ export function TakeFoldersSection({
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newScript, setNewScript] = useState("");
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    take: TakeMaterialProject;
+  } | null>(null);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleOutsideClick = () => setContextMenu(null);
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
 
   const handleOpenMaterials = (take: TakeMaterialProject) => {
     if (selectedTake?.id === take.id) {
@@ -56,6 +71,15 @@ export function TakeFoldersSection({
     setNewTitle("");
     setNewScript("");
     setIsCreating(false);
+  };
+
+  const handleDelete = (id: string) => {
+    if (onDeleteTakeFolder) {
+      onDeleteTakeFolder(id);
+    }
+    if (selectedTake?.id === id) {
+      setSelectedTake(null);
+    }
   };
 
   return (
@@ -169,19 +193,28 @@ export function TakeFoldersSection({
         </form>
       )}
 
-      {/* Grid of Folders: Simple icon with title */}
+      {/* Grid of Folders */}
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           justifyContent: "flex-start",
           gap: 32,
-          padding: "10px 0"
+          padding: "10px 0",
         }}
       >
         {takes.map((take) => (
           <div
             key={take.id}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContextMenu({
+                x: e.clientX,
+                y: e.clientY,
+                take,
+              });
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -189,11 +222,20 @@ export function TakeFoldersSection({
               cursor: "pointer",
               transition: "transform 0.2s ease",
               width: 100,
+              position: "relative",
             }}
             className="hover:scale-105 group"
           >
-            {/* Simple Folder Icon */}
-            <div onClick={() => handleOpenMaterials(take)}>
+            {/* Simple Folder Icon (Click to open, Double click to rename) */}
+            <div
+              onClick={() => handleOpenMaterials(take)}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setEditingId(take.id);
+                setEditingTitle(take.title);
+              }}
+              title="Click to open • Double-click to rename • Right-click to delete"
+            >
               <SimpleFolderIcon size={80} />
             </div>
 
@@ -211,45 +253,46 @@ export function TakeFoldersSection({
                   setEditingId(null);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     if (onUpdateTakeFolder && editingTitle.trim() !== "") {
                       onUpdateTakeFolder(take.id, editingTitle.trim());
                     }
                     setEditingId(null);
-                  } else if (e.key === 'Escape') {
+                  } else if (e.key === "Escape") {
                     setEditingId(null);
                   }
                 }}
                 style={{
                   marginTop: 8,
-                  fontSize: 14,
-                  fontWeight: 500,
+                  fontSize: 13,
+                  fontWeight: 600,
                   color: "#fff",
                   textAlign: "center",
-                  background: "rgba(255, 255, 255, 0.1)",
-                  border: "1px solid rgba(0, 240, 255, 0.5)",
-                  borderRadius: 4,
+                  background: "rgba(255, 255, 255, 0.15)",
+                  border: "1px solid #00f0ff",
+                  borderRadius: 6,
                   width: "100%",
-                  padding: "2px",
+                  padding: "3px 4px",
                 }}
               />
             ) : (
               <div
-                onDoubleClick={() => {
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
                   setEditingId(take.id);
                   setEditingTitle(take.title);
                 }}
                 onClick={() => handleOpenMaterials(take)}
                 style={{
                   marginTop: 8,
-                  fontSize: 14,
-                  fontWeight: 500,
+                  fontSize: 13.5,
+                  fontWeight: 600,
                   color: "#fff",
                   textAlign: "center",
                   wordBreak: "break-word",
                   cursor: "text",
                 }}
-                title="Double-click to rename"
+                title="Double-click to rename • Right-click for options"
               >
                 {take.title}
               </div>
@@ -258,6 +301,99 @@ export function TakeFoldersSection({
         ))}
       </div>
 
+      {/* Right-Click Context Menu */}
+      {contextMenu && (
+        <div
+          style={{
+            position: "fixed",
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 99999,
+            background: "rgba(10, 14, 28, 0.95)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(0, 240, 255, 0.35)",
+            borderRadius: 12,
+            padding: "6px",
+            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 240, 255, 0.15)",
+            minWidth: 170,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(contextMenu.take.id);
+              setEditingTitle(contextMenu.take.title);
+              setContextMenu(null);
+            }}
+            className="btn btn-ghost btn-sm"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              justifyContent: "flex-start",
+              fontSize: 12.5,
+              padding: "7px 12px",
+              color: "#fff",
+              width: "100%",
+            }}
+          >
+            <Edit2 size={13} color="#00f0ff" />
+            <span>Rename Folder</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onLoadTakeToTeleprompter(contextMenu.take);
+              setContextMenu(null);
+            }}
+            className="btn btn-ghost btn-sm"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              justifyContent: "flex-start",
+              fontSize: 12.5,
+              padding: "7px 12px",
+              color: "#00f0ff",
+              width: "100%",
+            }}
+          >
+            <Play size={13} />
+            <span>Load to Prompter</span>
+          </button>
+
+          <div style={{ height: 1, background: "rgba(255, 255, 255, 0.08)", margin: "3px 0" }} />
+
+          <button
+            type="button"
+            onClick={() => {
+              handleDelete(contextMenu.take.id);
+              setContextMenu(null);
+            }}
+            className="btn btn-ghost btn-sm"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              justifyContent: "flex-start",
+              fontSize: 12.5,
+              padding: "7px 12px",
+              color: "#ef4444",
+              width: "100%",
+            }}
+          >
+            <Trash2 size={13} color="#ef4444" />
+            <span>Delete Folder</span>
+          </button>
+        </div>
+      )}
+
       {/* Inline Content Expansion */}
       {selectedTake && (
         <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
@@ -265,12 +401,22 @@ export function TakeFoldersSection({
             <h4 style={{ margin: 0, fontSize: 16, color: "#00f0ff" }}>
               {selectedTake.title} Contents
             </h4>
-            <button
-              onClick={() => onLoadTakeToTeleprompter(selectedTake)}
-              className="btn btn-primary btn-sm"
-            >
-              Load into Teleprompter
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => handleDelete(selectedTake.id)}
+                className="btn btn-ghost btn-sm"
+                style={{ color: "#ef4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
+              >
+                <Trash2 size={13} />
+                <span>Delete</span>
+              </button>
+              <button
+                onClick={() => onLoadTakeToTeleprompter(selectedTake)}
+                className="btn btn-primary btn-sm"
+              >
+                Load into Teleprompter
+              </button>
+            </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -286,7 +432,7 @@ export function TakeFoldersSection({
                     display: "block",
                     borderRadius: 8,
                     background: "#000",
-                    border: "1px solid rgba(0, 240, 255, 0.3)"
+                    border: "1px solid rgba(0, 240, 255, 0.3)",
                   }}
                 />
                 <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#00f0ff", fontFamily: "monospace" }}>

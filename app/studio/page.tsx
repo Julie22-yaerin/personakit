@@ -474,6 +474,10 @@ export default function StudioPage() {
     );
   }
 
+  function handleDeleteTakeFolder(id: string) {
+    setTakeProjects((prev) => prev.filter((take) => take.id !== id));
+  }
+
   function handleAddTakeFolder(title: string, rawScript: string) {
     const sentences = rawScript
       .split(/(?<=[.!?。！？\n])\s+/)
@@ -687,9 +691,11 @@ export default function StudioPage() {
     startLiveMetricsLoop();
     startCoachLoop();
     if (isSpeechRecognitionSupported()) {
-      transcriptionRef.current = startLiveTranscription((chunk, timestampMs) => {
-        setTranscript((prev) => (prev ? `${prev} ${chunk}` : chunk));
-        speechSegmentsRef.current.push({ text: chunk, timestampMs });
+      transcriptionRef.current = startLiveTranscription((text, timestampMs, isFinal) => {
+        setTranscript(text);
+        if (isFinal) {
+          speechSegmentsRef.current.push({ text, timestampMs });
+        }
       });
     }
   }
@@ -1061,16 +1067,6 @@ export default function StudioPage() {
                 </p>
               )}
 
-              {!isRecording && (
-                <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
-                  {visualTargets
-                    ? "Visual signature calibrated — the live overlay compares against it automatically."
-                    : calibrating
-                      ? "Calibrating your visual signature from your last take..."
-                      : "Visual signature not calibrated yet — record a take and it calibrates automatically."}
-                </p>
-              )}
-              {calibrationError && <p className="error" style={{ marginTop: 6 }}>{calibrationError}</p>}
             </div>
 
             {/* Take & Script Material Folders (Directly below Filming Frame) */}
@@ -1079,6 +1075,7 @@ export default function StudioPage() {
               onAddTakeFolder={handleAddTakeFolder}
               onLoadTakeToTeleprompter={handleLoadTakeToTeleprompter}
               onUpdateTakeFolder={handleUpdateTakeFolder}
+              onDeleteTakeFolder={handleDeleteTakeFolder}
             />
 
         {(transcript || isRecording) && (
@@ -1191,59 +1188,6 @@ export default function StudioPage() {
               <span>Volume variation</span>
               <span>{Math.round(speechResult.volumeVariation)}</span>
             </div>
-          </div>
-        )}
-
-        {vcsResult && (
-          <div id="visual-signature" className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
-            {vcsResult.score === null || vcsResult.label === null ? (
-              <p style={{ color: "var(--muted)", margin: 0 }}>
-                No face was detected during this take, so visual consistency couldn&apos;t be measured.
-              </p>
-            ) : (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <div className="price-name">Visual Consistency — {vcsResult.label}</div>
-                  <span className="score-badge" style={{ color: vcsColor(vcsResult.label) }}>
-                    {Math.round(vcsResult.score)}
-                  </span>
-                </div>
-                {vcsResult.categories
-                  .filter((c): c is VisualCategoryResult & { score: number } => c.score !== null)
-                  .map((c) => (
-                    <ComponentBar key={c.label} label={c.label} value={c.score} />
-                  ))}
-                {weakestVisualCategories(vcsResult.categories)[0] && (
-                  <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-                    Furthest from signature: {weakestVisualCategories(vcsResult.categories)[0].label}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {visualHistory.length > 0 && (
-          <div className="auth-card" style={{ textAlign: "left", marginBottom: 16 }}>
-            <div className="price-name" style={{ marginBottom: 10 }}>Visual Consistency History (last {visualHistory.length})</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Score</th>
-                  <th>Label</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visualHistory.map((h, i) => (
-                  <tr key={i}>
-                    <td style={{ fontSize: 12 }}>{new Date(h.recordedAt).toLocaleString()}</td>
-                    <td>{Math.round(h.score)}</td>
-                    <td style={{ fontSize: 12 }}>{h.label}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         )}
 

@@ -1,9 +1,5 @@
 "use client";
 
-// The DOM lib doesn't ship types for the (still-unstandardized but widely
-// supported) Web Speech API, so this declares just enough of it to use
-// safely. Chrome/Edge support it; browsers without it get a clear
-// "not supported" signal instead of a crash.
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
   [index: number]: { transcript: string };
@@ -39,49 +35,68 @@ export interface LiveTranscript {
 }
 
 /**
- * Starts continuous live transcription. `onFinalChunk` fires once per
- * finalized segment (not on every interim guess) — the caller accumulates
- * the full transcript. `timestampMs` is `performance.now()` at the moment
- * the segment finalized, for speech-rate/pause analysis.
+ * Starts continuous real-time live transcription with instant interim & final results streaming.
  */
 export function startLiveTranscription(
-  onFinalChunk: (text: string, timestampMs: number) => void,
+  onTranscript: (text: string, timestampMs: number, isFinal: boolean) => void,
+  lang: string = "vi-VN"
 ): LiveTranscript | null {
+  if (typeof window === "undefined") return null;
   const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   if (!Ctor) return null;
 
+  let isStopped = false;
   const recognition = new Ctor();
   recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.lang = "en-US";
+  // Use Vietnamese by default or fallback
+  recognition.lang = lang || (navigator.language.startsWith("vi") ? "vi-VN" : "en-US");
 
-  recognition.onresult = (event) => {
-    let finalText = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
+  recognition.onresult = (event: SpeechRecognitionEventLike) => {
+    let fullCurrentText = "";
+    let isAnyFinal = false;
+
+    for (let i = 0; i < event.results.length; i++) {
       const result = event.results[i];
-      if (result.isFinal) finalText += result[0].transcript + " ";
+      if (result && result[0]) {
+        fullCurrentText += result[0].transcript + " ";
+        if (result.isFinal) isAnyFinal = true;
+      }
     }
-    if (finalText.trim()) onFinalChunk(finalText.trim(), performance.now());
-  };
-  recognition.onerror = () => {
-    // transient errors (e.g. brief silence) are common and non-fatal; the
-    // browser keeps the session alive via onend/restart below
-  };
-  recognition.onend = () => {
-    // auto-restart so a single dropped connection doesn't end transcription
-    try {
-      recognition.start();
-    } catch {
-      // already stopped intentionally
+
+    const trimmed = fullCurrentText.trim();
+    if (trimmed) {
+      onTranscript(trimmed, performance.now(), isAnyFinal);
     }
   };
 
-  recognition.start();
+  recognition.onerror = () => {
+    // transient errors (e.g. brief silence) are common and non-fatal
+  };
+
+  recognition.onend = () => {
+    if (!isStopped) {
+      try {
+        recognition.start();
+      } catch {
+        // already active
+      }
+    }
+  };
+
+  try {
+    recognition.start();
+  } catch (err) {
+    console.warn("Speech recognition start failed:", err);
+  }
 
   return {
     stop: () => {
+      isStopped = true;
       recognition.onend = null;
-      recognition.stop();
+      try {
+        recognition.stop();
+      } catch {}
     },
   };
 }
