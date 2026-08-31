@@ -12,8 +12,9 @@ import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
-import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles } from "lucide-react";
+import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen } from "lucide-react";
 import { ScriptCompareModal } from "../../components/studio/ScriptCompareModal";
+import { ScriptTeleprompterModal } from "../../components/studio/ScriptTeleprompterModal";
 import type { ScriptComparisonResult, ScriptComparisonVersion } from "../../lib/script-transformer";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
@@ -124,6 +125,7 @@ export default function StudioPage() {
 
   const [scriptText, setScriptText] = useState("");
   const [comparisonResult, setComparisonResult] = useState<ScriptComparisonResult | null>(null);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(true);
   // Script handed over from Pre-Filming AI Director — waits for explicit "Use it".
   const [receivedScript, setReceivedScript] = useState<{ title: string; content: string } | null>(null);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
@@ -365,13 +367,14 @@ export default function StudioPage() {
     );
   }
 
-  async function handlePrepareScript() {
-    if (!scriptText.trim()) return;
+  async function handlePrepareScript(textToProcess?: string) {
+    const target = (typeof textToProcess === "string" ? textToProcess : scriptText).trim();
+    if (!target) return;
     setScriptLoading(true);
     setScriptError(null);
     try {
       const res = await authedFetch("/api/studio/script/process", {
-        sourceText: scriptText,
+        sourceText: target,
         context: founderContext,
       });
       const parsed = await safeReadJson<ScriptComparisonResult>(res);
@@ -677,6 +680,22 @@ export default function StudioPage() {
       <div className="app-main-inner studio-page" style={{ margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <p className="onboarding-step-label" style={{ margin: 0 }}>Studio · Live Filming HUD</p>
+          <button
+            type="button"
+            onClick={() => setIsFolderModalOpen(true)}
+            className="btn btn-ghost btn-sm"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              color: "#00f0ff",
+              borderColor: "rgba(0, 240, 255, 0.3)",
+              background: "rgba(0, 240, 255, 0.08)",
+            }}
+          >
+            <FolderOpen size={14} />
+            <span>📁 Script & Take Folders</span>
+          </button>
         </div>
 
         <div className="studio-pane-filming">
@@ -757,7 +776,7 @@ export default function StudioPage() {
               <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                 <button
                   className="btn btn-primary btn-sm"
-                  onClick={handlePrepareScript}
+                  onClick={() => handlePrepareScript()}
                   disabled={scriptLoading || isRecording || !scriptText.trim()}
                   style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
@@ -1057,6 +1076,18 @@ export default function StudioPage() {
           onClose={() => setComparisonResult(null)}
         />
       )}
+
+      <ScriptTeleprompterModal
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        onLoadPlanIntoFilming={(planToLoad) => {
+          setActivePlan(planToLoad);
+          setScriptText(planToLoad.fullScript);
+          setCurrentShotIndex(0);
+        }}
+        onProcessScript={handlePrepareScript}
+        scriptLoading={scriptLoading}
+      />
     </AppShell>
   );
 }
