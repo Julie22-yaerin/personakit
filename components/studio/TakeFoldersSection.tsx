@@ -3,18 +3,7 @@
 import React, { useState } from "react";
 import { FolderInteraction } from "@/components/ui/folder-interaction";
 import { TakeMaterialsModal, type TakeMaterialProject } from "./TakeMaterialsModal";
-import {
-  FolderOpen,
-  Plus,
-  Play,
-  Clock,
-  Video,
-  Layers,
-  Calendar,
-  Sparkles,
-  ExternalLink,
-} from "lucide-react";
-import type { PreFilmingPlan } from "@/lib/pre-filming-llm";
+import { FolderOpen, Plus } from "lucide-react";
 
 interface TakeFoldersSectionProps {
   takes: TakeMaterialProject[];
@@ -50,14 +39,14 @@ export function TakeFoldersSection({
   return (
     <div
       style={{
-        marginTop: 24,
-        marginBottom: 32,
-        padding: "24px",
+        marginTop: 20,
+        marginBottom: 28,
+        padding: "20px",
         background: "rgba(10, 14, 28, 0.75)",
         backdropFilter: "blur(16px)",
-        borderRadius: 24,
+        borderRadius: 20,
         border: "1px solid rgba(0, 240, 255, 0.2)",
-        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.08)",
+        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.06)",
       }}
     >
       {/* Header */}
@@ -66,36 +55,16 @@ export function TakeFoldersSection({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 20,
+          marginBottom: 16,
           borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-          paddingBottom: 16,
+          paddingBottom: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "rgba(0, 240, 255, 0.14)",
-              border: "1px solid #00f0ff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <FolderOpen size={18} color="#00f0ff" />
-          </div>
-          <div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fff", margin: 0 }}>
-              Take & Script Material Folders
-            </h3>
-            <p style={{ fontSize: 12, color: "var(--p-text-secondary)", margin: "2px 0 0 0" }}>
-              Mỗi Script & Video đã quay = 1 Folder · Nhấp vào Folder để mở trang chi tiết Material
-            </p>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <FolderOpen size={17} color="#00f0ff" />
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "#fff", margin: 0 }}>
+            Take Material Folders ({takes.length})
+          </h3>
         </div>
 
         <button
@@ -105,13 +74,14 @@ export function TakeFoldersSection({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 6,
+            gap: 4,
             borderColor: "rgba(0, 240, 255, 0.3)",
             color: "#00f0ff",
+            fontSize: 12,
           }}
         >
-          <Plus size={14} />
-          <span>{isCreating ? "Hủy" : "+ Thêm Folder Script Mới"}</span>
+          <Plus size={13} />
+          <span>{isCreating ? "Hủy" : "+ Tạo Folder Mới"}</span>
         </button>
       </div>
 
@@ -120,49 +90,45 @@ export function TakeFoldersSection({
         <form
           onSubmit={handleCreateSubmit}
           style={{
-            marginBottom: 20,
-            padding: 16,
+            marginBottom: 16,
+            padding: 14,
             background: "rgba(6, 9, 20, 0.8)",
-            borderRadius: 16,
+            borderRadius: 14,
             border: "1px solid rgba(0, 240, 255, 0.3)",
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: 8,
           }}
         >
-          <div style={{ display: "flex", gap: 10 }}>
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder={`Tên đề mục (VD: Short #${takes.length + 1})`}
-              style={{
-                flex: 1,
-                padding: "8px 12px",
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
-                borderRadius: 8,
-                color: "#fff",
-                fontSize: 13,
-              }}
-            />
-          </div>
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder={`Tiêu đề folder (VD: Short #${takes.length + 1})`}
+            style={{
+              padding: "7px 10px",
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: 6,
+              color: "#fff",
+              fontSize: 12.5,
+            }}
+          />
           <textarea
             rows={3}
             value={newScript}
             onChange={(e) => setNewScript(e.target.value)}
-            placeholder="Dán nội dung script của short này vào đây..."
+            placeholder="Dán nội dung script của short này..."
             style={{
-              width: "100%",
-              padding: "10px 12px",
+              padding: "8px 10px",
               background: "rgba(255, 255, 255, 0.05)",
               border: "1px solid rgba(255, 255, 255, 0.12)",
-              borderRadius: 8,
+              borderRadius: 6,
               color: "#fff",
-              fontSize: 13,
+              fontSize: 12.5,
             }}
           />
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
             <button
               type="button"
               onClick={() => setIsCreating(false)}
@@ -174,125 +140,71 @@ export function TakeFoldersSection({
               type="submit"
               disabled={!newScript.trim()}
               className="btn btn-primary btn-sm"
-              style={{ display: "flex", alignItems: "center", gap: 6 }}
             >
-              <Plus size={13} />
-              <span>Tạo Folder</span>
+              Lưu Folder
             </button>
           </div>
         </form>
       )}
 
-      {/* Grid of Folders */}
+      {/* Grid of Folders: Interactive folder icon with a single line title underneath */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 20,
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: 24,
         }}
       >
         {takes.map((take) => (
           <div
             key={take.id}
+            onClick={() => handleOpenMaterials(take)}
             style={{
-              background: "rgba(6, 9, 20, 0.7)",
-              borderRadius: 18,
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              padding: "18px 16px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              cursor: "pointer",
+              padding: "12px 14px",
+              background: "rgba(6, 9, 20, 0.6)",
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.08)",
               transition: "all 0.2s ease",
-              position: "relative",
-              overflow: "hidden",
             }}
-            className="hover:border-cyan-400/50 hover:shadow-[0_0_24px_rgba(0,240,255,0.15)]"
+            className="hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(0,240,255,0.15)] group"
           >
-            {/* Header info */}
-            <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-              <div>
-                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0 }}>
-                  📁 {take.title}
-                </h4>
-                <span style={{ fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                  <Calendar size={11} />
-                  {take.dateTakeShot}
-                </span>
-              </div>
-              <span
-                style={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: "#00f0ff",
-                  background: "rgba(0, 240, 255, 0.15)",
-                  padding: "2px 6px",
-                  borderRadius: 6,
-                  fontFamily: "monospace",
-                }}
-              >
-                ⏱️ {take.totalDuration}
-              </span>
-            </div>
-
             {/* Interactive Folder Animation */}
-            <div style={{ width: "100%", margin: "8px 0" }}>
+            <div style={{ pointerEvents: "auto" }}>
               <FolderInteraction
                 shots={take.shots}
                 title={take.title}
                 duration={take.totalDuration}
-                onSelectShot={() => handleOpenMaterials(take)}
               />
             </div>
 
-            {/* Footer / Open Material Page CTA */}
-            <div style={{ width: "100%", marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
-              <button
-                type="button"
-                onClick={() => handleOpenMaterials(take)}
-                style={{
-                  width: "100%",
-                  padding: "9px 14px",
-                  borderRadius: 10,
-                  background: "linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(56, 189, 248, 0.15))",
-                  border: "1px solid rgba(0, 240, 255, 0.35)",
-                  color: "#00f0ff",
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <ExternalLink size={13} />
-                <span>Mở Page Material của {take.title}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onLoadTakeToTeleprompter(take)}
-                style={{
-                  width: "100%",
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  background: "transparent",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  color: "var(--muted)",
-                  fontSize: 11.5,
-                  cursor: "pointer",
-                  textAlign: "center",
-                }}
-              >
-                🎬 Nạp kịch bản vào Teleprompter
-              </button>
+            {/* 1 Single Line Title Underneath */}
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#00f0ff",
+                fontFamily: "monospace",
+                textAlign: "center",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: 320,
+              }}
+              className="group-hover:underline"
+            >
+              📁 {take.title} · {take.dateTakeShot} ({take.totalDuration})
             </div>
           </div>
         ))}
       </div>
 
-      {/* Materials Modal/Page */}
+      {/* Unified Single-Page Take Materials Modal */}
       {selectedTake && (
         <TakeMaterialsModal
           take={selectedTake}

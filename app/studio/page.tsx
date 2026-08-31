@@ -12,9 +12,9 @@ import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
-import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen } from "lucide-react";
+import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen, Bot } from "lucide-react";
 import { ScriptCompareModal } from "../../components/studio/ScriptCompareModal";
-import { ScriptTeleprompterModal } from "../../components/studio/ScriptTeleprompterModal";
+import { ChatGPTMaterialModal } from "../../components/studio/ChatGPTMaterialModal";
 import { TakeFoldersSection } from "../../components/studio/TakeFoldersSection";
 import type { TakeMaterialProject } from "../../components/studio/TakeMaterialsModal";
 import type { ScriptComparisonResult, ScriptComparisonVersion } from "../../lib/script-transformer";
@@ -127,7 +127,7 @@ export default function StudioPage() {
 
   const [scriptText, setScriptText] = useState("");
   const [comparisonResult, setComparisonResult] = useState<ScriptComparisonResult | null>(null);
-  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [isChatGPTModalOpen, setIsChatGPTModalOpen] = useState(true);
   const [takeProjects, setTakeProjects] = useState<TakeMaterialProject[]>([
     {
       id: "short-1",
@@ -833,7 +833,7 @@ export default function StudioPage() {
           <p className="onboarding-step-label" style={{ margin: 0 }}>Studio · Live Filming HUD</p>
           <button
             type="button"
-            onClick={() => setIsFolderModalOpen(true)}
+            onClick={() => setIsChatGPTModalOpen(true)}
             className="btn btn-ghost btn-sm"
             style={{
               display: "flex",
@@ -844,8 +844,8 @@ export default function StudioPage() {
               background: "rgba(0, 240, 255, 0.08)",
             }}
           >
-            <FolderOpen size={14} />
-            <span>📁 Script & Take Folders</span>
+            <Bot size={14} />
+            <span>📝 Paste Script from ChatGPT</span>
           </button>
         </div>
 
@@ -1235,15 +1235,14 @@ export default function StudioPage() {
         />
       )}
 
-      <ScriptTeleprompterModal
-        isOpen={isFolderModalOpen}
-        onClose={() => setIsFolderModalOpen(false)}
-        onLoadPlanIntoFilming={(planToLoad) => {
-          setActivePlan(planToLoad);
-          setScriptText(planToLoad.fullScript);
-          setCurrentShotIndex(0);
+      <ChatGPTMaterialModal
+        isOpen={isChatGPTModalOpen}
+        onClose={() => setIsChatGPTModalOpen(false)}
+        onOptimizeScript={(text) => handlePrepareScript(text)}
+        onLoadDirectToFilming={(text) => {
+          setScriptText(text);
+          handleAddTakeFolder(`Short #${takeProjects.length + 1}`, text);
         }}
-        onProcessScript={handlePrepareScript}
         scriptLoading={scriptLoading}
       />
     </AppShell>
