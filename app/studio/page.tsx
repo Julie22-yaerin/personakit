@@ -125,65 +125,50 @@ export default function StudioPage() {
   const [activePlan, setActivePlan] = useState<PreFilmingPlan | null>(null);
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
   const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
+  const [activeTakeId, setActiveTakeId] = useState<string | null>("short-1");
 
   const [scriptText, setScriptText] = useState("");
   const [isChatGPTModalOpen, setIsChatGPTModalOpen] = useState(true);
-  const [takeProjects, setTakeProjects] = useState<TakeMaterialProject[]>([
-    {
-      id: "short-1",
-      title: "shorts #1",
-      dateTakeShot: "Take shot: Aug 31, 2026, 12:45 PM",
-      totalDuration: "00:30",
-      scriptText: "Stop recording content the traditional way. The hard truth 95% of founders won't admit: lengthy scripts destroy your retention. Break your video into 15-second shots instead.",
-      shots: [
-        {
-          shotNumber: 1,
-          timeRange: "00:00 - 00:03",
-          script: "Stop recording content the traditional way.",
-          action: "⚡ Look directly into camera lens, gesture to pause",
-        },
-        {
-          shotNumber: 2,
-          timeRange: "00:03 - 00:10",
-          script: "The hard truth 95% of founders won't admit: lengthy scripts destroy your retention.",
-          action: "⚡ Slight head shake, lower tone for authenticity",
-        },
-        {
-          shotNumber: 3,
-          timeRange: "00:10 - 00:20",
-          script: "Break your video into 15-second shots and record one single action at a time.",
-          action: "🎬 Point toward screen to demonstrate",
-        },
-      ],
-    },
-    {
-      id: "short-2",
-      title: "shorts #2",
-      dateTakeShot: "Take shot: Aug 31, 2026, 1:00 PM",
-      totalDuration: "00:45",
-      scriptText: "Most current recording tools make you feel like performing surgery. Too many buttons, too much friction before hitting record. Here is how we simplify it into single executable shots.",
-      shots: [
-        {
-          shotNumber: 1,
-          timeRange: "00:00 - 00:05",
-          script: "Most current recording tools make you feel like performing surgery.",
-          action: "🎬 Pick up coffee mug, look naturally at camera",
-        },
-        {
-          shotNumber: 2,
-          timeRange: "00:05 - 00:15",
-          script: "Too many buttons, too much friction before hitting record.",
-          action: "🎬 Gesture with hand to emphasize key friction point",
-        },
-        {
-          shotNumber: 3,
-          timeRange: "00:15 - 00:30",
-          script: "Here is how we simplify it into single executable shots.",
-          action: "🎬 Confident nod, close the point solidly",
-        },
-      ],
-    },
-  ]);
+  const [takeProjects, setTakeProjects] = useState<TakeMaterialProject[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("personakit_studio_folders");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [
+      {
+        id: "short-1",
+        title: "shorts #1",
+        dateTakeShot: "Take shot: Aug 31, 2026, 12:45 PM",
+        totalDuration: "00:30",
+        scriptText: "Stop recording content the traditional way. The hard truth 95% of founders won't admit: lengthy scripts destroy your retention. Break your video into 15-second shots instead.",
+        shots: [
+          {
+            shotNumber: 1,
+            timeRange: "00:00 - 00:03",
+            script: "Stop recording content the traditional way.",
+            action: "⚡ Look directly into camera lens, gesture to pause",
+          },
+          {
+            shotNumber: 2,
+            timeRange: "00:03 - 00:10",
+            script: "The hard truth 95% of founders won't admit: lengthy scripts destroy your retention.",
+            action: "⚡ Slight head shake, lower tone for authenticity",
+          },
+          {
+            shotNumber: 3,
+            timeRange: "00:10 - 00:20",
+            script: "Break your video into 15-second shots and record one single action at a time.",
+            action: "🎬 Point toward screen to demonstrate",
+          },
+        ],
+      },
+    ];
+  });
   // Script handed over from Pre-Filming AI Director — waits for explicit "Use it".
   const [receivedScript, setReceivedScript] = useState<{ title: string; content: string } | null>(null);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
@@ -217,6 +202,23 @@ export default function StudioPage() {
   const liveFillerRateRef = useRef(0);
   const liveVisualAlertCountRef = useRef(0);
 
+function saveFoldersToStorage(userId: string | null | undefined, folders: TakeMaterialProject[]) {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("personakit_studio_folders", JSON.stringify(folders));
+    } catch (e) {
+      console.warn("localStorage save folders failed", e);
+    }
+  }
+  if (userId) {
+    setDoc(
+      doc(db, "users", userId),
+      { takeFolders: folders, takeFoldersUpdatedAt: serverTimestamp() },
+      { merge: true }
+    ).catch((err) => console.warn("Firestore save folders failed", err));
+  }
+}
+
   // The coach loop's setInterval closure is created once per recording
   // session and never sees new renders — without this, it would keep
   // reading the empty `transcript` from the moment recording started.
@@ -235,6 +237,14 @@ export default function StudioPage() {
       const snap = await getDoc(doc(db, "users", u.uid));
       const data = snap.data();
       if (snap.exists() && data) {
+        if (Array.isArray(data.takeFolders) && data.takeFolders.length > 0) {
+          setTakeProjects(data.takeFolders);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("personakit_studio_folders", JSON.stringify(data.takeFolders));
+            } catch {}
+          }
+        }
         setPersonaVector(data.onboarding?.personaVector);
         setLastPlan(data.studio?.latestPlan);
         setVisualTargets(data.visualSignature?.targets ?? null);
@@ -450,8 +460,9 @@ export default function StudioPage() {
     const now = new Date();
     const dateStr = `Take shot: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
+    const newTakeId = `take-${Date.now()}`;
     const newTake: TakeMaterialProject = {
-      id: `take-${Date.now()}`,
+      id: newTakeId,
       title,
       dateTakeShot: dateStr,
       totalDuration: validation.totalDuration,
@@ -465,17 +476,28 @@ export default function StudioPage() {
       })),
     };
 
-    setTakeProjects((prev) => [newTake, ...prev]);
+    setActiveTakeId(newTakeId);
+    setTakeProjects((prev) => {
+      const next = [newTake, ...prev];
+      saveFoldersToStorage(user?.uid, next);
+      return next;
+    });
   }
 
   function handleUpdateTakeFolder(id: string, newTitle: string) {
-    setTakeProjects((prev) =>
-      prev.map((take) => (take.id === id ? { ...take, title: newTitle } : take))
-    );
+    setTakeProjects((prev) => {
+      const next = prev.map((take) => (take.id === id ? { ...take, title: newTitle } : take));
+      saveFoldersToStorage(user?.uid, next);
+      return next;
+    });
   }
 
   function handleDeleteTakeFolder(id: string) {
-    setTakeProjects((prev) => prev.filter((take) => take.id !== id));
+    setTakeProjects((prev) => {
+      const next = prev.filter((take) => take.id !== id);
+      saveFoldersToStorage(user?.uid, next);
+      return next;
+    });
   }
 
   function handleAddTakeFolder(title: string, rawScript: string) {
@@ -505,8 +527,9 @@ export default function StudioPage() {
     const now = new Date();
     const dateStr = `Take shot: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
+    const newTakeId = `take-${Date.now()}`;
     const newTake: TakeMaterialProject = {
-      id: `take-${Date.now()}`,
+      id: newTakeId,
       title: title || `shorts #${takeProjects.length + 1}`,
       dateTakeShot: dateStr,
       totalDuration: `${currTime}s`,
@@ -514,10 +537,16 @@ export default function StudioPage() {
       shots: generatedShots,
     };
 
-    setTakeProjects((prev) => [newTake, ...prev]);
+    setActiveTakeId(newTakeId);
+    setTakeProjects((prev) => {
+      const next = [newTake, ...prev];
+      saveFoldersToStorage(user?.uid, next);
+      return next;
+    });
   }
 
   function handleLoadTakeToTeleprompter(take: TakeMaterialProject) {
+    setActiveTakeId(take.id);
     const planToLoad: PreFilmingPlan = {
       title: take.title,
       totalDuration: take.totalDuration,
@@ -646,17 +675,25 @@ export default function StudioPage() {
       volumeSamplerRef.current = null;
     }
 
-    const recorder = new MediaRecorder(streamRef.current, { mimeType: "video/webm" });
+    let mimeType = "video/webm";
+    if (typeof MediaRecorder !== "undefined") {
+      if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) mimeType = "video/webm;codecs=vp9,opus";
+      else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")) mimeType = "video/webm;codecs=vp8,opus";
+      else if (MediaRecorder.isTypeSupported("video/webm")) mimeType = "video/webm";
+      else if (MediaRecorder.isTypeSupported("video/mp4")) mimeType = "video/mp4";
+    }
+
+    const recorder = new MediaRecorder(streamRef.current, { mimeType });
     recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
+      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
     };
     recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      const blob = new Blob(chunksRef.current, { type: mimeType });
       const url = URL.createObjectURL(blob);
       setRecordedUrl(url);
 
       const now = new Date();
-      const dateStr = `Take shot: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+      const dateStr = `Take shot: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
       const shotItems = activePlan?.shots.map((s) => ({
         shotNumber: s.shotNumber,
         timeRange: s.timeRange,
@@ -672,19 +709,32 @@ export default function StudioPage() {
         },
       ];
 
-      const newTakeProject: TakeMaterialProject = {
-        id: `take-${Date.now()}`,
-        title: `shorts #${takeProjects.length + 1}`,
-        dateTakeShot: dateStr,
-        totalDuration: activePlan?.totalDuration || "00:30",
-        videoUrl: url,
-        scriptText: scriptText || (activePlan?.fullScript ?? ""),
-        shots: shotItems,
-      };
-
-      setTakeProjects((prev) => [newTakeProject, ...prev]);
+      setTakeProjects((prev) => {
+        const existingIdx = prev.findIndex((t) => t.id === activeTakeId);
+        let updated: TakeMaterialProject[];
+        if (existingIdx !== -1) {
+          updated = prev.map((t, idx) =>
+            idx === existingIdx ? { ...t, videoUrl: url, dateTakeShot: dateStr } : t
+          );
+        } else {
+          const newId = `take-${Date.now()}`;
+          const newTake: TakeMaterialProject = {
+            id: newId,
+            title: `shorts #${prev.length + 1}`,
+            dateTakeShot: dateStr,
+            totalDuration: activePlan?.totalDuration || "00:30",
+            videoUrl: url,
+            scriptText: scriptText || (activePlan?.fullScript ?? ""),
+            shots: shotItems,
+          };
+          updated = [newTake, ...prev];
+          setActiveTakeId(newId);
+        }
+        saveFoldersToStorage(user?.uid, updated);
+        return updated;
+      });
     };
-    recorder.start();
+    recorder.start(1000);
     mediaRecorderRef.current = recorder;
     setIsRecording(true);
 

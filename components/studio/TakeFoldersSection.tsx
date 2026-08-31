@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FolderOpen, Plus, Trash2, Edit2, Play } from "lucide-react";
+import { FolderOpen, Plus, Trash2, Edit2, Play, Download } from "lucide-react";
 import type { FolderShotItem } from "@/components/ui/folder-interaction";
 
 export interface TakeMaterialProject {
@@ -55,6 +55,14 @@ export function TakeFoldersSection({
     window.addEventListener("click", handleOutsideClick);
     return () => window.removeEventListener("click", handleOutsideClick);
   }, []);
+
+  // Sync selectedTake if takes list updates (e.g. video attached)
+  useEffect(() => {
+    if (selectedTake) {
+      const updated = takes.find((t) => t.id === selectedTake.id);
+      if (updated) setSelectedTake(updated);
+    }
+  }, [takes]);
 
   const handleOpenMaterials = (take: TakeMaterialProject) => {
     if (selectedTake?.id === take.id) {
@@ -419,25 +427,62 @@ export function TakeFoldersSection({
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {selectedTake.videoUrl && (
-              <div>
+              <div
+                style={{
+                  background: "rgba(4, 7, 18, 0.6)",
+                  borderRadius: 14,
+                  padding: "16px",
+                  border: "1px solid rgba(0, 240, 255, 0.25)",
+                }}
+              >
                 <video
                   src={selectedTake.videoUrl}
                   controls
                   style={{
                     width: "100%",
-                    maxHeight: "340px",
+                    maxHeight: "360px",
                     objectFit: "contain",
                     display: "block",
-                    borderRadius: 8,
+                    borderRadius: 10,
                     background: "#000",
-                    border: "1px solid rgba(0, 240, 255, 0.3)",
+                    border: "1px solid rgba(0, 240, 255, 0.35)",
                   }}
                 />
-                <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#00f0ff", fontFamily: "monospace" }}>
-                  <span>🎬 Shot 1: Produced Video Footage ({selectedTake.totalDuration})</span>
-                  <span style={{ color: "#10b981" }}>⏱️ Time Range: {selectedTake.shots[0]?.timeRange || "0:00 - 0:30"}</span>
+                <div
+                  style={{
+                    marginTop: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ fontSize: 12.5, color: "#00f0ff", fontFamily: "monospace" }}>
+                    <span>🎬 Produced Video Footage ({selectedTake.totalDuration})</span>
+                    <span style={{ marginLeft: 12, color: "#10b981" }}>
+                      ⏱️ Time Range: {selectedTake.shots[0]?.timeRange || "0:00 - 0:30"}
+                    </span>
+                  </div>
+
+                  <a
+                    href={selectedTake.videoUrl}
+                    download={`${selectedTake.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-take.webm`}
+                    className="btn btn-primary btn-sm"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 12.5,
+                      padding: "6px 14px",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Download size={14} />
+                    <span>Download Video</span>
+                  </a>
                 </div>
               </div>
             )}
