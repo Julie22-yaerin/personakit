@@ -21,6 +21,8 @@ const REQUIRED_ENV_VARS: EnvConfig[] = [
   { name: "NVIDIA_EXTRACTOR_API_KEY", required: false, sensitive: true },
   { name: "NVIDIA_STYLIST_API_KEY", required: false, sensitive: true },
   { name: "QWEN_API_KEY", required: false, sensitive: true },
+  { name: "ILLUSTRATION_AI_KEY", required: false, sensitive: true },
+  { name: "illustration_ai", required: false, sensitive: true },
 
   // Security
   { name: "WEBHOOK_SECRET", required: false, sensitive: true },
