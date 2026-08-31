@@ -15,6 +15,8 @@ import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
 import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen, Bot } from "lucide-react";
 import { ChatGPTMaterialModal } from "../../components/studio/ChatGPTMaterialModal";
 import { TakeFoldersSection, type TakeMaterialProject } from "../../components/studio/TakeFoldersSection";
+import { ActionMotionOverlay } from "../../components/studio/ActionMotionOverlay";
+import { LiveScriptCaptions } from "../../components/studio/LiveScriptCaptions";
 import type { ValidationResult } from "../../lib/script-validator";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
@@ -122,6 +124,7 @@ export default function StudioPage() {
   const [founderContext, setFounderContext] = useState<FounderContext>({});
   const [activePlan, setActivePlan] = useState<PreFilmingPlan | null>(null);
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
+  const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
 
   const [scriptText, setScriptText] = useState("");
   const [isChatGPTModalOpen, setIsChatGPTModalOpen] = useState(true);
@@ -442,6 +445,7 @@ export default function StudioPage() {
 
     setActivePlan(plan);
     setCurrentShotIndex(0);
+    setIsGuidanceOpen(true);
 
     const now = new Date();
     const dateStr = `Take shot: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
@@ -528,6 +532,17 @@ export default function StudioPage() {
     setActivePlan(planToLoad);
     setScriptText(take.scriptText);
     setCurrentShotIndex(0);
+    setIsGuidanceOpen(true);
+  }
+
+  function handleShotAdvance() {
+    if (!activePlan) return;
+    if (currentShotIndex < activePlan.shots.length - 1) {
+      setCurrentShotIndex((prev) => prev + 1);
+      setIsGuidanceOpen(true);
+    } else {
+      handleStopRecording();
+    }
   }
 
   /**
@@ -959,8 +974,51 @@ export default function StudioPage() {
                 <p className="error">{cameraError}</p>
               ) : (
                 <div className="studio-camera-canvas" style={{ position: "relative", width: "100%", height: "58vh", maxHeight: "640px", overflow: "hidden", borderRadius: 16, border: "1px dashed rgba(148, 168, 255, 0.3)", background: "#060812" }}>
-                  <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  {coachingTip && (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      filter: isGuidanceOpen ? "blur(14px)" : "none",
+                      transition: "filter 0.3s ease",
+                    }}
+                  />
+
+                  {/* Shot Action Motion GIF & 3-2-1 Countdown Overlay */}
+                  {activePlan?.shots[currentShotIndex] && (
+                    <ActionMotionOverlay
+                      shot={activePlan.shots[currentShotIndex]}
+                      currentShotIndex={currentShotIndex}
+                      totalShots={activePlan.shots.length}
+                      isOpen={isGuidanceOpen}
+                      onStartFilming={() => {
+                        setIsGuidanceOpen(false);
+                        if (!isRecording) {
+                          handleStartRecording();
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* Live Teleprompter Captions with Word-by-Word Progressive Blurring */}
+                  {activePlan?.shots[currentShotIndex] && isRecording && !isGuidanceOpen && (
+                    <LiveScriptCaptions
+                      dialogue={activePlan.shots[currentShotIndex].dialogue}
+                      timeRange={activePlan.shots[currentShotIndex].timeRange}
+                      shotNumber={activePlan.shots[currentShotIndex].shotNumber || currentShotIndex + 1}
+                      totalShots={activePlan.shots.length}
+                      actionText={activePlan.shots[currentShotIndex].action}
+                      liveTranscript={transcript}
+                      isRecording={isRecording}
+                      onCompleteShot={handleShotAdvance}
+                    />
+                  )}
+
+                  {coachingTip && !isGuidanceOpen && (
                     <div
                       style={{
                         position: "absolute",
