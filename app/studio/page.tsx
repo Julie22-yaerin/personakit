@@ -12,7 +12,9 @@ import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
-import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2 } from "lucide-react";
+import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles } from "lucide-react";
+import { ScriptCompareModal } from "../../components/studio/ScriptCompareModal";
+import type { ScriptComparisonResult, ScriptComparisonVersion } from "../../lib/script-transformer";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
   classifySpeechRate,
@@ -121,6 +123,7 @@ export default function StudioPage() {
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
 
   const [scriptText, setScriptText] = useState("");
+  const [comparisonResult, setComparisonResult] = useState<ScriptComparisonResult | null>(null);
   // Script handed over from Pre-Filming AI Director — waits for explicit "Use it".
   const [receivedScript, setReceivedScript] = useState<{ title: string; content: string } | null>(null);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
@@ -367,15 +370,42 @@ export default function StudioPage() {
     setScriptLoading(true);
     setScriptError(null);
     try {
-      const res = await authedFetch("/api/studio/script/decompose", { sourceText: scriptText });
-      const parsed = await safeReadJson<ScriptGraph>(res);
-      if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Script decomposition failed");
-      setScriptGraph(parsed.data);
+      const res = await authedFetch("/api/studio/script/process", {
+        sourceText: scriptText,
+        context: founderContext,
+      });
+      const parsed = await safeReadJson<ScriptComparisonResult>(res);
+      if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Script optimization failed");
+      setComparisonResult(parsed.data);
     } catch (err) {
-      setScriptError(err instanceof Error ? err.message : "Script decomposition failed");
+      setScriptError(err instanceof Error ? err.message : "Script optimization failed");
     } finally {
       setScriptLoading(false);
     }
+  }
+
+  function handleSelectComparisonVersion(version: ScriptComparisonVersion) {
+    const plan: PreFilmingPlan = {
+      title: version.title,
+      totalDuration: version.totalDuration,
+      hookStrategy: version.title.includes("Enhanced")
+        ? "3s Viral Hook + Rage-Bait Contrarian + Dynamic Actions"
+        : "Original Linear Delivery",
+      shots: version.rows.map((r) => ({
+        shotNumber: r.shotNumber,
+        timeRange: r.timeRange,
+        label: r.hookType || `Shot ${r.shotNumber}`,
+        dialogue: r.script,
+        action: r.action,
+        hookCode: r.hookType ? "⚡ HOOK" : undefined,
+      })),
+      fullScript: version.fullScript,
+    };
+
+    setActivePlan(plan);
+    setScriptText(version.fullScript);
+    setCurrentShotIndex(0);
+    setComparisonResult(null);
   }
 
   /**
@@ -710,28 +740,29 @@ export default function StudioPage() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                 <div className="price-name" style={{ fontSize: 13 }}>Script & Teleprompter Text</div>
-                {scriptGraph && (
+                {activePlan && (
                   <span style={{ fontSize: 11, color: "var(--accent-dim)" }}>
-                    Ready: {scriptGraph.nodes.map((n) => SCRIPT_NODE_LABELS[n.type]).join(" -> ")}
+                    Loaded: {activePlan.title} ({activePlan.shots.length} shots • {activePlan.totalDuration})
                   </span>
                 )}
               </div>
               <textarea
-                rows={2}
+                rows={3}
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
-                placeholder="Script content loaded from Pre-Filming or typed manually..."
+                placeholder="Dán kịch bản vào đây để tối ưu hóa (chia câu ngắn, thêm 3s Hook, Rage-Bait, Time-ranges & Actions)..."
                 disabled={isRecording}
-                style={{ fontSize: 12 }}
+                style={{ fontSize: 12.5 }}
               />
               <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                 <button
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-primary btn-sm"
                   onClick={handlePrepareScript}
                   disabled={scriptLoading || isRecording || !scriptText.trim()}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  {scriptLoading ? "Structuring..." : scriptGraph ? "Re-structure Script" : "Prepare Script"}
+                  <Sparkles size={14} />
+                  {scriptLoading ? "Processing & Optimizing..." : "Process Script (Hooks & Rage-Bait)"}
                 </button>
               </div>
               {scriptError && <p className="error" style={{ marginTop: 6, fontSize: 12 }}>{scriptError}</p>}
@@ -1018,6 +1049,14 @@ export default function StudioPage() {
         )}
         </div>
       </div>
+
+      {comparisonResult && (
+        <ScriptCompareModal
+          comparison={comparisonResult}
+          onSelectVersion={handleSelectComparisonVersion}
+          onClose={() => setComparisonResult(null)}
+        />
+      )}
     </AppShell>
   );
 }
