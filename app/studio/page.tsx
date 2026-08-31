@@ -180,23 +180,21 @@ export default function StudioPage() {
       }
       const snap = await getDoc(doc(db, "users", u.uid));
       const data = snap.data();
-      if (!snap.exists() || !data?.onboardingCompletedAt) {
-        router.replace("/onboarding");
-        return;
-      }
-      setPersonaVector(data.onboarding?.personaVector);
-      setLastPlan(data.studio?.latestPlan);
-      setVisualTargets(data.visualSignature?.targets ?? null);
-      setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
+      if (snap.exists() && data) {
+        setPersonaVector(data.onboarding?.personaVector);
+        setLastPlan(data.studio?.latestPlan);
+        setVisualTargets(data.visualSignature?.targets ?? null);
+        setVisualHistory(((data.visualSignatureHistory ?? []) as VisualHistoryEntry[]).slice().reverse());
 
-      const fContext: FounderContext = {
-        personaVector: data.onboarding?.personaVector,
-        communicationProfile: data.onboarding?.communicationProfile || data.identity?.communicationProfile,
-        founderOrigin: data.identity?.founderOrigin || data.onboarding?.founderOrigin,
-        companyContext: data.companyContext || data.onboarding?.companyContext,
-        savedStyleSuggestions: data.savedStyleSuggestions,
-      };
-      setFounderContext(fContext);
+        const fContext: FounderContext = {
+          personaVector: data.onboarding?.personaVector,
+          communicationProfile: data.onboarding?.communicationProfile || data.identity?.communicationProfile,
+          founderOrigin: data.identity?.founderOrigin || data.onboarding?.founderOrigin,
+          companyContext: data.companyContext || data.onboarding?.companyContext,
+          savedStyleSuggestions: data.savedStyleSuggestions,
+        };
+        setFounderContext(fContext);
+      }
 
       try {
         const handed = sessionStorage.getItem("persona.studio.script");

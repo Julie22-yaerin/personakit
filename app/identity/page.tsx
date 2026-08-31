@@ -97,32 +97,30 @@ export default function IdentityPage() {
       }
       const snap = await getDoc(doc(db, "users", u.uid));
       const data = snap.data();
-      if (!snap.exists() || !data?.onboardingCompletedAt) {
-        router.replace("/onboarding");
-        return;
-      }
-      const existing = data.founderIdentity;
-      if (existing) {
-        setCandidates(existing.candidates ?? []);
-        setCommunicationProfile(existing.communicationProfile ?? undefined);
-        setFounderOrigin(existing.founderOrigin ?? undefined);
-        setSelfKnowledgeScore(existing.selfKnowledgeScore ?? 0);
+      if (snap.exists() && data) {
+        const existing = data.founderIdentity;
+        if (existing) {
+          setCandidates(existing.candidates ?? []);
+          setCommunicationProfile(existing.communicationProfile ?? undefined);
+          setFounderOrigin(existing.founderOrigin ?? undefined);
+          setSelfKnowledgeScore(existing.selfKnowledgeScore ?? 0);
 
-        // A local draft newer than the last save (e.g. they started "Add
-        // more detail" and never submitted) should win over the older
-        // saved answers, not get silently discarded.
-        const localDraft = typeof window !== "undefined" ? window.localStorage.getItem(DRAFT_KEY) : null;
-        if (localDraft) {
-          try {
-            setAnswers(JSON.parse(localDraft));
-            setStep("interview");
-          } catch {
+          // A local draft newer than the last save (e.g. they started "Add
+          // more detail" and never submitted) should win over the older
+          // saved answers, not get silently discarded.
+          const localDraft = typeof window !== "undefined" ? window.localStorage.getItem(DRAFT_KEY) : null;
+          if (localDraft) {
+            try {
+              setAnswers(JSON.parse(localDraft));
+              setStep("interview");
+            } catch {
+              setAnswers(existing.interviewAnswers ?? {});
+              setStep("confirm");
+            }
+          } else {
             setAnswers(existing.interviewAnswers ?? {});
             setStep("confirm");
           }
-        } else {
-          setAnswers(existing.interviewAnswers ?? {});
-          setStep("confirm");
         }
       }
       setUser(u);

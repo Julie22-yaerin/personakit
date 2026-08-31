@@ -60,13 +60,11 @@ export default function AppHome() {
       }
       const snap = await getDoc(doc(db, "users", u.uid));
       const data = snap.data();
-      if (!snap.exists() || !data?.onboardingCompletedAt) {
-        router.replace("/onboarding");
-        return;
+      if (snap.exists() && data) {
+        setContentHistory((data.contentHistory ?? []) as ContentHistoryEntry[]);
+        setDistributionLog((data.distributionLog ?? []) as DistributionEntry[]);
+        setEdsWeights((data.edsWeights as EDSWeights) ?? DEFAULT_EDS_WEIGHTS);
       }
-      setContentHistory((data.contentHistory ?? []) as ContentHistoryEntry[]);
-      setDistributionLog((data.distributionLog ?? []) as DistributionEntry[]);
-      setEdsWeights((data.edsWeights as EDSWeights) ?? DEFAULT_EDS_WEIGHTS);
       setUser(u);
     });
     return unsubscribe;

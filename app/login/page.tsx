@@ -31,14 +31,8 @@ async function ensureUserDoc(uid: string, email: string | null) {
   }
 }
 
-async function nextRouteAfterAuth(uid: string): Promise<"/onboarding" | "/app"> {
-  try {
-    const snap = await getDoc(doc(db, "users", uid));
-    return snap.exists() && snap.data()?.onboardingCompletedAt ? "/app" : "/onboarding";
-  } catch (err) {
-    console.warn("nextRouteAfterAuth fallback:", err);
-    return "/onboarding";
-  }
+async function nextRouteAfterAuth(uid: string): Promise<"/app"> {
+  return "/app";
 }
 
 function friendlyError(message: string): string {

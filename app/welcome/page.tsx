@@ -56,7 +56,7 @@ export default function WelcomePage() {
               <Link href="/studio" className="p-btn p-btn-primary">
                 Launch My First Shoot <ArrowRight size={15} />
               </Link>
-              <Link href="/onboarding" className="p-btn p-btn-ghost">
+              <Link href="/identity" className="p-btn p-btn-ghost">
                 Recalibrate Persona
               </Link>
             </div>

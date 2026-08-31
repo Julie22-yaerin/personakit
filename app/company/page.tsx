@@ -39,11 +39,7 @@ export default function CompanyPage() {
       }
       const snap = await getDoc(doc(db, "users", u.uid));
       const data = snap.data();
-      if (!snap.exists() || !data?.onboardingCompletedAt) {
-        router.replace("/onboarding");
-        return;
-      }
-      const ctx: CompanyContext = data.companyContext ?? EMPTY_COMPANY_CONTEXT;
+      const ctx: CompanyContext = snap.exists() && data?.companyContext ? data.companyContext : EMPTY_COMPANY_CONTEXT;
       setProductDescription(ctx.productDescription);
       setAccurateClaimsText(ctx.accurateClaims.join("\n"));
       setFalseClaimsText(ctx.falseClaims.join("\n"));
