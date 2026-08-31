@@ -1,15 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   X,
   Download,
   Video,
   FileText,
   RotateCcw,
-  Sparkles,
-  Layers,
-  Calendar,
+  Copy,
+  Check,
 } from "lucide-react";
 import type { FolderShotItem } from "@/components/ui/folder-interaction";
 
@@ -36,18 +35,35 @@ export function TakeMaterialsModal({
   onClose,
   onLoadToTeleprompter,
 }: TakeMaterialsModalProps) {
+  const [copied, setCopied] = useState(false);
+
   if (!isOpen || !take) return null;
 
+  // Build the complete, unified .txt document content
+  const fullTxtDocument = take.scriptText?.trim()
+    ? take.scriptText
+    : take.shots
+        .map((s) => `[${s.timeRange}] ${s.script}${s.action ? ` (Action: ${s.action})` : ""}`)
+        .join("\n\n");
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(fullTxtDocument);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleDownloadScript = () => {
-    const textContent = `=== ${take.title} (${take.dateTakeShot}) ===\nDuration: ${take.totalDuration}\n\n--- SHOTS (Sorted by Time Range) ---\n` +
-      take.shots.map((s) => `[${s.timeRange}] Shot ${s.shotNumber}:\nScript: "${s.script}"\nAction: ${s.action || "None"}\n${s.hookType ? `Hook: ${s.hookType}\n` : ""}`).join("\n\n") +
-      `\n\n--- FULL SCRIPT ---\n${take.scriptText}`;
+    const textContent = `========================================================\n` +
+      `📁 SCRIPT MATERIAL: ${take.title.toUpperCase()}\n` +
+      `📅 ${take.dateTakeShot} | Total Duration: ${take.totalDuration}\n` +
+      `========================================================\n\n` +
+      fullTxtDocument;
 
     const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${take.title.toLowerCase().replace(/\s+/g, "_")}_materials.txt`;
+    a.download = `${take.title.toLowerCase().replace(/\s+/g, "_")}_script.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -83,7 +99,7 @@ export function TakeMaterialsModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header (1 Single Title line) */}
+        {/* Header (1 Single Title Line) */}
         <div
           style={{
             padding: "16px 24px",
@@ -103,26 +119,47 @@ export function TakeMaterialsModal({
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
-              onClick={handleDownloadScript}
+              onClick={handleCopy}
               style={{
                 background: "rgba(255, 255, 255, 0.08)",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
                 color: "#fff",
-                borderRadius: 10,
+                borderRadius: 8,
                 padding: "6px 12px",
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                gap: 5,
+              }}
+            >
+              {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
+              <span>{copied ? "Copied!" : "Copy .txt"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadScript}
+              style={{
+                background: "rgba(0, 240, 255, 0.12)",
+                border: "1px solid rgba(0, 240, 255, 0.3)",
+                color: "#00f0ff",
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
               }}
             >
               <Download size={13} />
-              <span>Export File</span>
+              <span>Download .txt</span>
             </button>
 
             <button
@@ -146,13 +183,13 @@ export function TakeMaterialsModal({
           </div>
         </div>
 
-        {/* Unified Single Page (Shows Video & Script together without organization tabs) */}
+        {/* Unified Single Page: Video + Full .txt Script File */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Top Section: Video Player */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 700, color: "#00f0ff" }}>
               <Video size={15} />
-              <span>VIDEO ĐÃ QUAY (RECORDED TAKE)</span>
+              <span>VIDEO ĐÃ QUAY (RECORDED TAKE FOOTAGE)</span>
             </div>
 
             {take.videoUrl ? (
@@ -162,7 +199,7 @@ export function TakeMaterialsModal({
                   controls
                   style={{
                     width: "100%",
-                    maxHeight: "360px",
+                    maxHeight: "340px",
                     objectFit: "contain",
                     display: "block",
                   }}
@@ -185,61 +222,37 @@ export function TakeMaterialsModal({
             )}
           </div>
 
-          {/* Bottom Section: Script & Shots sorted by time range */}
+          {/* Bottom Section: Raw .txt Full Script Document */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, fontSize: 12, fontWeight: 700, color: "#10b981" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, fontSize: 12, fontWeight: 700, color: "#10b981" }}>
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <FileText size={15} />
-                <span>KỊCH BẢN & SHOTS (SẮP XẾP THEO KHUNG THỜI GIAN)</span>
+                <span>TOÀN BỘ SCRIPT (.TXT FILE)</span>
               </span>
-              <span style={{ color: "var(--muted)", fontWeight: 500 }}>{take.shots.length} shots</span>
+              <span style={{ color: "var(--muted)", fontWeight: 500, fontFamily: "monospace" }}>
+                {fullTxtDocument.split(/\s+/).filter(Boolean).length} words · {fullTxtDocument.length} chars
+              </span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {take.shots.map((shot) => (
-                <div
-                  key={shot.shotNumber}
-                  style={{
-                    padding: "12px 14px",
-                    background: shot.hookType ? "rgba(0, 240, 255, 0.05)" : "rgba(255, 255, 255, 0.02)",
-                    borderRadius: 10,
-                    border: `1px solid ${shot.hookType ? "rgba(0, 240, 255, 0.25)" : "rgba(255, 255, 255, 0.07)"}`,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span className="prefilming-shot-num" style={{ fontSize: 10.5 }}>Shot {shot.shotNumber}</span>
-                    <span className="prefilming-shot-timerange" style={{ fontSize: 11 }}>{shot.timeRange}</span>
-                    {shot.hookType && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: "#00f0ff",
-                          background: "rgba(0, 240, 255, 0.15)",
-                          border: "1px solid rgba(0, 240, 255, 0.3)",
-                          padding: "1px 6px",
-                          borderRadius: 4,
-                        }}
-                      >
-                        {shot.hookType}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.5 }}>
-                    💬 <strong>Script:</strong> &ldquo;{shot.script}&rdquo;
-                  </div>
-
-                  {shot.action && (
-                    <div style={{ fontSize: 11.5, color: "#34d399" }}>
-                      🎬 <strong>Action:</strong> {shot.action}
-                    </div>
-                  )}
-                </div>
-              ))}
+            {/* Whole .txt File Sheet Presentation */}
+            <div
+              style={{
+                background: "#040714",
+                borderRadius: 14,
+                border: "1px solid rgba(16, 185, 129, 0.25)",
+                padding: "16px 20px",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontSize: 13.5,
+                lineHeight: 1.7,
+                color: "#f1f5f9",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                maxHeight: "360px",
+                overflowY: "auto",
+                boxShadow: "inset 0 2px 12px rgba(0,0,0,0.6)",
+              }}
+            >
+              {fullTxtDocument}
             </div>
           </div>
         </div>
