@@ -3,7 +3,74 @@
 import { useScroll, useTransform, motion, MotionValue } from "motion/react";
 import React, { useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Flame, ScanFace, CheckCircle2, Clock, Sparkles, AlertTriangle } from "lucide-react";
+import { ArrowRight, Flame, ScanFace, CheckCircle2, Clock, Sparkles, AlertTriangle, Copy, Check } from "lucide-react";
+
+const PROMPT_TEXT = `Turn my content into a simple recording plan.\n\nI will give you:\n\nGOAL: What I want the video to achieve\nACTION: What I need to do/record\nSCRIPT: What I want to say\nTIME: Target video length\n\nPersonalize the plan to my personality, desired image, and voice. If you don't have enough context to do this properly, ask me first.\n\nThen output the plan as short rows:\n\nTIME RANGE — TALKING SCRIPT — ACTION\n\nExample:\n\n0:09–0:25 — \"If you're not using this, what the fuck are you doing?\"\n\nAction: Punch toward camera.\n\nKeep it practical and easy to record.\n\nOptimize for fewer retakes and less wasted recording time.\n\nDo not promise virality. Do not overcomplicate the video.`;
+
+function PromptBox() {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(PROMPT_TEXT);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ marginTop: 20, width: "100%", maxWidth: 360, alignSelf: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 4px" }}>
+        <span className="p-mono" style={{ fontSize: 11, color: "var(--p-text-secondary)", fontWeight: 700, letterSpacing: "0.05em" }}>
+          STUDIO PROMPT
+        </span>
+        <button
+          onClick={handleCopy}
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#fff",
+            fontSize: 10,
+            padding: "4px 8px",
+            borderRadius: 6,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            transition: "all 0.2s"
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+          }}
+        >
+          {copied ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+          {copied ? <span style={{ color: "#10b981" }}>COPIED</span> : "COPY"}
+        </button>
+      </div>
+      <div
+        className="prompt-scroll p-mono"
+        style={{
+          background: "rgba(5, 7, 14, 0.8)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 8,
+          padding: 14,
+          fontSize: 11,
+          color: "rgba(255,255,255,0.6)",
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.5,
+          maxHeight: 140,
+          overflowY: "auto",
+          textAlign: "left"
+        }}
+      >
+        {PROMPT_TEXT}
+      </div>
+    </div>
+  );
+}
 
 export function HeroScrollContainer() {
   const container = useRef<HTMLDivElement>(null);
@@ -68,6 +135,7 @@ const Section1: React.FC<SectionProps> = ({ scrollYProgress }) => {
           </div>
 
           <div className="p-hero-visual">
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="p-phone-mock" style={{ border: "1px solid rgba(0, 240, 255, 0.35)", background: "rgba(10, 14, 26, 0.88)" }}>
               <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 6, zIndex: 10 }}>
                 <span className="hud-indicator-dot" />
@@ -108,6 +176,9 @@ const Section1: React.FC<SectionProps> = ({ scrollYProgress }) => {
               <div className="p-phone-label" style={{ background: "rgba(16, 20, 36, 0.95)", borderTop: "1px solid rgba(0, 240, 255, 0.2)" }}>
                 SHOT 01/04: THE CONTRAST HOOK (0-3s)
               </div>
+            </div>
+
+            <PromptBox />
             </div>
 
             {/* Quick telemetry teaser */}
