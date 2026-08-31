@@ -15,8 +15,7 @@ import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
 import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen, Bot } from "lucide-react";
 import { ScriptCompareModal } from "../../components/studio/ScriptCompareModal";
 import { ChatGPTMaterialModal } from "../../components/studio/ChatGPTMaterialModal";
-import { TakeFoldersSection } from "../../components/studio/TakeFoldersSection";
-import type { TakeMaterialProject } from "../../components/studio/TakeMaterialsModal";
+import { TakeFoldersSection, type TakeMaterialProject } from "../../components/studio/TakeFoldersSection";
 import type { ScriptComparisonResult, ScriptComparisonVersion } from "../../lib/script-transformer";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
@@ -470,6 +469,12 @@ export default function StudioPage() {
     setScriptText(version.fullScript);
     setCurrentShotIndex(0);
     setComparisonResult(null);
+  }
+
+  function handleUpdateTakeFolder(id: string, newTitle: string) {
+    setTakeProjects((prev) =>
+      prev.map((take) => (take.id === id ? { ...take, title: newTitle } : take))
+    );
   }
 
   function handleAddTakeFolder(title: string, rawScript: string) {
@@ -1022,6 +1027,7 @@ export default function StudioPage() {
               takes={takeProjects}
               onAddTakeFolder={handleAddTakeFolder}
               onLoadTakeToTeleprompter={handleLoadTakeToTeleprompter}
+              onUpdateTakeFolder={handleUpdateTakeFolder}
             />
 
         {(transcript || isRecording) && (
