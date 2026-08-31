@@ -128,7 +128,7 @@ export default function StudioPage() {
   const [takeProjects, setTakeProjects] = useState<TakeMaterialProject[]>([
     {
       id: "short-1",
-      title: "Short #1",
+      title: "shorts #1",
       dateTakeShot: "Take shot: 31/08/2026 12:45",
       totalDuration: "00:30",
       scriptText: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống. Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn. Hãy chia nhỏ thành từng cú máy 15 giây.",
@@ -157,7 +157,7 @@ export default function StudioPage() {
     },
     {
       id: "short-2",
-      title: "Short #2",
+      title: "shorts #2",
       dateTakeShot: "Take shot: 31/08/2026 13:00",
       totalDuration: "00:45",
       scriptText: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật. Quá nhiều nút bấm, quá nhiều rối rắm trước khi bấm máy. Đây là cách chúng tôi giải quyết bài toán đó trong 1 shot duy nhất.",
@@ -426,7 +426,7 @@ export default function StudioPage() {
   }
 
   function handleLoadValidScript(validation: ValidationResult) {
-    const title = `Short #${takeProjects.length + 1}`;
+    const title = `shorts #${takeProjects.length + 1}`;
     setScriptText(validation.rawScript);
 
     const plan: PreFilmingPlan = {
@@ -502,7 +502,7 @@ export default function StudioPage() {
 
     const newTake: TakeMaterialProject = {
       id: `take-${Date.now()}`,
-      title: title || `Short #${takeProjects.length + 1}`,
+      title: title || `shorts #${takeProjects.length + 1}`,
       dateTakeShot: dateStr,
       totalDuration: `${currTime}s`,
       scriptText: rawScript,
@@ -658,7 +658,7 @@ export default function StudioPage() {
 
       const newTakeProject: TakeMaterialProject = {
         id: `take-${Date.now()}`,
-        title: `Short #${takeProjects.length + 1}`,
+        title: `shorts #${takeProjects.length + 1}`,
         dateTakeShot: dateStr,
         totalDuration: activePlan?.totalDuration || "00:30",
         videoUrl: url,

@@ -27,11 +27,27 @@ export function FolderInteractionDemo() {
   );
 }
 
+import { Typewriter } from "@/components/ui/typewriter-text";
+
+export function DemoVariant1() {
+  return (
+    <div className="flex items-center justify-center p-8">
+      <Typewriter
+        text={["Welcome to HextaUI", "Build awesome websites.", "hextaui.com"]}
+        speed={100}
+        loop={true}
+        className="text-xl font-medium text-white"
+      />
+    </div>
+  );
+}
+
 export default function Demo() {
   return (
     <div className="flex flex-col gap-8 items-center justify-center w-full min-h-screen bg-background p-8">
       <FolderInteraction />
       <CompareDemo />
+      <DemoVariant1 />
     </div>
   );
 }

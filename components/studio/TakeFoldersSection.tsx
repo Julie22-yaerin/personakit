@@ -52,7 +52,7 @@ export function TakeFoldersSection({
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newScript.trim()) return;
-    onAddTakeFolder(newTitle.trim() || `Short #${takes.length + 1}`, newScript.trim());
+    onAddTakeFolder(newTitle.trim() || `shorts #${takes.length + 1}`, newScript.trim());
     setNewTitle("");
     setNewScript("");
     setIsCreating(false);
@@ -126,7 +126,7 @@ export function TakeFoldersSection({
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder={`Tiêu đề folder (VD: Short #${takes.length + 1})`}
+            placeholder={`Tiêu đề folder (VD: shorts #${takes.length + 1})`}
             style={{
               padding: "7px 10px",
               background: "rgba(255, 255, 255, 0.05)",
@@ -289,8 +289,9 @@ export function TakeFoldersSection({
                     border: "1px solid rgba(0, 240, 255, 0.3)"
                   }}
                 />
-                <div style={{ marginTop: 8, fontSize: 12, color: "#fff", fontFamily: "monospace" }}>
-                  {selectedTake.totalDuration}
+                <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#00f0ff", fontFamily: "monospace" }}>
+                  <span>🎬 Shot 1: Video đã sản xuất ({selectedTake.totalDuration})</span>
+                  <span style={{ color: "#10b981" }}>⏱️ Timerange: {selectedTake.shots[0]?.timeRange || "0:00 - 0:30"}</span>
                 </div>
               </div>
             )}
