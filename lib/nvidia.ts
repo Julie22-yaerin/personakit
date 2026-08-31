@@ -4,10 +4,9 @@ import OpenAI from "openai";
  * NVIDIA NIM (integrate.api.nvidia.com, OpenAI-compatible) — the default
  * provider now, replacing Google AI Studio (whose free-tier 429s were
  * too frequent for real use). Two roles/keys, matching the app's
- * extract-vs-synthesize split: "extractor" (bé 1, meta/muse-glimmer-30b,
- * vision-capable) does raw analysis/extraction — face scans, identity
- * traits, content/redline scoring components, script structure, live
- * relevance/coaching. "stylist" (bé 2, thinkingmachines/inkling,
+ * extract-vs-synthesize split: "extractor" (Model 1, meta/muse-glimmer-30b,
+ * chosen for high-speed deterministic structured extraction) handles plan
+ * relevance/coaching. "stylist" (Model 2, thinkingmachines/inkling,
  * text-only) does the creative synthesis calls that actually produce
  * persona/style/voice output — onboarding synthesis and studio session
  * planning.

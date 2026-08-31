@@ -129,57 +129,54 @@ export default function StudioPage() {
     {
       id: "short-1",
       title: "shorts #1",
-      dateTakeShot: "Take shot: 31/08/2026 12:45",
+      dateTakeShot: "Take shot: Aug 31, 2026, 12:45 PM",
       totalDuration: "00:30",
-      scriptText: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống. Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn. Hãy chia nhỏ thành từng cú máy 15 giây.",
+      scriptText: "Stop recording content the traditional way. The hard truth 95% of founders won't admit: lengthy scripts destroy your retention. Break your video into 15-second shots instead.",
       shots: [
         {
           shotNumber: 1,
           timeRange: "00:00 - 00:03",
-          script: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống.",
-          action: "⚡ Nhìn xoáy thẳng vào ống kính máy quay, gõ tay ngắt nhịp",
-          hookType: "🔥 3s Pattern Interrupt",
+          script: "Stop recording content the traditional way.",
+          action: "⚡ Look directly into camera lens, gesture to pause",
         },
         {
           shotNumber: 2,
           timeRange: "00:03 - 00:10",
-          script: "Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn.",
-          action: "⚡ Lắc đầu nhẹ, hạ thấp giọng tạo độ chân thực",
-          hookType: "⚡ Rage-Bait / Contrarian",
+          script: "The hard truth 95% of founders won't admit: lengthy scripts destroy your retention.",
+          action: "⚡ Slight head shake, lower tone for authenticity",
         },
         {
           shotNumber: 3,
           timeRange: "00:10 - 00:20",
-          script: "Hãy chia nhỏ thành từng cú máy 15 giây và quay từng hành động một.",
-          action: "🎬 Chỉ tay sang màn hình dẫn chứng",
+          script: "Break your video into 15-second shots and record one single action at a time.",
+          action: "🎬 Point toward screen to demonstrate",
         },
       ],
     },
     {
       id: "short-2",
       title: "shorts #2",
-      dateTakeShot: "Take shot: 31/08/2026 13:00",
+      dateTakeShot: "Take shot: Aug 31, 2026, 1:00 PM",
       totalDuration: "00:45",
-      scriptText: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật. Quá nhiều nút bấm, quá nhiều rối rắm trước khi bấm máy. Đây là cách chúng tôi giải quyết bài toán đó trong 1 shot duy nhất.",
+      scriptText: "Most current recording tools make you feel like performing surgery. Too many buttons, too much friction before hitting record. Here is how we simplify it into single executable shots.",
       shots: [
         {
           shotNumber: 1,
           timeRange: "00:00 - 00:05",
-          script: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật.",
-          action: "🎬 Nâng ly cà phê, ánh mắt tự nhiên hướng vào camera",
-          hookType: "🎯 Problem Hook",
+          script: "Most current recording tools make you feel like performing surgery.",
+          action: "🎬 Pick up coffee mug, look naturally at camera",
         },
         {
           shotNumber: 2,
           timeRange: "00:05 - 00:15",
-          script: "Quá nhiều nút bấm, quá nhiều rối rắm trước khi bấm máy.",
-          action: "🎬 Đưa tay nhấn mạnh từ khóa",
+          script: "Too many buttons, too much friction before hitting record.",
+          action: "🎬 Gesture with hand to emphasize key friction point",
         },
         {
           shotNumber: 3,
           timeRange: "00:15 - 00:30",
-          script: "Đây là cách chúng tôi giải quyết bài toán đó trong 1 shot duy nhất.",
-          action: "🎬 Mỉm cười, chốt luận điểm vững vàng",
+          script: "Here is how we simplify it into single executable shots.",
+          action: "🎬 Confident nod, close the point solidly",
         },
       ],
     },
@@ -447,7 +444,7 @@ export default function StudioPage() {
     setCurrentShotIndex(0);
 
     const now = new Date();
-    const dateStr = `Take shot: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+    const dateStr = `Take shot: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
     const newTake: TakeMaterialProject = {
       id: `take-${Date.now()}`,
@@ -493,12 +490,12 @@ export default function StudioPage() {
         shotNumber: idx + 1,
         timeRange,
         script: sent,
-        action: idx === 0 ? "⚡ Nhìn thẳng camera, tạo điểm chạm ban đầu" : "🎬 Cử chỉ tay nhấn mạnh thông điệp",
+        action: idx === 0 ? "⚡ Look directly into camera lens" : "🎬 Hand gesture emphasizing key point",
       };
     });
 
     const now = new Date();
-    const dateStr = `Take shot: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+    const dateStr = `Take shot: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
     const newTake: TakeMaterialProject = {
       id: `take-${Date.now()}`,
@@ -522,7 +519,7 @@ export default function StudioPage() {
         timeRange: s.timeRange,
         label: s.hookType || `Shot ${s.shotNumber}`,
         dialogue: s.script,
-        action: s.action || "Giao tiếp mắt tự nhiên",
+        action: s.action || "Natural eye contact",
         hookCode: s.hookType ? "⚡ HOOK" : undefined,
       })),
       fullScript: take.scriptText,
@@ -652,7 +649,7 @@ export default function StudioPage() {
           shotNumber: 1,
           timeRange: "00:00 - 00:15",
           script: scriptText || "Recorded Take Script",
-          action: "Nhìn thẳng vào ống kính máy quay",
+          action: "Look directly into camera lens",
         },
       ];
 
@@ -865,7 +862,7 @@ export default function StudioPage() {
                       disabled={currentShotIndex === 0}
                       onClick={() => setCurrentShotIndex((i) => Math.max(0, i - 1))}
                     >
-                      ← Shot trước
+                      ← Previous Shot
                     </button>
                     <span style={{ fontSize: 11, color: "var(--muted)" }}>
                       {currentShotIndex + 1} / {activePlan.shots.length}
@@ -876,7 +873,7 @@ export default function StudioPage() {
                       disabled={currentShotIndex >= activePlan.shots.length - 1}
                       onClick={() => setCurrentShotIndex((i) => Math.min(activePlan.shots.length - 1, i + 1))}
                     >
-                      Shot tiếp →
+                      Next Shot →
                     </button>
                   </div>
                 </div>
@@ -895,7 +892,7 @@ export default function StudioPage() {
                       &ldquo;{activePlan.shots[currentShotIndex].dialogue}&rdquo;
                     </div>
                     <div className="teleprompter-shot-action">
-                      <span>🎬 <strong>Hành động:</strong> {activePlan.shots[currentShotIndex].action}</span>
+                      <span>🎬 <strong>Action:</strong> {activePlan.shots[currentShotIndex].action}</span>
                     </div>
                   </>
                 )}
@@ -921,7 +918,7 @@ export default function StudioPage() {
                 rows={3}
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
-                placeholder="Dán kịch bản hoặc bấm nút bên dưới để mở Prompt mẫu gửi cho ChatGPT..."
+                placeholder="Paste recording plan or click below to open the prompt template..."
                 disabled={isRecording}
                 style={{ fontSize: 12.5 }}
               />
@@ -934,7 +931,7 @@ export default function StudioPage() {
                   style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
                   <Bot size={14} />
-                  <span>Mở Prompt Mẫu & Dán Output ChatGPT</span>
+                  <span>Open Prompt Template & Paste Output</span>
                 </button>
               </div>
             </FrostedGlassCard>

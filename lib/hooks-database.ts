@@ -22,311 +22,257 @@ export const HOOKS_DATABASE: HookEntry[] = [
   {
     code: "#001",
     category: "appearance",
-    categoryLabel: "Diện mạo & Bối cảnh",
+    categoryLabel: "Appearance & Setting",
     stage: "ideation",
     stageLabel: "Ideation",
     personaTags: ["Obsessive Thinker", "Garage Hacker"],
-    scenario: "Tóc rối, áo thun phai màu, quầng thâm mắt dưới ánh sáng đèn bàn yếu ớt.",
-    spokenHookExample: "Tôi vừa thức trắng 48 tiếng để tìm ra một lỗi mà đáng lẽ không nên tồn tại.",
-    actionCues: "Ánh đèn bàn vàng mờ, góc quay cận mặt mệt mỏi nhưng ánh mắt sáng rực.",
-    psychologicalMechanism: "Nguyên mẫu Hacker (Hacker Archetype) truyền tải sự cống hiến nhận thức tuyệt đối.",
-    algorithmicImpact: "Dừng cuộn tức thì (Thumbstop rate cao) nhờ tính chân thực thô ráp.",
+    scenario: "Messy hair, faded t-shirt, dark under-eye circles under dim desk lighting.",
+    spokenHookExample: "I just stayed awake for 48 hours to track down a bug that never should have existed.",
+    actionCues: "Dim warm desk lamp, close-up face shot looking tired but intense.",
+    psychologicalMechanism: "Hacker archetype conveying extreme cognitive dedication.",
+    algorithmicImpact: "Immediate thumbstop due to unpolished raw authenticity.",
   },
   {
     code: "#002",
     category: "appearance",
-    categoryLabel: "Diện mạo & Bối cảnh",
+    categoryLabel: "Appearance & Setting",
     stage: "ideation",
     stageLabel: "Ideation",
     personaTags: ["High Energy Ideator", "Endurance Athlete"],
-    scenario: "Mặc đồ tập gym ướt đẫm mồ hôi, vừa thở dốc vừa nói ngay trên máy chạy bộ.",
-    spokenHookExample: "Ý tưởng kiếm 1 triệu đô đầu tiên đến lúc tôi kiệt sức nhất ở cây số thứ 15.",
-    actionCues: "Vừa lau mồ hôi bằng khăn vừa nhìn thẳng vào camera, nhịp thở dồn dập.",
-    psychologicalMechanism: "Tín hiệu về sự kỷ luật, endorphin rush tạo ra cảm giác cấp bách cho ý tưởng.",
-    algorithmicImpact: "Tăng tỷ lệ giữ chân 3 giây đầu (Hook rate) nhờ năng lượng động lực học.",
+    scenario: "Sweat-drenched workout clothes, speaking out of breath on a treadmill.",
+    spokenHookExample: "The idea for my first million came when I was completely exhausted at mile 10.",
+    actionCues: "Wiping sweat with towel while looking directly into camera, heavy breathing.",
+    psychologicalMechanism: "Discipline and endorphin rush creating extreme urgency for the idea.",
+    algorithmicImpact: "Boosts first 3s hook rate through dynamic energy.",
   },
   {
     code: "#005",
     category: "appearance",
-    categoryLabel: "Diện mạo & Bối cảnh",
+    categoryLabel: "Appearance & Setting",
     stage: "building",
     stageLabel: "Building",
     personaTags: ["Deep Work Specialist", "Tech Savant"],
-    scenario: "Đeo kính chống ánh sáng xanh, màn hình phản chiếu mã lệnh chớp nhoáng lên tròng kính.",
-    spokenHookExample: "Mọi người nghĩ code AI phức tạp, nhưng đoạn code này chỉ có đúng 12 dòng.",
-    actionCues: "Phản chiếu terminal code xanh lá lên tròng kính, ánh sáng phòng tối.",
-    psychologicalMechanism: "Ngôn ngữ hình ảnh Cyberpunk, biến nhà sáng lập thành cỗ máy xử lý dữ liệu đáng tin cậy.",
-    algorithmicImpact: "Thu hút khán giả chuyên môn kỹ thuật, kéo dài thời gian xem trung bình.",
+    scenario: "Blue-light glasses with terminal code reflecting rapidly off lenses in dark room.",
+    spokenHookExample: "People think AI code is complicated, but this core snippet is exactly 12 lines.",
+    actionCues: "Green terminal code reflecting across glasses, dark ambient room.",
+    psychologicalMechanism: "Cyberpunk visual grammar turning the founder into an authoritative data processor.",
+    algorithmicImpact: "Attracts technical audience, extending average view duration.",
   },
   {
-    code: "#008",
+    code: "#007",
     category: "appearance",
-    categoryLabel: "Diện mạo & Bối cảnh",
-    stage: "marketing",
-    stageLabel: "Marketing",
-    personaTags: ["Cheeky Challenger", "Brand Warrior"],
-    scenario: "Cầm một tách cà phê có in logo của công ty đối thủ nhưng đã bị gạch chéo bằng bút lông đen.",
-    spokenHookExample: "Tại sao giải pháp của đối thủ trị giá 1 tỷ đô lại vô dụng với bạn?",
-    actionCues: "Cầm cốc quay logo bị gạch chéo về phía ống kính, nhấp ngụm cà phê thản nhiên.",
-    psychologicalMechanism: "Sợi dây thị giác gây hấn mang tính biểu tượng, truyền tải sự tự tin của kẻ thách thức.",
-    algorithmicImpact: "Tạo ra thảo luận so sánh thương hiệu, giữ chân người xem ở lại lâu hơn.",
+    categoryLabel: "Appearance & Setting",
+    stage: "building",
+    stageLabel: "Building",
+    personaTags: ["Contrarian Provocateur", "Market Rebel"],
+    scenario: "Holding a coffee mug with competitor logo crossed out in black permanent marker.",
+    spokenHookExample: "Why our competitor's $1B solution is completely useless for you.",
+    actionCues: "Turns mug to display crossed-out logo to lens, calmly takes a sip.",
+    psychologicalMechanism: "Symbolic visual aggression displaying high-conviction challenger mindset.",
+    algorithmicImpact: "Drives brand debate and comment engagement, increasing watch time.",
   },
 
-  // --- Movement Hooks ---
+  // --- Movement & Action Hooks ---
   {
-    code: "#016",
+    code: "#015",
     category: "movement",
-    categoryLabel: "Chuyển động & Động năng",
-    stage: "ideation",
-    stageLabel: "Ideation",
-    personaTags: ["Iconoclast", "Aggressive Rebel"],
-    scenario: "Ném mạnh một quyển sách kinh doanh nổi tiếng vào thùng rác ngay giây đầu.",
-    spokenHookExample: "Hãy vứt cuốn sách này đi nếu bạn muốn thực sự sống sót năm nay.",
-    actionCues: "Ném cuốn sách nghe tiếng 'bộp' vào thùng rác kim loại, nhìn xoáy vào camera.",
-    psychologicalMechanism: "Báng bổ thần tượng (Iconoclasm). Não bộ bị sốc trước hành vi từ chối biểu tượng quen thuộc.",
-    algorithmicImpact: "Tăng vọt tỷ lệ chú ý 3 giây đầu (Hook rate), kích thích sự chia rẽ trong bình luận.",
+    categoryLabel: "Movement & Action",
+    stage: "building",
+    stageLabel: "Building",
+    personaTags: ["Contrarian Provocateur", "Direct Operator"],
+    scenario: "Tossing a famous bestselling business book into a metal trash can on second one.",
+    spokenHookExample: "Throw this book away if you actually want to survive this year.",
+    actionCues: "Throws book with an audible thud into metal bin, locks eyes with camera.",
+    psychologicalMechanism: "Iconoclasm: the brain is jolted when an authority symbol is discarded.",
+    algorithmicImpact: "Spikes 3s hook rate and polarizes comments.",
   },
   {
     code: "#018",
     category: "movement",
-    categoryLabel: "Chuyển động & Động năng",
-    stage: "building",
-    stageLabel: "Building",
-    personaTags: ["Agile Executor", "Action Biased"],
-    scenario: "Xé toạc một bản kế hoạch kinh doanh in trên giấy thành nhiều mảnh nhỏ rồi tung lên không trung.",
-    spokenHookExample: "Kế hoạch 5 năm của bạn đã lỗi thời ngay từ khi bạn in nó ra.",
-    actionCues: "Hai tay xé toang tờ giấy A4, tung mảnh vụn lên không trung trước ống kính.",
-    psychologicalMechanism: "Chuyển động hủy diệt (Destructive motion). Thay đổi trạng thái vật lý tạo sự thỏa mãn thị giác.",
-    algorithmicImpact: "Giữ chân người xem chờ đợi lời giải thích cho hành động phá hoại, kéo dài Dwell time.",
+    categoryLabel: "Movement & Action",
+    stage: "marketing",
+    stageLabel: "Marketing",
+    personaTags: ["Radical Simplifier", "Speed Builder"],
+    scenario: "Tearing a printed 5-year business plan into shreds and tossing pieces into the air.",
+    spokenHookExample: "Your 5-year plan was obsolete the second you pressed print.",
+    actionCues: "Tears A4 paper in two, throws confetti shreds into camera view.",
+    psychologicalMechanism: "Destructive motion creating instant sensory satisfaction.",
+    algorithmicImpact: "Keeps viewers waiting for rationale, boosting dwell time.",
   },
   {
-    code: "#023",
+    code: "#022",
     category: "movement",
-    categoryLabel: "Chuyển động & Động năng",
-    stage: "series_a",
-    stageLabel: "Series A",
-    personaTags: ["Simplifier", "Core Truth Seeker"],
-    scenario: "Dùng bút lông xóa gạch chéo một chuỗi các con số 0 trên bảng, biến 1.000.000 thành 1.",
-    spokenHookExample: "Chúng tôi không cần 1 triệu người dùng ảo. Chúng tôi chỉ cần đúng 1 chỉ số này.",
-    actionCues: "Gạch mạnh bút đỏ xóa bay các số 0 trên bảng trắng, khoanh tròn số 1.",
-    psychologicalMechanism: "Chuyển động loại bỏ sự dư thừa truyền tải triết lý tối giản hóa mạnh mẽ.",
-    algorithmicImpact: "Hình ảnh biến đổi số liệu trở nên dễ nhớ, thúc đẩy tỷ lệ lưu trữ (Saves).",
-  },
-
-  // --- Voice / Auditory Hooks ---
-  {
-    code: "#031",
-    category: "voice",
-    categoryLabel: "Âm thanh & Tông giọng",
-    stage: "ideation",
-    stageLabel: "Ideation",
-    personaTags: ["Conspiracy Theorist", "Whistleblower"],
-    scenario: "Thì thầm sát vào micro nhỏ, ánh mắt láo liên nhìn xung quanh như đang tiết lộ bí mật quốc gia.",
-    spokenHookExample: "Đừng nói cho sếp của bạn biết điều này...",
-    actionCues: "Kéo sát micro cài áo lên sát miệng, nói giọng thì thầm kịch tính.",
-    psychologicalMechanism: "Tâm lý học về sự cấm đoán và bí mật (Forbidden knowledge).",
-    algorithmicImpact: "Ép người xem bật âm lượng tối đa hoặc dừng cuộn để nghe rõ lời thì thầm.",
-  },
-  {
-    code: "#033",
-    category: "voice",
-    categoryLabel: "Âm thanh & Tông giọng",
-    stage: "building",
-    stageLabel: "Building",
-    personaTags: ["Stoic Operator", "Cold Realist"],
-    scenario: "Im lặng hoàn toàn trong 3 giây đầu, chỉ có tiếng gõ bàn phím cơ dồn dập vang lên.",
-    spokenHookExample: "Nếu bạn vẫn đang dùng bảng tính để quản lý khách hàng, bạn đang tự sát.",
-    actionCues: "3 giây đầu hoàn toàn không nói, chỉ gõ phím cơ clicky lách cách, rồi bất ngờ ngẩng đầu nhìn vào camera.",
-    psychologicalMechanism: "Khoảng lặng thính giác (Auditory silence) tạo sự tương phản mạnh mẽ với luồng tin tức ồn ào.",
-    algorithmicImpact: "Tỷ lệ vượt qua 3 giây đầu tuyệt đối nhờ cảm giác căng thẳng được xây dựng bằng âm thanh.",
-  },
-  {
-    code: "#037",
-    category: "voice",
-    categoryLabel: "Âm thanh & Tông giọng",
+    categoryLabel: "Movement & Action",
     stage: "marketing",
     stageLabel: "Marketing",
-    personaTags: ["High Intensity Closer", "Urgent Commander"],
-    scenario: "Nói cực nhanh không ngắt nghỉ với âm lượng lớn như một chỉ huy chiến trường đang giao nhiệm vụ.",
-    spokenHookExample: "Dừng lại! Đừng chi thêm 1 đồng nào cho quảng cáo Facebook nếu bạn chưa làm 3 điều này!",
-    actionCues: "Cúi sát người về phía trước, ánh mắt đanh thép, ngón tay nhịp mạnh theo từng từ.",
-    psychologicalMechanism: "Kích hoạt hạch hạnh nhân (Amygdala activation) qua tín hiệu âm thanh báo động khẩn cấp.",
-    algorithmicImpact: "Giữ tỷ lệ hoàn thành (Completion rate) cao nhờ nhịp điệu nhanh dồn dập.",
+    personaTags: ["Data Pragmatist", "Growth Operator"],
+    scenario: "Crossing out multiple zeroes on a whiteboard with red marker, turning 1,000,000 into 1.",
+    spokenHookExample: "We don't need 1 million vanity users. We only track this single metric.",
+    actionCues: "Strikes through zeros on whiteboard, firmly circles the digit 1.",
+    psychologicalMechanism: "Elimination movement conveying ruthless simplification.",
+    algorithmicImpact: "Visual transformation of numbers drives high save rates.",
   },
 
-  // --- Word / Cognitive Hooks ---
+  // --- Voice & Sound Hooks ---
   {
-    code: "#046",
-    category: "word",
-    categoryLabel: "Từ ngữ & Nghịch lý",
-    stage: "ideation",
-    stageLabel: "Ideation",
-    personaTags: ["Contrarian Thinker", "Paradox Finder"],
-    scenario: "Khẳng định một điều ngược lại hoàn toàn với niềm tin phổ biến của 99% người trong ngành.",
-    spokenHookExample: "Ý tưởng khởi nghiệp càng hay thì tỷ lệ phá sản càng cao. Đây là lý do.",
-    actionCues: "Ngồi khoanh tay điềm tĩnh, nhìn thẳng vào mắt người xem với nụ cười nhẹ đầy tự tin.",
-    psychologicalMechanism: "Sự bất hòa nhận thức (Cognitive dissonance) buộc não bộ phải tìm lời giải thích.",
-    algorithmicImpact: "Bùng nổ bình luận tranh luận giữa 2 luồng quan điểm trái chiều.",
+    code: "#029",
+    category: "voice",
+    categoryLabel: "Voice & Tone",
+    stage: "all_stages",
+    stageLabel: "All Stages",
+    personaTags: ["Insider Analyst", "Undercover Operator"],
+    scenario: "Whispering closely into a lapel mic, looking around like sharing classified intel.",
+    spokenHookExample: "Do not let your boss know about this...",
+    actionCues: "Pulls clip mic right to mouth, delivers in a dramatic whisper.",
+    psychologicalMechanism: "Forbidden knowledge psychology.",
+    algorithmicImpact: "Forces viewers to turn up volume or stop scrolling to hear clearly.",
   },
   {
-    code: "#048",
-    category: "word",
-    categoryLabel: "Từ ngữ & Nghịch lý",
+    code: "#034",
+    category: "voice",
+    categoryLabel: "Voice & Tone",
     stage: "building",
     stageLabel: "Building",
-    personaTags: ["Transparent Builder", "Vulnerable Leader"],
-    scenario: "Công khai một thất bại đau đớn hoặc một con số tài chính tồi tệ mà không giấu giếm.",
-    spokenHookExample: "Tháng trước tôi vừa mất trắng 200 triệu đồng chỉ vì 1 dòng code sai.",
-    actionCues: "Để lộ màn hình dashboard tài chính đỏ rực, thở hắt ra một hơi chân thành.",
-    psychologicalMechanism: "Hiệu ứng Pratfall (Pratfall effect) làm tăng mức độ đáng tin cậy của chuyên gia khi để lộ điểm yếu.",
-    algorithmicImpact: "Chỉ số Chiều sâu (Depth Score) cao nhất nhờ sự đồng cảm sâu sắc và tỷ lệ chia sẻ lớn.",
-  },
-  {
-    code: "#051",
-    category: "word",
-    categoryLabel: "Từ ngữ & Nghịch lý",
-    stage: "marketing",
-    stageLabel: "Marketing",
-    personaTags: ["System Architect", "Cheatsheet Giver"],
-    scenario: "Hứa hẹn một quy trình từng bước hoặc một bản tài liệu cô đọng giải quyết dứt điểm nỗi đau.",
-    spokenHookExample: "Đây là toàn bộ quy trình 3 bước tôi dùng để chốt deal 50.000$ đầu tiên mà không cần quảng cáo.",
-    actionCues: "Giơ tờ checklist hoặc tài liệu 1 trang lên trước camera rồi chỉ vào từng mục.",
-    psychologicalMechanism: "Khao khát đường tắt (Shortcut bias) và nhận thức về giá trị thông tin ngay lập tức.",
-    algorithmicImpact: "Tỷ lệ lưu trữ (Saves) và chia sẻ (Shares) đạt mức tối đa.",
+    personaTags: ["Speed Builder", "Obsessive Thinker"],
+    scenario: "Absolute silence for first 3 seconds with rapid mechanical keyboard typing sound.",
+    spokenHookExample: "(Silent 3s typing) ...I just automated what our agency charged $5,000 for.",
+    actionCues: "Rapid typing on keyboard, suddenly stops and looks straight up into lens.",
+    psychologicalMechanism: "Pattern interrupt through sudden acoustic break.",
+    algorithmicImpact: "High retention during initial silence leading to punchy spoken drop.",
   },
 
-  // --- Rage Bait / Strategic Polarization Hooks ---
+  // --- Word & Text Hooks ---
   {
-    code: "#076",
+    code: "#041",
+    category: "word",
+    categoryLabel: "Word & Hook Copy",
+    stage: "ideation",
+    stageLabel: "Ideation",
+    personaTags: ["Contrarian Provocateur", "Radical Simplifier"],
+    scenario: "Black screen with bold white font: 'Everything you know about PMF is wrong.'",
+    spokenHookExample: "Stop looking for Product-Market Fit. Find Problem-Founder Fit first.",
+    actionCues: "High-contrast text appears with an audible click before founder cuts in.",
+    psychologicalMechanism: "Direct cognitive assault triggering immediate defense/curiosity.",
+    algorithmicImpact: "Short text reading time locks in initial view count.",
+  },
+  {
+    code: "#047",
+    category: "word",
+    categoryLabel: "Word & Hook Copy",
+    stage: "marketing",
+    stageLabel: "Marketing",
+    personaTags: ["Growth Operator", "Data Pragmatist"],
+    scenario: "Staring deadpan into camera for 1 second, then delivering a razor-sharp counterintuitive stat.",
+    spokenHookExample: "Our highest converting landing page has literally zero images and 42 words.",
+    actionCues: "Deadpan look, slight pause, deliver stat with extreme calm.",
+    psychologicalMechanism: "Extreme minimalism violating expectations of complex marketing advice.",
+    algorithmicImpact: "High share rate among practitioners seeking actionable benchmarks.",
+  },
+
+  // --- Editing & Visual Pacing Hooks ---
+  {
+    code: "#061",
+    category: "editing",
+    categoryLabel: "Editing & Pacing",
+    stage: "marketing",
+    stageLabel: "Marketing",
+    personaTags: ["Speed Builder", "High Energy Ideator"],
+    scenario: "Snap zoom cutting in from wide room shot to extreme close-up of founder's eye in 0.5s.",
+    spokenHookExample: "Look closely at this chart before you hire your next engineer.",
+    actionCues: "Two-stage snap zoom timed with audio whoosh.",
+    psychologicalMechanism: "Optical zoom reflexively grabs visual cortex attention.",
+    algorithmicImpact: "Drastically cuts 0–1s drop-off rate.",
+  },
+
+  // --- Rage Bait & Contrarian Hooks ---
+  {
+    code: "#075",
     category: "rage_bait",
-    categoryLabel: "Phân cực & Khiêu khích",
-    stage: "ideation",
-    stageLabel: "Ideation",
-    personaTags: ["High Ego Disruptor", "Provocateur"],
-    scenario: "Tấn công thẳng thắn vào một thói quen hoặc công cụ mà cả ngành đang tôn thờ.",
-    spokenHookExample: "Bằng đại học ngành quản trị kinh doanh là thứ lãng phí tiền bạc nhất tôi từng thấy.",
-    actionCues: "Vừa lắc đầu vừa cười khẩy, giọng điệu châm biếm sâu cay.",
-    psychologicalMechanism: "Thiên kiến tiêu cực (Negativity bias) và phản xạ tự vệ bản ngã của nhóm người bị động chạm.",
-    algorithmicImpact: "Lượng bình luận phản bác và bảo vệ khổng lồ, thuật toán liên tục phân phối lại.",
+    categoryLabel: "Contrarian & Spicy",
+    stage: "all_stages",
+    stageLabel: "All Stages",
+    personaTags: ["Contrarian Provocateur", "Market Rebel"],
+    scenario: "Holding an iPhone showing a popular influencer productivity app, then deleting it.",
+    spokenHookExample: "Productivity apps are designed to keep you unproductive. Here is the proof.",
+    actionCues: "Presses 'Delete App' on camera screen, looks up calmly.",
+    psychologicalMechanism: "Debunking mainstream habits triggers strong disagreement and comments.",
+    algorithmicImpact: "Spikes comment velocity, causing algorithmic distribution loops.",
   },
   {
     code: "#080",
     category: "rage_bait",
-    categoryLabel: "Phân cực & Khiêu khích",
-    stage: "marketing",
-    stageLabel: "Marketing",
-    personaTags: ["Ruthless Meritocrat", "Hard Truth Teller"],
-    scenario: "Vạch trần một ảo tưởng làm giàu hoặc một lời khuyên kinh doanh sáo rỗng trên mạng.",
-    spokenHookExample: "Lý do bạn chưa kiếm được 10.000$/tháng không phải vì thiếu vốn, mà vì sản phẩm của bạn quá tệ.",
-    actionCues: "Nhìn thẳng không chớp mắt, ngắt từng chữ chắc nịch không do dự.",
-    psychologicalMechanism: "Đánh trúng nỗi sợ hãi bất tài (Incompetence fear) kết hợp với mong muốn chứng minh bản thân.",
-    algorithmicImpact: "Dwell time cực cao vì người xem tức giận muốn nghe hết để tìm kẽ hở phản bác.",
+    categoryLabel: "Contrarian & Spicy",
+    stage: "series_a",
+    stageLabel: "Series A",
+    personaTags: ["Bootstrapped Purist", "Direct Operator"],
+    scenario: "Writing 'VC Money' on a card, folding it up, and tucking it into back pocket.",
+    spokenHookExample: "Raising capital is often just a disguised way to avoid building product.",
+    actionCues: "Folds note with slight smirk, taps desk.",
+    psychologicalMechanism: "Contrarian status signaling separating builders from pitch artists.",
+    algorithmicImpact: "Heavy reposts on founder networks and high quote-share ratios.",
   },
 
-  // --- Multimodal & Complex Hooks ---
+  // --- Multi-modal Complex Hooks ---
   {
     code: "#091",
     category: "complex",
-    categoryLabel: "Đa phương thức Phức hợp",
-    stage: "ideation",
-    stageLabel: "Ideation",
-    personaTags: ["Disillusioned Creator", "Radical Truth Teller"],
-    scenario: "Kéo rèm cửa sổ cho ánh sáng chói lòa tràn vào + Thở dài mệt mỏi + 'Sự thật về thu nhập thụ động là nó không hề thụ động.'",
-    spokenHookExample: "Sự thật về thu nhập thụ động là nó không hề thụ động một chút nào.",
-    actionCues: "Kéo phắt rèm cửa cho ánh sáng chói vào camera, thở dài mệt mỏi rồi quay lại nhìn thẳng ống kính.",
-    psychologicalMechanism: "Đánh thức đa giác quan: Ánh sáng mạnh gây sốc thị giác, tiếng thở dài tạo đồng cảm, thông điệp phủ định dối trá.",
-    algorithmicImpact: "Tạo lực tương tác bùng nổ, dễ dàng vượt qua bài kiểm tra chất lượng ban đầu của AI.",
+    categoryLabel: "Multi-modal Complex",
+    stage: "all_stages",
+    stageLabel: "All Stages",
+    personaTags: ["Obsessive Thinker", "Data Pragmatist"],
+    scenario: "Split screen showing real Stripe revenue graph next to founder's calm face.",
+    spokenHookExample: "Here is the exact day our revenue went from zero to $10k MRR, and why.",
+    actionCues: "Points to revenue graph spike, talks directly to viewers.",
+    psychologicalMechanism: "Unimpeachable visual proof combined with transparent storytelling.",
+    algorithmicImpact: "Maximum completion rate and bookmark rate.",
   },
   {
     code: "#092",
     category: "complex",
-    categoryLabel: "Đa phương thức Phức hợp",
+    categoryLabel: "Multi-modal Complex",
     stage: "building",
     stageLabel: "Building",
-    personaTags: ["High Energy Fixer", "Tactical Nerd"],
-    scenario: "Zoom giật cục vào một biểu đồ đang đi xuống + Tốc độ nói cực nhanh + 'Hệ thống vừa sập, và đây là cách tôi sửa trong 5 phút.'",
-    spokenHookExample: "Hệ thống của chúng tôi vừa sập hoàn toàn. Đây là cách tôi sửa nó trong đúng 5 phút.",
-    actionCues: "Camera zoom giật vào màn hình log lỗi đỏ rực, sau đó chuyển nhanh sang mặt founder đang thao tác bàn phím.",
-    psychologicalMechanism: "Cảm giác khủng hoảng cấp tính. Sự kết hợp tốc độ hình ảnh và âm thanh ép não bộ tập trung cao độ.",
-    algorithmicImpact: "Tỷ lệ giữ chân 3s tuyệt đối, lượng Saves khổng lồ do chứa quy trình xử lý sự cố.",
+    personaTags: ["Garage Hacker", "Deep Work Specialist"],
+    scenario: "Dynamic zoom into terminal showing error logs + rapid spoken diagnosis.",
+    spokenHookExample: "Our entire backend went down at 3 AM. Here is what we found in line 402.",
+    actionCues: "Points at terminal error trace, locks eye contact with camera.",
+    psychologicalMechanism: "High-stakes crisis storytelling (War room energy).",
+    algorithmicImpact: "Strong retention through narrative suspense.",
   },
   {
-    code: "#097",
+    code: "#100",
     category: "complex",
-    categoryLabel: "Đa phương thức Phức hợp",
+    categoryLabel: "Multi-modal Complex",
     stage: "all_stages",
     stageLabel: "All Stages",
-    personaTags: ["Provocative Analyst", "Myth Buster"],
-    scenario: "Cầm điện thoại chỉ vào một bài báo giật gân + Giọng nhếch mép châm biếm + 'AI sẽ không lấy đi công việc của bạn. Người biết dùng AI sẽ làm điều đó.'",
-    spokenHookExample: "AI sẽ không cướp việc của bạn. Những người biết dùng AI như thế này mới là người làm điều đó.",
-    actionCues: "Cầm điện thoại đưa sát màn hình bài báo vào ống kính, sau đó kéo về nhìn thẳng người xem với nụ cười tự tin.",
-    psychologicalMechanism: "Sự chỉ điểm vật lý tập trung ánh nhìn, thông điệp đánh vào nỗi sợ hãi thời đại.",
-    algorithmicImpact: "Bùng nổ chia sẻ đa nền tảng vì tính thời sự và tính ứng dụng cao.",
-  },
-  {
-    code: "#099",
-    category: "complex",
-    categoryLabel: "Đa phương thức Phức hợp",
-    stage: "series_a",
-    stageLabel: "Series A / Growth",
-    personaTags: ["Transparent Leader", "Data Evangelist"],
-    scenario: "Màn hình hiển thị dashboard tài chính đỏ rực + Đặt tay lên trán thở dài + 'Dòng tiền của chúng tôi đang chảy máu. Đây là nhật ký cứu sống công ty.'",
-    spokenHookExample: "Dòng tiền của chúng tôi đang chảy máu tuần thứ ba liên tiếp. Đây là nhật ký sống còn.",
-    actionCues: "Quay màn hình đồ thị burn rate, đặt tay lên trán thở dài, sau đó nhìn vào camera với ánh mắt kiên định.",
-    psychologicalMechanism: "Tính chân thực thô ráp kết hợp số liệu kinh doanh cụ thể, tạo cam kết theo dõi series.",
-    algorithmicImpact: "Tỷ lệ Follows sau khi xem cực cao vì muốn theo dõi kết quả của chuỗi nhật ký.",
+    personaTags: ["Radical Simplifier", "Direct Operator"],
+    scenario: "Founder stands in empty room with single microphone, speaking with absolute conviction.",
+    spokenHookExample: "You already know what to say. Stop letting overproduction kill your message.",
+    actionCues: "Direct eye contact, unmoving posture, crystal-clear vocal projection.",
+    psychologicalMechanism: "Raw authentic authority without distraction.",
+    algorithmicImpact: "High emotional resonance and viral shares across founders.",
   },
 ];
 
-export function getAllHooks(): HookEntry[] {
-  return HOOKS_DATABASE;
-}
-
-export function getHookByCode(code: string): HookEntry | undefined {
-  const norm = code.startsWith("#") ? code : `#${code}`;
-  return HOOKS_DATABASE.find((h) => h.code.toLowerCase() === norm.toLowerCase());
-}
-
-export function getHooksByStage(stage: HookEntry["stage"]): HookEntry[] {
-  return HOOKS_DATABASE.filter((h) => h.stage === stage || h.stage === "all_stages");
-}
-
-export function searchHooks(query: string): HookEntry[] {
-  const q = query.toLowerCase().trim();
-  if (!q) return HOOKS_DATABASE;
-  return HOOKS_DATABASE.filter(
+/**
+ * Filter hooks based on founder context & stage.
+ */
+export function recommendHooksForContext(
+  stage: HookEntry["stage"],
+  personaTags: string[] = []
+): HookEntry[] {
+  const matches = HOOKS_DATABASE.filter(
     (h) =>
-      h.code.toLowerCase().includes(q) ||
-      h.categoryLabel.toLowerCase().includes(q) ||
-      h.scenario.toLowerCase().includes(q) ||
-      (h.spokenHookExample && h.spokenHookExample.toLowerCase().includes(q)) ||
-      h.personaTags.some((t) => t.toLowerCase().includes(q)) ||
-      h.psychologicalMechanism.toLowerCase().includes(q),
+      (h.stage === stage || h.stage === "all_stages") &&
+      (personaTags.length === 0 ||
+        h.personaTags.some((tag) => personaTags.includes(tag)))
   );
-}
 
-export function recommendHooksForContext(topic: string, founderKeywords: string[] = []): HookEntry[] {
-  const allTerms = [topic, ...founderKeywords].join(" ").toLowerCase();
-  const scored = HOOKS_DATABASE.map((h) => {
-    let score = 0;
-    for (const tag of h.personaTags) {
-      if (allTerms.includes(tag.toLowerCase())) score += 3;
-    }
-    if (allTerms.includes(h.category)) score += 2;
-    if (allTerms.includes("ai") || allTerms.includes("code") || allTerms.includes("tech") || allTerms.includes("kỹ thuật")) {
-      if (h.personaTags.includes("Tech Savant") || h.personaTags.includes("Tactical Nerd") || h.code === "#097") {
-        score += 4;
-      }
-    }
-    if (allTerms.includes("tiền") || allTerms.includes("vốn") || allTerms.includes("doanh thu") || allTerms.includes("deal")) {
-      if (h.code === "#048" || h.code === "#051" || h.code === "#099") score += 4;
-    }
-    if (allTerms.includes("phản biện") || allTerms.includes("tranh cãi") || allTerms.includes("ngược đời") || allTerms.includes("thực tế")) {
-      if (h.category === "rage_bait" || h.personaTags.includes("Contrarian Thinker")) score += 4;
-    }
-    return { hook: h, score };
-  });
+  if (matches.length > 0) return matches;
 
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, 4).map((s) => s.hook);
+  // Fallback to all matching stage
+  const stageMatches = HOOKS_DATABASE.filter(
+    (h) => h.stage === stage || h.stage === "all_stages"
+  );
+  return stageMatches.length > 0 ? stageMatches : HOOKS_DATABASE.slice(0, 5);
 }

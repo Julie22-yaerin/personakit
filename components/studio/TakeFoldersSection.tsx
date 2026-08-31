@@ -103,7 +103,7 @@ export function TakeFoldersSection({
           }}
         >
           <Plus size={13} />
-          <span>{isCreating ? "Hủy" : "+ Tạo Folder Mới"}</span>
+          <span>{isCreating ? "Cancel" : "+ New Folder"}</span>
         </button>
       </div>
 
@@ -126,7 +126,7 @@ export function TakeFoldersSection({
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder={`Tiêu đề folder (VD: shorts #${takes.length + 1})`}
+            placeholder={`Folder title (e.g. shorts #${takes.length + 1})`}
             style={{
               padding: "7px 10px",
               background: "rgba(255, 255, 255, 0.05)",
@@ -140,7 +140,7 @@ export function TakeFoldersSection({
             rows={3}
             value={newScript}
             onChange={(e) => setNewScript(e.target.value)}
-            placeholder="Dán nội dung script của short này..."
+            placeholder="Paste script content for this short..."
             style={{
               padding: "8px 10px",
               background: "rgba(255, 255, 255, 0.05)",
@@ -156,14 +156,14 @@ export function TakeFoldersSection({
               onClick={() => setIsCreating(false)}
               className="btn btn-ghost btn-sm"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={!newScript.trim()}
               className="btn btn-primary btn-sm"
             >
-              Lưu Folder
+              Save Folder
             </button>
           </div>
         </form>
@@ -290,8 +290,8 @@ export function TakeFoldersSection({
                   }}
                 />
                 <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#00f0ff", fontFamily: "monospace" }}>
-                  <span>🎬 Shot 1: Video đã sản xuất ({selectedTake.totalDuration})</span>
-                  <span style={{ color: "#10b981" }}>⏱️ Timerange: {selectedTake.shots[0]?.timeRange || "0:00 - 0:30"}</span>
+                  <span>🎬 Shot 1: Produced Video Footage ({selectedTake.totalDuration})</span>
+                  <span style={{ color: "#10b981" }}>⏱️ Time Range: {selectedTake.shots[0]?.timeRange || "0:00 - 0:30"}</span>
                 </div>
               </div>
             )}

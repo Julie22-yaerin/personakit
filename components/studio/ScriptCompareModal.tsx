@@ -213,9 +213,9 @@ export function ScriptCompareModal({
               <div
                 style={{
                   padding: "10px 14px",
-                  background: "rgba(0, 240, 255, 0.08)",
+                  background: "rgba(245, 158, 11, 0.12)",
                   borderRadius: 10,
-                  border: "1px solid rgba(0, 240, 255, 0.2)",
+                  border: "1px solid rgba(245, 158, 11, 0.4)",
                   fontSize: 12,
                   color: "#00f0ff",
                   display: "flex",
@@ -225,7 +225,7 @@ export function ScriptCompareModal({
               >
                 <Flame size={14} color="#f59e0b" />
                 <span>
-                  <strong>Viral Enhancements:</strong> Đã chèn 3s Pattern Interrupt Hook đầu video, Rage-Bait contrarian clause và các cử chỉ động tác trực diện.
+                  <strong>Viral Enhancements:</strong> Added a 3s Pattern Interrupt Hook, a contrarian clause, and direct camera actions.
                 </span>
               </div>
 
@@ -314,7 +314,7 @@ export function ScriptCompareModal({
                   color: "#cbd5e1",
                 }}
               >
-                📄 <strong>Original Format:</strong> Giữ nguyên lời thoại gốc của bạn, chia nhỏ thành các câu dễ đọc kèm khoảng thời gian và hành động tự nhiên.
+                📄 <strong>Original Format:</strong> Preserves your original dialogue, divided into readable sentences with natural time ranges and simple camera actions.
               </div>
 
               <div

@@ -4,37 +4,22 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Sparkles,
   Send,
-  Clapperboard,
+  Play,
   Clock,
   Zap,
-  ShieldCheck,
   Flame,
-  ArrowRight,
-  RefreshCw,
-  MessageSquare,
   Bot,
-  User as UserIcon,
-  Play,
+  User,
+  RefreshCw,
 } from "lucide-react";
-import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
-import type {
-  PreFilmingPlan,
-  PreFilmingLLMResult,
-  FounderContext,
-  ShotItem,
-} from "@/lib/pre-filming-llm";
+import type { PreFilmingPlan, ShotItem, FounderContext } from "@/lib/pre-filming-llm";
 
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   plan?: PreFilmingPlan;
-  recommendedHooks?: Array<{
-    code: string;
-    title: string;
-    category: string;
-    promptTemplate: string;
-  }>;
+  recommendedHooks?: Array<{ code: string; title: string; promptTemplate: string }>;
   timestamp: string;
 }
 
@@ -44,10 +29,10 @@ interface PreFilmingPaneProps {
 }
 
 const QUICK_PROMPTS = [
-  { label: "⚡ 30s Contrarian Hook", prompt: "Tạo kịch bản 30s với góc nhìn đi ngược số đông trong ngành của tôi." },
-  { label: "🎬 Honest Failure Story", prompt: "Soạn kịch bản 30s kể về một thất bại thực tế và bài học xương máu (Pratfall Hook)." },
-  { label: "🎯 3-Step Tactical Teardown", prompt: "Soạn kịch bản 30s hướng dẫn 3 bước giải quyết dứt điểm nỗi đau lớn nhất của khách hàng." },
-  { label: "🚀 Product Trojan Horse", prompt: "Tạo kịch bản video ngắn lồng ghép sản phẩm của tôi như một công cụ sinh tồn tất yếu." },
+  { label: "⚡ 30s Contrarian Hook", prompt: "Create a 30s video script with a contrarian take that goes against the crowd in my industry." },
+  { label: "🎬 Honest Failure Story", prompt: "Draft a 30s script sharing a real failure and the painful lesson learned (Pratfall Hook)." },
+  { label: "🎯 3-Step Tactical Teardown", prompt: "Write a 30s script teaching 3 actionable steps to eliminate our customer's biggest bottleneck." },
+  { label: "🚀 Product Trojan Horse", prompt: "Create a short script positioning my product naturally as an essential survival tool." },
 ];
 
 export function PreFilmingPane({
@@ -59,7 +44,7 @@ export function PreFilmingPane({
       id: "welcome",
       role: "assistant",
       content:
-        "Chào bạn! Tôi là **Founder Content Guard & Tactical Short-Form Director**. Tôi đã nạp toàn bộ hồ sơ tính cách (Persona) và định vị thương hiệu của bạn. Tôi sẽ giúp bạn brainstorm ý tưởng, chọn điểm chạm (Hook 3s đầu) từ kho 100 Hooks, và chia kịch bản thành từng shot quay cụ thể từ giây x đến giây y. Bạn muốn quay chủ đề gì hôm nay?",
+        "Hello! I am your **Founder Content Guard & Tactical Short-Form Director**. I have loaded your brand positioning and persona profile. I can help you brainstorm ideas, pick high-retention hooks, and split scripts into timed shots from second X to second Y. What topic would you like to record today?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -80,7 +65,7 @@ export function PreFilmingPane({
     if (!text || loading) return;
 
     const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: `usr-${Date.now()}`,
       role: "user",
       content: text,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -91,48 +76,40 @@ export function PreFilmingPane({
     setLoading(true);
 
     try {
-      const history = messages.slice(-6).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
       const res = await fetch("/api/studio/pre-filming", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: text,
-          history,
-          context: founderContext,
+          prompt: text,
+          founderContext,
+          chatHistory: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
       if (!res.ok) {
-        throw new Error("Lỗi khi kết nối với AI Director.");
+        throw new Error("Failed to connect to AI Director.");
       }
 
-      const data: PreFilmingLLMResult = await res.json();
+      const data = await res.json();
 
-      const assistantMsg: ChatMessage = {
-        id: `assistant-${Date.now()}`,
+      const aiMsg: ChatMessage = {
+        id: `ai-${Date.now()}`,
         role: "assistant",
-        content: data.reply,
+        content: data.directorFeedback || "Here is the structured shooting breakdown for your video:",
         plan: data.plan,
         recommendedHooks: data.recommendedHooks,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err) {
-      console.error("Pre-filming AI error:", err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          role: "assistant",
-          content: "Đã có lỗi xảy ra trong quá trình tạo kịch bản. Vui lòng thử lại.",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (err: unknown) {
+      const fallbackMsg: ChatMessage = {
+        id: `err-${Date.now()}`,
+        role: "assistant",
+        content: "An error occurred while generating the filming plan. Please try again.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
       setLoading(false);
     }
@@ -145,27 +122,15 @@ export function PreFilmingPane({
     }
   };
 
-  const brandVoice = founderContext.companyContext?.brandVoice || "Radical Authenticity";
-  const product = founderContext.companyContext?.productDescription || "Founder Toolkit";
-
   return (
-    <div className="prefilming-container">
-      {/* Header Context Indicator */}
-      <div className="prefilming-header">
-        <div className="prefilming-header-title">
-          <Clapperboard size={18} className="text-cyan-400" />
-          <span>Pre-Filming AI Director</span>
+    <div className="prefilming-pane-container">
+      {/* Header */}
+      <div className="prefilming-pane-header">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} className="text-cyan-400" />
+          <span className="prefilming-title">AI Director & Hook Advisor</span>
         </div>
-        <div className="prefilming-badge-group">
-          <span className="prefilming-badge-pill" title="Persona Guard Active">
-            <ShieldCheck size={12} className="text-emerald-400" />
-            <span>Voice: {brandVoice}</span>
-          </span>
-          <span className="prefilming-badge-pill" title="100-Hooks Library Connected">
-            <Zap size={12} className="text-amber-400" />
-            <span>100 Hooks Engine</span>
-          </span>
-        </div>
+        <span className="prefilming-badge">100 Hook Vault Active</span>
       </div>
 
       {/* Quick Prompts Bar */}
@@ -174,27 +139,29 @@ export function PreFilmingPane({
           <button
             key={idx}
             type="button"
-            className="prefilming-prompt-chip"
-            disabled={loading}
+            className="prefilming-chip"
             onClick={() => handleSendMessage(qp.prompt)}
+            disabled={loading}
           >
             {qp.label}
           </button>
         ))}
       </div>
 
-      {/* Messages Stream */}
-      <div className="prefilming-messages">
+      {/* Messages Scroll Area */}
+      <div className="prefilming-messages-area">
         {messages.map((m) => (
-          <div key={m.id} className={`prefilming-msg-row ${m.role === "user" ? "msg-user" : "msg-assistant"}`}>
+          <div
+            key={m.id}
+            className={`prefilming-msg-row ${m.role === "user" ? "msg-user" : "msg-assistant"}`}
+          >
             <div className="prefilming-avatar">
-              {m.role === "user" ? <UserIcon size={14} /> : <Bot size={14} />}
+              {m.role === "user" ? <User size={14} /> : <Bot size={14} />}
             </div>
-
             <div className="prefilming-msg-bubble">
-              <div className="prefilming-msg-content">{m.content}</div>
+              <div className="prefilming-msg-text">{m.content}</div>
 
-              {/* If message has a structured Shot Breakdown Plan */}
+              {/* Render Structured Plan if AI produced one */}
               {m.plan && (
                 <div className="prefilming-plan-card">
                   <div className="prefilming-plan-head">
@@ -209,10 +176,10 @@ export function PreFilmingPane({
                       type="button"
                       className="btn btn-primary btn-sm prefilming-load-btn"
                       onClick={() => onLoadScriptIntoFilming(m.plan!)}
-                      title="Nạp kịch bản này vào Studio bên phải để quay ngay"
+                      title="Load this script into the Studio teleprompter"
                     >
                       <Play size={13} fill="currentColor" />
-                      <span>Nạp vào Studio Quay</span>
+                      <span>Load into Studio</span>
                     </button>
                   </div>
 
@@ -235,16 +202,16 @@ export function PreFilmingPane({
                         </div>
 
                         <div className="prefilming-shot-dialogue">
-                          <strong>Lời thoại:</strong> &ldquo;{shot.dialogue}&rdquo;
+                          <strong>Dialogue:</strong> &ldquo;{shot.dialogue}&rdquo;
                         </div>
 
                         <div className="prefilming-shot-action">
-                          <strong>🎬 Động tác / Đạo cụ:</strong> {shot.action}
+                          <strong>🎬 Action / Props:</strong> {shot.action}
                         </div>
 
                         {shot.moodTip && (
                           <div className="prefilming-shot-mood">
-                            <strong>Nhịp điệu:</strong> {shot.moodTip}
+                            <strong>Pacing / Mood:</strong> {shot.moodTip}
                           </div>
                         )}
                       </div>
@@ -258,7 +225,7 @@ export function PreFilmingPane({
                       onClick={() => onLoadScriptIntoFilming(m.plan!)}
                     >
                       <Play size={14} fill="currentColor" style={{ marginRight: 6 }} />
-                      Chuyển sang Teleprompter & Quay Shot này
+                      Switch to Teleprompter & Record This Plan
                     </button>
                   </div>
                 </div>
@@ -269,7 +236,7 @@ export function PreFilmingPane({
                 <div className="prefilming-hooks-suggestions">
                   <div className="prefilming-hooks-title">
                     <Flame size={12} className="text-amber-400" />
-                    <span>Gợi ý Hook biến thể từ kho 100 Hooks:</span>
+                    <span>Hook suggestions from 100 Hook Vault:</span>
                   </div>
                   <div className="prefilming-hooks-grid">
                     {m.recommendedHooks.map((h, i) => (
@@ -300,7 +267,7 @@ export function PreFilmingPane({
             </div>
             <div className="prefilming-msg-bubble prefilming-loading-bubble">
               <RefreshCw size={14} className="animate-spin text-cyan-400" />
-              <span>AI Director đang đọc Persona & soạn kịch bản từng shot...</span>
+              <span>AI Director is analyzing Persona & crafting timed shot sequence...</span>
             </div>
           </div>
         )}
@@ -321,14 +288,14 @@ export function PreFilmingPane({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Yêu cầu AI Director soạn kịch bản, gợi ý hook, hay chỉnh sửa shot (Enter để gửi)..."
+          placeholder="Ask AI Director to craft a script, suggest hooks, or adjust shots (Press Enter to send)..."
           disabled={loading}
         />
         <button
           type="submit"
           className="btn btn-primary prefilming-send-btn"
           disabled={loading || !input.trim()}
-          title="Gửi yêu cầu"
+          title="Send message"
         >
           <Send size={15} />
         </button>

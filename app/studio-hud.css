@@ -525,7 +525,7 @@
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
 }
 
-/* Quality Gauge Bars ("dạng thanh") */
+/* Quality Gauge Bars (Linear progress meters) */
 .hud-quality-gauge-item {
   display: flex;
   flex-direction: column;

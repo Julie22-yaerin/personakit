@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { generateNvidiaJSON, isNvidiaConfigured } from "./nvidia";
 import type { FounderContext } from "./pre-filming-llm";
 
@@ -66,9 +65,9 @@ export function transformScriptDeterministic(
   context?: FounderContext
 ): ScriptComparisonResult {
   const sentences = splitIntoShortSentences(sourceText);
-  const brandVoice = context?.companyContext?.brandVoice || "Thẳng thắn, sắc bén";
+  const brandVoice = context?.companyContext?.brandVoice || "Direct & Authoritative";
 
-  // 1. Build Original Formatted Version (Clean time ranges & natural actions, no extra rage-bait/hooks)
+  // 1. Build Original Formatted Version
   let currentTime = 0;
   const originalRows: ScriptRow[] = sentences.map((sent, idx) => {
     const wordCount = sent.split(/\s+/).length;
@@ -76,10 +75,10 @@ export function transformScriptDeterministic(
     const timeRange = formatTimeRange(currentTime, currentTime + duration);
     currentTime += duration;
 
-    let defaultAction = "Nhìn thẳng vào ống kính máy quay với phong thái tự tin";
-    if (idx === 0) defaultAction = "Giao tiếp mắt trực diện, tư thế mở";
-    else if (idx === sentences.length - 1) defaultAction = "Hạ nhẹ tông giọng, chốt kết luận vững vàng";
-    else if (idx % 2 === 1) defaultAction = "Dùng tay nhấn mạnh từ khóa chính";
+    let defaultAction = "Look directly into camera lens with confident posture";
+    if (idx === 0) defaultAction = "Direct eye contact, open posture";
+    else if (idx === sentences.length - 1) defaultAction = "Lower vocal tone slightly, conclude with firm nod";
+    else if (idx % 2 === 1) defaultAction = "Hand gesture emphasizing key insight";
 
     return {
       shotNumber: idx + 1,
@@ -93,13 +92,13 @@ export function transformScriptDeterministic(
     (r) => `• [${r.timeRange}] — Script: "${r.script}" — Action: ${r.action}`
   );
 
-  // 2. Build Enhanced "Best" Version (Adds 3s Contrarian Hook, Rage Bait, High-Impact Physical Actions)
-  const hookIntro = "Dừng lại ngay nếu bạn vẫn đang làm theo cách truyền thống này:";
-  const rageBaitClause = "Sự thật mất lòng mà 95% mọi người trong ngành không dám thừa nhận:";
+  // 2. Build Enhanced "Best" Version
+  const hookIntro = "Stop doing this the traditional way immediately:";
+  const rageBaitClause = "The hard truth 95% of people in this space won't admit:";
   
   const enhancedSentences = [
     hookIntro,
-    sentences[0] || "Cách làm cũ đã lỗi thời hoàn toàn.",
+    sentences[0] || "The old workflow is completely obsolete.",
     rageBaitClause,
     ...sentences.slice(1),
   ];
@@ -112,21 +111,21 @@ export function transformScriptDeterministic(
     const timeRange = formatTimeRange(enhancedTime, enhancedTime + duration);
     enhancedTime += duration;
 
-    let action = "Chỉ tay dứt khoát vào camera";
+    let action = "Point decisively toward camera";
     let hookType: string | undefined = undefined;
 
     if (isHook) {
-      action = "⚡ Cầm đạo cụ / gõ tay xuống bàn ngắt nhịp (Pattern Interrupt), mắt nhìn xoáy vào camera";
-      hookType = "🔥 3s Viral Hook (Ngắt dòng chú ý)";
+      action = "⚡ Tap desk or hold prop (Pattern Interrupt), lock eyes with camera";
+      hookType = "🔥 3s Viral Hook";
     } else if (isRage) {
-      action = "⚡ Lắc đầu nhẹ, hạ thấp giọng tạo độ chân thực & kích thích tranh luận (Rage-Bait Tracing)";
-      hookType = "⚡ Rage-Bait / Contrarian Trigger";
+      action = "⚡ Slight head shake, lower pitch for authenticity & debate";
+      hookType = "⚡ Contrarian Trigger";
     } else if (idx === enhancedSentences.length - 1) {
-      action = "🎬 Mỉm cười dứt khoát, ra hiệu hành động rõ ràng cho khán giả";
+      action = "🎬 Decisive smile, clear call to action for audience";
     } else if (idx % 2 === 0) {
-      action = "🎬 Đổi góc nhìn / chỉ tay sang màn hình dẫn chứng";
+      action = "🎬 Shift perspective / point toward demonstration screen";
     } else {
-      action = "🎬 Nhấn mạnh biểu cảm khuôn mặt theo nhịp điệu";
+      action = "🎬 Emphasize facial expression in sync with rhythm";
     }
 
     return {
@@ -174,7 +173,7 @@ Given a raw script submitted by a founder, process it into TWO comparison versio
 2. "enhancedBest":
    - Split into punchy, high-retention shots.
    - Add a high-converting 3-second Hook at the beginning (Pattern Interrupt / Contrarian).
-   - Inject a contextual rage-bait / spicy opinion element to trigger comments and debate.
+   - Inject a contextual contrarian element to trigger comments and debate.
    - Add dynamic physical filming actions (e.g. whiteboard gesture, prop tap, camera lean-in).
    - Divide into tight sequential time ranges.
 
@@ -202,7 +201,6 @@ export async function processScriptIntoComparison(
 ): Promise<ScriptComparisonResult> {
   const fallback = transformScriptDeterministic(sourceText, context);
 
-  // If Nvidia or Anthropic is available, attempt AI enhancement
   if (isNvidiaConfigured("extractor") || process.env.ANTHROPIC_API_KEY) {
     try {
       if (isNvidiaConfigured("extractor")) {

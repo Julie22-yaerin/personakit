@@ -30,60 +30,60 @@ export interface ScriptFolderProject {
 const DEFAULT_FOLDERS: ScriptFolderProject[] = [
   {
     id: "folder-contrarian",
-    title: "Take #1 · Contrarian Hook",
+    title: "shorts #1 · Contrarian Hook",
     totalDuration: "00:30",
-    scriptText: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống. Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn. Hãy chia nhỏ thành từng cú máy 15 giây.",
+    scriptText: "Stop recording content the traditional way. The hard truth 95% of founders won't admit: lengthy scripts destroy your retention. Break your video into 15-second shots instead.",
     shots: [
       {
         shotNumber: 1,
         timeRange: "00:00 - 00:03",
-        script: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống.",
-        action: "⚡ Nhìn xoáy thẳng vào ống kính máy quay, gõ tay ngắt nhịp",
+        script: "Stop recording content the traditional way.",
+        action: "⚡ Look directly into camera lens, gesture to pause",
         hookType: "🔥 3s Pattern Interrupt",
       },
       {
         shotNumber: 2,
         timeRange: "00:03 - 00:10",
-        script: "Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn.",
-        action: "⚡ Lắc đầu nhẹ, hạ thấp giọng tạo độ chân thực",
-        hookType: "⚡ Rage-Bait / Contrarian",
+        script: "The hard truth 95% of founders won't admit: lengthy scripts destroy your retention.",
+        action: "⚡ Slight head shake, lower tone for authenticity",
+        hookType: "⚡ Contrarian",
       },
       {
         shotNumber: 3,
         timeRange: "00:10 - 00:20",
-        script: "Hãy chia nhỏ thành từng cú máy 15 giây và quay từng hành động một.",
-        action: "🎬 Chỉ tay sang màn hình dẫn chứng",
+        script: "Break your video into 15-second shots and record one single action at a time.",
+        action: "🎬 Point toward screen to demonstrate",
       },
     ],
-    createdAt: "Vừa xong",
+    createdAt: "Just now",
   },
   {
     id: "folder-product-launch",
-    title: "Take #2 · Product Teardown",
+    title: "shorts #2 · Product Teardown",
     totalDuration: "00:45",
-    scriptText: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật. Quá nhiều nút bấm, quá nhiều rối rắm. Đây là cách chúng tôi giải quyết bài toán đó.",
+    scriptText: "Most current recording tools make you feel like performing surgery. Too many buttons, too much friction before hitting record. Here is how we simplify it into single executable shots.",
     shots: [
       {
         shotNumber: 1,
         timeRange: "00:00 - 00:05",
-        script: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật.",
-        action: "🎬 Nâng ly cà phê, ánh mắt tự nhiên hướng vào camera",
+        script: "Most current recording tools make you feel like performing surgery.",
+        action: "🎬 Pick up coffee mug, look naturally at camera",
         hookType: "🎯 Problem Hook",
       },
       {
         shotNumber: 2,
         timeRange: "00:05 - 00:15",
-        script: "Quá nhiều nút bấm, quá nhiều rối rắm trước khi bấm máy.",
-        action: "🎬 Đưa tay nhấn mạnh từ khóa",
+        script: "Too many buttons, too much friction before hitting record.",
+        action: "🎬 Gesture with hand to emphasize key friction point",
       },
       {
         shotNumber: 3,
         timeRange: "00:15 - 00:30",
-        script: "Đây là cách chúng tôi giải quyết bài toán đó trong 1 shot duy nhất.",
-        action: "🎬 Mỉm cười, chốt luận điểm vững vàng",
+        script: "Here is how we simplify it into single executable shots.",
+        action: "🎬 Confident nod, close the point solidly",
       },
     ],
-    createdAt: "Hôm nay",
+    createdAt: "Today",
   },
 ];
 
@@ -151,17 +151,17 @@ export function ScriptTeleprompterModal({
         shotNumber: idx + 1,
         timeRange,
         script: sent,
-        action: idx === 0 ? "⚡ Nhìn thẳng camera, tạo điểm chạm ban đầu" : "🎬 Cử chỉ tay nhấn mạnh thông điệp",
+        action: idx === 0 ? "⚡ Look directly into camera" : "🎬 Hand gesture emphasizing key message",
       };
     });
 
     const newFolder: ScriptFolderProject = {
       id: `folder-${Date.now()}`,
-      title: folderTitle.trim() || `Script Folder #${folders.length + 1}`,
+      title: folderTitle.trim() || `shorts #${folders.length + 1}`,
       totalDuration: `${currTime}s`,
       scriptText: inputScript.trim(),
       shots: generatedShots,
-      createdAt: "Vừa tạo",
+      createdAt: "Just created",
     };
 
     const updated = [newFolder, ...folders];
@@ -185,7 +185,7 @@ export function ScriptTeleprompterModal({
         timeRange: s.timeRange,
         label: s.hookType || `Shot ${s.shotNumber}`,
         dialogue: s.script,
-        action: s.action || "Giao tiếp mắt tự nhiên",
+        action: s.action || "Natural eye contact",
         hookCode: s.hookType ? "⚡ HOOK" : undefined,
       })),
       fullScript: activeFolder.scriptText,
@@ -205,8 +205,8 @@ export function ScriptTeleprompterModal({
         alignItems: "center",
         justifyContent: "center",
         background: "rgba(2, 6, 16, 0.85)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
         padding: "16px",
       }}
       onClick={onClose}
@@ -215,38 +215,36 @@ export function ScriptTeleprompterModal({
         style={{
           width: "100%",
           maxWidth: 960,
-          minHeight: 560,
-          maxHeight: "92vh",
+          maxHeight: "90vh",
           background: "rgba(10, 14, 28, 0.95)",
-          border: "1px solid rgba(0, 240, 255, 0.35)",
+          border: "1px solid rgba(0, 240, 255, 0.3)",
           borderRadius: 24,
-          boxShadow: "0 30px 90px rgba(0, 0, 0, 0.9), 0 0 50px rgba(0, 240, 255, 0.18)",
+          boxShadow: "0 25px 80px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 240, 255, 0.15)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          position: "relative",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header */}
+        {/* Header */}
         <div
           style={{
-            padding: "16px 24px",
+            padding: "18px 24px",
             borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: "rgba(14, 20, 40, 0.7)",
+            background: "rgba(14, 20, 40, 0.8)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 12,
-                background: "rgba(0, 240, 255, 0.16)",
-                border: "1px solid #00f0ff",
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: "rgba(0, 240, 255, 0.12)",
+                border: "1px solid rgba(0, 240, 255, 0.4)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -259,7 +257,7 @@ export function ScriptTeleprompterModal({
                 Script & Teleprompter Folder Center
               </h2>
               <p style={{ fontSize: 12, color: "var(--p-text-secondary)", margin: 0 }}>
-                Mỗi kịch bản & nội dung paste = 1 Folder chứa các Shot sắp xếp theo khung thời gian
+                Each script & paste = 1 Folder containing shots arranged by timed ranges
               </p>
             </div>
           </div>
@@ -368,7 +366,7 @@ export function ScriptTeleprompterModal({
               rows={4}
               value={inputScript}
               onChange={(e) => setInputScript(e.target.value)}
-              placeholder="Dán kịch bản vào đây... AI sẽ tự động phân tách thành các câu ngắn, chèn 3s Hook, Rage-Bait và gán Time-ranges cụ thể."
+              placeholder="Paste your recording plan here (Time range — Talking script — Action)..."
               style={{
                 width: "100%",
                 padding: "12px 14px",
@@ -405,7 +403,7 @@ export function ScriptTeleprompterModal({
                 }}
               >
                 <Sparkles size={14} />
-                <span>{scriptLoading ? "Đang tối ưu..." : "AI Optimize (Hooks & Rage-Bait)"}</span>
+                <span>{scriptLoading ? "Optimizing..." : "AI Optimize (Structured Shots)"}</span>
               </button>
 
               <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 220 }}>
@@ -413,7 +411,7 @@ export function ScriptTeleprompterModal({
                   type="text"
                   value={folderTitle}
                   onChange={(e) => setFolderTitle(e.target.value)}
-                  placeholder="Tên Folder mới (VD: Take #3)"
+                  placeholder="Folder title (e.g. shorts #3)"
                   style={{
                     flex: 1,
                     padding: "8px 12px",
@@ -450,47 +448,53 @@ export function ScriptTeleprompterModal({
             </div>
           </div>
 
-          {/* ACTIVE SHOTS LIST (Sorted by Time-range) */}
+          {/* ACTIVE SHOT BREAKDOWN LIST */}
           {activeFolder && activeFolder.shots.length > 0 && (
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span className="p-mono" style={{ fontSize: 12, color: "#10b981", fontWeight: 700 }}>
-                  ⏱️ SHOTS IN CURRENT FOLDER (Sorted by Time Range)
+                <span className="p-mono" style={{ fontSize: 12, color: "var(--p-text-secondary)", fontWeight: 700 }}>
+                  TIMED SHOT PREVIEW ({activeFolder.shots.length} SHOTS)
                 </span>
-                <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                  {activeFolder.shots.length} takes • {activeFolder.totalDuration} Total
+                <span style={{ fontSize: 11, color: "var(--accent-dim)" }}>
+                  Total Duration: {activeFolder.totalDuration}
                 </span>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {activeFolder.shots.map((shot) => (
+                {activeFolder.shots.map((shot, idx) => (
                   <div
-                    key={shot.shotNumber}
+                    key={idx}
                     style={{
                       padding: "10px 14px",
-                      background: shot.hookType ? "rgba(0, 240, 255, 0.06)" : "rgba(255, 255, 255, 0.03)",
-                      border: `1px solid ${shot.hookType ? "rgba(0, 240, 255, 0.25)" : "rgba(255, 255, 255, 0.07)"}`,
+                      background: "rgba(255, 255, 255, 0.03)",
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
                       borderRadius: 10,
                       display: "flex",
                       flexDirection: "column",
                       gap: 4,
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="prefilming-shot-num">Shot {shot.shotNumber}</span>
-                      <span className="prefilming-shot-timerange">{shot.timeRange}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#00f0ff", fontFamily: "var(--font-mono)" }}>
+                          Shot #{shot.shotNumber}
+                        </span>
+                        <span style={{ fontSize: 11, color: "var(--muted)", background: "rgba(255,255,255,0.05)", padding: "1px 6px", borderRadius: 4 }}>
+                          ⏱️ {shot.timeRange}
+                        </span>
+                      </div>
                       {shot.hookType && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#00f0ff", background: "rgba(0, 240, 255, 0.15)", padding: "1px 6px", borderRadius: 4 }}>
+                        <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>
                           {shot.hookType}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>
-                      💬 &ldquo;{shot.script}&rdquo;
+                    <div style={{ fontSize: 13, color: "#f1f5f9", lineHeight: 1.45 }}>
+                      &ldquo;{shot.script}&rdquo;
                     </div>
                     {shot.action && (
-                      <div style={{ fontSize: 11, color: "#10b981", fontFamily: "inherit" }}>
-                        🎬 {shot.action}
+                      <div style={{ fontSize: 11.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}>
+                        <span>🎬 Action: {shot.action}</span>
                       </div>
                     )}
                   </div>
@@ -503,7 +507,7 @@ export function ScriptTeleprompterModal({
         {/* Footer Actions */}
         <div
           style={{
-            padding: "14px 24px",
+            padding: "16px 24px",
             borderTop: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             justifyContent: "space-between",
@@ -514,40 +518,26 @@ export function ScriptTeleprompterModal({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: "transparent",
-              color: "var(--muted)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: 10,
-              padding: "8px 16px",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
+            className="btn btn-ghost btn-sm"
+            style={{ color: "var(--muted)" }}
           >
-            Cancel / Close
+            Cancel
           </button>
 
           <button
             type="button"
             onClick={handleLaunchFilming}
+            className="btn btn-primary"
             style={{
-              background: "#00f0ff",
-              color: "#050814",
-              border: "none",
-              borderRadius: 12,
-              padding: "10px 24px",
-              fontSize: 13.5,
-              fontWeight: 800,
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(0, 240, 255, 0.4)",
               display: "flex",
               alignItems: "center",
               gap: 8,
-              transition: "all 0.15s ease",
+              padding: "10px 24px",
+              fontWeight: 700,
             }}
           >
-            <Camera size={16} />
-            <span>Load into Teleprompter & Start Filming</span>
+            <Play size={15} fill="currentColor" />
+            <span>Load Folder into Teleprompter & Shoot</span>
           </button>
         </div>
       </div>

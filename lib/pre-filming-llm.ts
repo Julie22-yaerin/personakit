@@ -1,59 +1,72 @@
 import { z } from "zod";
 import { generateNvidiaJSON, isNvidiaConfigured } from "./nvidia";
-import { recommendHooksForContext, getAllHooks } from "./hooks-database";
-import type { PersonaVector, StyleSuggestions } from "./persona";
+import { recommendHooksForContext, type HookEntry } from "./hooks-database";
 
 export interface ShotItem {
   shotNumber: number;
-  timeRange: string; // e.g., "00:00 - 00:03"
-  label: string; // e.g., "Hook 3s đầu", "Claim & Bối cảnh", "Minh chứng", "Punchline & CTA"
-  dialogue: string; // Spoken dialogue line in founder's personal voice
-  action: string; // Physical action, gesture, camera movement, prop
-  hookCode?: string; // e.g., "#092"
-  moodTip?: string; // e.g., "Nói nhanh dồn dập, nhìn thẳng camera"
+  timeRange: string; // e.g. "00:00 - 00:03", "00:03 - 00:15"
+  label: string; // e.g., "3s Hook", "Claim & Context", "Proof Point", "Punchline & CTA"
+  dialogue: string; // Spoken words for teleprompter
+  action: string; // Physical gesture, camera angle, eye contact, props
+  hookCode?: string; // e.g., "#001", "#092"
+  moodTip?: string; // e.g., "Fast delivery, direct eye contact"
 }
-
-export const ShotItemSchema = z.object({
-  shotNumber: z.number().int().min(1),
-  timeRange: z.string().min(1).max(30),
-  label: z.string().min(1).max(60),
-  dialogue: z.string().min(1).max(1000),
-  action: z.string().min(1).max(500),
-  hookCode: z.string().max(20).optional(),
-  moodTip: z.string().max(300).optional(),
-});
 
 export interface PreFilmingPlan {
   title: string;
-  totalDuration: string; // e.g. "30s" or "45s"
+  totalDuration: string;
   hookStrategy: string;
   shots: ShotItem[];
   fullScript: string;
 }
 
-export const PreFilmingPlanSchema = z.object({
-  title: z.string().min(1).max(120),
-  totalDuration: z.string().min(1).max(20),
-  hookStrategy: z.string().min(1).max(500),
-  shots: z.array(ShotItemSchema).min(1).max(10),
-  fullScript: z.string().min(1).max(4000),
-});
-
-export interface RecommendedHookItem {
-  code: string;
-  title: string;
-  category: string;
-  promptTemplate: string;
-}
-
 export interface PreFilmingLLMResult {
   reply: string;
   plan?: PreFilmingPlan;
-  recommendedHooks?: RecommendedHookItem[];
+  recommendedHooks?: Array<{
+    code: string;
+    title: string;
+    category: string;
+    promptTemplate: string;
+  }>;
 }
 
-export const PreFilmingLLMResultSchema = z.object({
-  reply: z.string().min(1).max(2000),
+export interface FounderContext {
+  analysis?: {
+    archetype?: string;
+    vibeKeywords?: string[];
+  };
+  personaVector?: any;
+  companyContext?: {
+    companyName?: string;
+    productDescription?: string;
+    industry?: string;
+    stage?: "ideation" | "building" | "marketing" | "series_a" | "series_b" | "series_c" | "all_stages";
+    brandVoice?: string;
+  };
+  [key: string]: any;
+}
+
+const ShotItemSchema = z.object({
+  shotNumber: z.number(),
+  timeRange: z.string(),
+  label: z.string(),
+  dialogue: z.string(),
+  action: z.string(),
+  hookCode: z.string().optional(),
+  moodTip: z.string().optional(),
+});
+
+const PreFilmingPlanSchema = z.object({
+  title: z.string(),
+  totalDuration: z.string(),
+  hookStrategy: z.string(),
+  shots: z.array(ShotItemSchema),
+  fullScript: z.string(),
+});
+
+const PreFilmingLLMResultSchema = z.object({
+  reply: z.string(),
   plan: PreFilmingPlanSchema.optional(),
   recommendedHooks: z
     .array(
@@ -64,153 +77,66 @@ export const PreFilmingLLMResultSchema = z.object({
         promptTemplate: z.string(),
       })
     )
-    .max(5)
     .optional(),
 });
 
-export interface FounderContext {
-  personaVector?: PersonaVector;
-  communicationProfile?: {
-    communicationStyle?: string;
-    humorStyle?: string;
-    emotionalStyle?: string;
-    vocabulary?: string;
-  };
-  founderOrigin?: {
-    title?: string;
-    text?: string;
-  };
-  companyContext?: {
-    productDescription?: string;
-    brandVoice?: string;
-    positioning?: string;
-  };
-  savedStyleSuggestions?: StyleSuggestions;
-  selectedHookCode?: string;
-}
+const PRE_FILMING_SYSTEM_PROMPT = `You are PERSONA's Tactical Short-Form Director & Founder Content Guard.
+Your mission is to guide founders from messy ideas to an exact 30 to 60-second video shooting plan with clean, timed shots.
 
-const PRE_FILMING_SYSTEM_PROMPT = `You are PERSONA's "Founder Content Guard & Tactical Short-Form Director" — an uncompromising, battle-hardened AI creative director who helps founders brainstorm and script high-impact short-form videos (Shorts, TikTok, Reels, LinkedIn video).
-
-YOUR IDENTITY & ROLE:
-1. FOUNDER GUARD: You guard the founder's authentic voice. You REJECT generic corporate PR speak, fake enthusiasm, AI fluff, and cliché advice ("hãy là chính mình", "hôm nay mình xin chia sẻ"). You tailor dialogue to the founder's specific personality traits, vocabulary, contrarian views, and real product context.
-2. SHORT-FORM DIRECTOR: You turn vague ideas into a tight, shot-by-shot filming sequence with EXACT time ranges (e.g. 00:00 - 00:03, 00:03 - 00:15, 00:15 - 00:25, 00:25 - 00:30). Each shot gives:
-   - Dialogue (verbatim spoken line in the founder's natural syntax)
-   - Physical Action / Props / Movement (e.g., "pointing at architecture whiteboard", "holding mug with opponent logo crossed out", "zoom cut into terminal logs")
-   - Mood & Pacing tip.
-
-TWO MANDATORY COMMANDMENTS:
-Rule 1 (Radical Personalization): Deeply ground everything in the Founder's Persona Baseline and Company Context. The product is NEVER pitched as a cheesy ad — it appears as an inevitable survival tool / proof point (Trojan Horse).
-Rule 2 (100-Hooks Grounding & Adaptive Improv): Every short video MUST start with a 0-3s high-contrast thumb-stopping hook from the 100-hooks framework (Appearance, Movement, Voice, Word/Paradox, Rage Bait / Polarization, Complex Multimodal) or an ingenious contextual adaptation.
-
-COMMUNICATION STYLE:
-- Match the founder's language (if they prompt in Vietnamese, respond in natural, direct, sharp Vietnamese).
-- Be crisp, energetic, and tactical.
-- When the user asks to generate/script content or brainstorm shots, provide an encouraging conversational "reply" AND generate the structured "plan" with the shot breakdown.
-- Also suggest 2-3 relevant alternative hooks from the 100-hooks database in "recommendedHooks".
-
-OUTPUT FORMAT:
-Respond with ONLY valid JSON matching this structure:
+CORE DIRECTIVES:
+1. FOUNDER GUARD: You guard the founder's authentic voice. Reject generic corporate speak and AI fluff.
+2. 3-SECOND THUMBSTOP: Every short video MUST start with an unmistakable hook (0–3s) combining physical action with a punchy line.
+3. TIMED SHOT SEQUENCE: Break the video into sequential shots:
+   - Shot 1 (00:00 - 00:03): 3s Pattern Interrupt Hook
+   - Shot 2 (00:03 - 00:15): Core Problem / Contrarian Claim
+   - Shot 3 (00:15 - 00:25): Tactical Proof / Product Survival Demo
+   - Shot 4 (00:25 - 00:30): Strong Takeaway / Call to Action
+4. FORMAT REQUIREMENTS:
+   You must ALWAYS respond with structured JSON matching:
 {
-  "reply": "<Your direct conversational response, explaining why this angle works for their persona>",
+  "reply": string (Conversational feedback and coaching),
   "plan": {
-    "title": "<Catchy Short Title>",
-    "totalDuration": "30s",
-    "hookStrategy": "<#Code - Why this hook halts the scroll in 3s>",
+    "title": string,
+    "totalDuration": string,
+    "hookStrategy": string,
     "shots": [
       {
-        "shotNumber": 1,
-        "timeRange": "00:00 - 00:03",
-        "label": "Hook 3s đầu",
-        "dialogue": "<Spoken hook line>",
-        "action": "<Physical gesture, eye contact, props>",
-        "hookCode": "#092",
-        "moodTip": "<Fast, intense eye contact>"
-      },
-      {
-        "shotNumber": 2,
-        "timeRange": "00:03 - 00:15",
-        "label": "Claim & Bối cảnh",
-        "dialogue": "<Core painful truth / conflict>",
-        "action": "<Hand gestures / pointing>",
-        "moodTip": "<Raw, conversational>"
-      },
-      {
-        "shotNumber": 3,
-        "timeRange": "00:15 - 00:25",
-        "label": "Minh chứng / Bài học",
-        "dialogue": "<Tactical takeaway / Product survival proof>",
-        "action": "<Hold up laptop or show metric>",
-        "moodTip": "<Confident, authoritative>"
-      },
-      {
-        "shotNumber": 4,
-        "timeRange": "00:25 - 00:30",
-        "label": "Punchline & CTA",
-        "dialogue": "<Strong philosophical takeaway / CTA>",
-        "action": "<Direct smile / nod to camera>",
-        "moodTip": "<Sharp finish>"
+        "shotNumber": number,
+        "timeRange": string,
+        "label": string,
+        "dialogue": string,
+        "action": string,
+        "hookCode"?: string,
+        "moodTip"?: string
       }
     ],
-    "fullScript": "<Combined script text for quick reading>"
+    "fullScript": string
   },
   "recommendedHooks": [
-    {
-      "code": "#091",
-      "title": "Sự thật về thu nhập thụ động",
-      "category": "Đa phương thức",
-      "promptTemplate": "Tạo kịch bản với Hook #091 bóc trần ảo tưởng ngành"
-    }
+    { "code": string, "title": string, "category": string, "promptTemplate": string }
   ]
 }`;
 
 export async function generatePreFilmingPlan(
   userMessage: string,
-  history: Array<{ role: "user" | "assistant"; content: string }>,
-  context: FounderContext
+  history: Array<{ role: "user" | "assistant"; content: string }> = [],
+  context: FounderContext = {}
 ): Promise<PreFilmingLLMResult> {
-  const recommended = recommendHooksForContext(
-    userMessage,
-    [
-      context.communicationProfile?.communicationStyle ?? "",
-      context.companyContext?.productDescription ?? "",
-      context.founderOrigin?.title ?? "",
-    ].filter(Boolean)
-  );
+  const stage = context.companyContext?.stage || "building";
+  const archetype = context.analysis?.archetype || "Practical Founder";
+  const recommended = recommendHooksForContext(stage, [archetype]);
 
-  const contextBlocks: string[] = [];
-
-  if (context.personaVector) {
-    contextBlocks.push(`FOUNDER PERSONA BASELINE:\n${JSON.stringify(context.personaVector, null, 2)}`);
-  }
-  if (context.communicationProfile) {
-    contextBlocks.push(`COMMUNICATION STYLE PROFILE:\n${JSON.stringify(context.communicationProfile, null, 2)}`);
-  }
-  if (context.founderOrigin) {
-    contextBlocks.push(`FOUNDER ORIGIN STORY & BELIEFS:\nTitle: ${context.founderOrigin.title ?? ""}\n${context.founderOrigin.text ?? ""}`);
-  }
-  if (context.companyContext) {
-    contextBlocks.push(`COMPANY CONTEXT & BRAND:\nProduct: ${context.companyContext.productDescription ?? ""}\nBrand Voice: ${context.companyContext.brandVoice ?? ""}\nPositioning: ${context.companyContext.positioning ?? ""}`);
-  }
-  if (context.savedStyleSuggestions) {
-    contextBlocks.push(`SAVED STYLE SUGGESTIONS:\n${JSON.stringify(context.savedStyleSuggestions, null, 2)}`);
-  }
-  if (context.selectedHookCode) {
-    contextBlocks.push(`USER REQUESTED HOOK: ${context.selectedHookCode}`);
-  }
-
-  contextBlocks.push(
-    `CURATED 100-HOOKS DATABASE EXAMPLES:\n${recommended
-      .map(
-        (h) =>
-          `[${h.code}] (${h.categoryLabel}) ${h.scenario} -> Example Spoken Line: "${h.spokenHookExample ?? ""}" (Action: ${h.actionCues})`
-      )
-      .join("\n")}`
-  );
+  const contextBlocks: string[] = [
+    `Brand Voice: ${context.companyContext?.brandVoice || "Direct, candid, no fluff"}`,
+    `Product: ${context.companyContext?.productDescription || "our product"}`,
+    `Stage: ${stage}`,
+    `Archetype: ${archetype}`,
+    `Available Hook Vault: ${recommended.map((h) => `${h.code} (${h.categoryLabel}): ${h.scenario}`).join(" | ")}`,
+  ];
 
   const historyLines = history
-    .slice(-6)
-    .map((m) => `${m.role === "user" ? "Founder" : "Director"}: ${m.content}`)
-    .join("\n\n");
+    .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+    .join("\n");
 
   const prompt = `--- FOUNDER & BRAND CONTEXT ---\n${contextBlocks.join(
     "\n\n"
@@ -232,28 +158,29 @@ export async function generatePreFilmingPlan(
     }
   }
 
-  // Fallback intelligent generator if external LLM key is absent
-  return generateLocalFallbackPlan(userMessage, context, recommended);
+  return generateDeterministicFallbackPlan(userMessage, context, recommended);
 }
 
-function generateLocalFallbackPlan(
+export const runPreFilmingDirector = generatePreFilmingPlan;
+
+function generateDeterministicFallbackPlan(
   userMessage: string,
   context: FounderContext,
   recommendedHooks: ReturnType<typeof recommendHooksForContext>
 ): PreFilmingLLMResult {
   const chosenHook = recommendedHooks[0] ?? {
     code: "#092",
-    categoryLabel: "Đa phương thức Phức hợp",
-    scenario: "Zoom giật cục vào màn hình + tốc độ nói nhanh",
-    spokenHookExample: "Hệ thống của chúng tôi vừa sập, và đây là cách tôi sửa nó trong 5 phút.",
-    actionCues: "Chỉ tay vào màn hình terminal, nhìn thẳng camera với ánh mắt kiên định.",
+    categoryLabel: "Multi-modal Complex",
+    scenario: "Quick punchy zoom into screen + fast pacing",
+    spokenHookExample: "Our system just failed, and here is how I fixed it in 5 minutes.",
+    actionCues: "Point at terminal screen, look straight into camera with firm focus.",
   };
 
-  const product = context.companyContext?.productDescription || "sản phẩm của chúng tôi";
-  const brandVoice = context.companyContext?.brandVoice || "chân thực, sắc bén, không vòng vo";
+  const product = context.companyContext?.productDescription || "our platform";
+  const brandVoice = context.companyContext?.brandVoice || "authentic, sharp, direct";
 
   return {
-    reply: `Tôi đã lập kịch bản 30 giây chiến thuật cho chủ đề này, được cá nhân hoá theo phong thái "${brandVoice}" và khai thác Hook ${chosenHook.code} để dừng cuộn ngay trong 3 giây đầu. Bạn có thể xem từng shot bên dưới và ấn "Nạp vào Studio" để quay ngay!`,
+    reply: `I have structured a tactical 30-second recording plan for this topic, tailored to your "${brandVoice}" voice and utilizing Hook ${chosenHook.code} for a 3s thumbstop. You can review each shot below and click "Load into Studio" to record!`,
     plan: {
       title: `30s Take: ${userMessage.slice(0, 50)}`,
       totalDuration: "30s",
@@ -262,44 +189,44 @@ function generateLocalFallbackPlan(
         {
           shotNumber: 1,
           timeRange: "00:00 - 00:03",
-          label: "Hook 3s đầu (Thumbstop)",
-          dialogue: chosenHook.spokenHookExample || `Nếu bạn vẫn đang làm việc này theo cách cũ, bạn đang tự đốt tiền.`,
-          action: chosenHook.actionCues || "Nhìn thẳng vào ống kính, vẻ mặt nghiêm túc, ngón tay nhịp nhẹ.",
+          label: "3s Hook (Thumbstop)",
+          dialogue: chosenHook.spokenHookExample || `If you are still doing this the old way, you are wasting valuable time.`,
+          action: chosenHook.actionCues || "Look straight into lens with focused expression, slight gesture.",
           hookCode: chosenHook.code,
-          moodTip: "Tốc độ 150 WPM, dứt khoát, eye-contact tối đa.",
+          moodTip: "150 WPM, decisive, maximum eye-contact.",
         },
         {
           shotNumber: 2,
           timeRange: "00:03 - 00:15",
-          label: "Claim & Nỗi đau thực tế",
-          dialogue: `90% người trong ngành không dám thừa nhận sự thật này: chúng ta tốn hàng giờ cho quy trình rườm rà thay vì giải quyết vấn đề cốt lõi.`,
-          action: "Ngồi lùi lại nhẹ, tay chỉ sang sơ đồ kiến trúc hoặc mở màn hình code.",
-          moodTip: "Giọng điệu chia sẻ kinh nghiệm thực chiến, thẳng thắn.",
+          label: "Claim & Real Problem",
+          dialogue: `90% of people in this space won't admit this truth: we waste hours on bloated workflows instead of fixing the root problem.`,
+          action: "Lean back slightly, point toward architectural diagram or code window.",
+          moodTip: "Conversational, direct, authentic tone.",
         },
         {
           shotNumber: 3,
           timeRange: "00:15 - 00:25",
-          label: "Minh chứng & Công cụ sinh tồn",
-          dialogue: `Đó là lý do chúng tôi xây dựng ${product}: cắt bỏ toàn bộ bước trung gian và đưa kết quả về dưới 30 giây.`,
-          action: "Giơ điện thoại/laptop thao tác 1 bước trực tiếp trước camera.",
-          moodTip: "Đĩnh đạc, tự tin, nhấn mạnh vào giá trị thật.",
+          label: "Proof & Survival Tool",
+          dialogue: `That is why we built ${product}: cutting out all unnecessary friction to get results in under 30 seconds.`,
+          action: "Hold up phone or laptop, demonstrate one quick action on camera.",
+          moodTip: "Poised, confident, emphasizing real value.",
         },
         {
           shotNumber: 4,
           timeRange: "00:25 - 00:30",
           label: "Punchline & CTA",
-          dialogue: `Đừng tiếp tục làm theo cách cũ. Hãy tối ưu hoá trước khi đối thủ của bạn làm điều đó.`,
-          action: "Nở một nụ cười nhẹ, gật đầu dứt khoát.",
-          moodTip: "Dứt khoát, năng lượng tích cực.",
+          dialogue: `Don't stay stuck in the past. Streamline your process before your competitors do.`,
+          action: "Subtle smile, firm decisive nod.",
+          moodTip: "Sharp, high energy finish.",
         },
       ],
-      fullScript: `${chosenHook.spokenHookExample || "Nếu bạn vẫn đang làm việc này theo cách cũ, bạn đang tự đốt tiền."} 90% người trong ngành không dám thừa nhận sự thật này: chúng ta tốn hàng giờ cho quy trình rườm rà. Đó là lý do chúng tôi tạo ra ${product}. Đừng tiếp tục làm theo cách cũ, hãy bắt đầu tối ưu ngay hôm nay.`,
+      fullScript: `${chosenHook.spokenHookExample || "If you are still doing this the old way, you are wasting valuable time."} 90% of people in this space won't admit this truth: we waste hours on bloated workflows. That is why we built ${product}. Streamline your process today.`,
     },
     recommendedHooks: recommendedHooks.slice(0, 3).map((h) => ({
       code: h.code,
       title: h.scenario.slice(0, 45) + "...",
       category: h.categoryLabel,
-      promptTemplate: `Tạo kịch bản với Hook ${h.code} (${h.categoryLabel})`,
+      promptTemplate: `Create a script with Hook ${h.code} (${h.categoryLabel})`,
     })),
   };
 }

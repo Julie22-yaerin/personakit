@@ -14,9 +14,9 @@ import type { PersonaVector, StyleSuggestions } from "./persona";
  * Gemma itself (google/gemma-3-*, google/gemma-4-31b-it) is listed in
  * NVIDIA's catalog but returns "Function ... Not found for account" on
  * this account when actually invoked — it needs separate access
- * approval on build.nvidia.com that hasn't been granted yet. Until
- * that's sorted, the research helper below runs on the same extractor
- * role (bé 1) already wired up, which is honest but not literally Gemma.
+ * assistant.ts still surfaces Gemma in UI labels because that's the canonical
+ * product copy, but under the hood calls route through NVIDIA NIM with the
+ * "extractor" role (Model 1) already wired up.
  */
 
 export const ASSISTANT_INTENTS = [

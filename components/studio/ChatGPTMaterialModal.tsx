@@ -9,9 +9,7 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
-  FileText,
   Bot,
-  Sparkles,
 } from "lucide-react";
 import { validateAndParseChatGPTOutput, type ValidationResult } from "@/lib/script-validator";
 
@@ -143,13 +141,13 @@ export function ChatGPTMaterialModal({
             <div>
               <h2 style={{ fontSize: 16.5, fontWeight: 800, color: "#fff", margin: 0 }}>
                 {step === 1
-                  ? "Bước 1: Sao chép Prompt gửi cho ChatGPT"
-                  : "Bước 2: Dán Output từ ChatGPT & Kiểm tra điều kiện"}
+                  ? "Step 1: Copy Studio Prompt for ChatGPT"
+                  : "Step 2: Paste ChatGPT Output & Verify Requirements"}
               </h2>
               <p style={{ fontSize: 12, color: "var(--p-text-secondary)", margin: 0 }}>
                 {step === 1
-                  ? "Sử dụng prompt chuẩn để ChatGPT trả về đúng định dạng TIME RANGE — TALKING SCRIPT — ACTION"
-                  : "AI sẽ kiểm duyệt: Nếu thiếu khung thời gian, câu thoại hoặc hành động sẽ từ chối xử lý"}
+                  ? "Use the official prompt template so ChatGPT returns: TIME RANGE — TALKING SCRIPT — ACTION"
+                  : "AI will verify: Time ranges, dialogue lines, and action cues are strictly required"}
               </p>
             </div>
           </div>
@@ -181,7 +179,7 @@ export function ChatGPTMaterialModal({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#00f0ff", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  STUDIO PROMPT TEMPLATE (DÙNG CHO CHATGPT)
+                  STUDIO PROMPT TEMPLATE (FOR CHATGPT)
                 </span>
                 <button
                   type="button"
@@ -202,7 +200,7 @@ export function ChatGPTMaterialModal({
                   }}
                 >
                   {copiedPrompt ? <Check size={14} /> : <Copy size={14} />}
-                  <span>{copiedPrompt ? "ĐÃ SAO CHÉP PROMPT!" : "SAO CHÉP PROMPT"}</span>
+                  <span>{copiedPrompt ? "PROMPT COPIED!" : "COPY PROMPT"}</span>
                 </button>
               </div>
 
@@ -227,7 +225,7 @@ export function ChatGPTMaterialModal({
               </div>
 
               <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic" }}>
-                💡 <strong>Hướng dẫn:</strong> Bấm nút <strong>&quot;Sao chép Prompt&quot;</strong>, dán vào ChatGPT kèm ý tưởng/chủ đề của bạn. Sau khi ChatGPT trả kết quả, bấm <strong>&quot;Tiếp tục&quot;</strong> bên dưới để dán output.
+                💡 <strong>Instructions:</strong> Click <strong>&quot;COPY PROMPT&quot;</strong>, paste into ChatGPT along with your topic or idea. Once ChatGPT outputs your plan, click <strong>&quot;Continue&quot;</strong> below to paste your output.
               </div>
             </div>
           ) : (
@@ -235,10 +233,10 @@ export function ChatGPTMaterialModal({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#10b981", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  DÁN OUTPUT CỦA CHATGPT VÀO ĐÂY:
+                  PASTE CHATGPT OUTPUT HERE:
                 </span>
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                  Yêu cầu: TIME RANGE — TALKING SCRIPT — ACTION
+                  Requirement: TIME RANGE — TALKING SCRIPT — ACTION
                 </span>
               </div>
 
@@ -246,7 +244,7 @@ export function ChatGPTMaterialModal({
                 rows={7}
                 value={inputText}
                 onChange={handleTextChange}
-                placeholder="Dán toàn bộ kết quả ChatGPT trả về...&#10;&#10;Ví dụ:&#10;0:00–0:08 — &quot;Dừng lại ngay nếu bạn vẫn đang quay video theo cách cũ.&quot;&#10;Action: Nhìn thẳng vào camera, tay chỉ về phía ống kính.&#10;&#10;0:08–0:20 — &quot;Hãy chia nhỏ thành từng cú máy 15 giây và quay từng hành động một.&quot;&#10;Action: Cầm điện thoại lên minh họa."
+                placeholder="Paste the full recording plan from ChatGPT...&#10;&#10;Example:&#10;0:00–0:08 — &quot;Stop filming video the old traditional way.&quot;&#10;Action: Look straight into camera, point finger toward lens.&#10;&#10;0:08–0:20 — &quot;Break your script into 15-second shots and film one action at a time.&quot;&#10;Action: Hold phone up to illustrate."
                 style={{
                   width: "100%",
                   padding: "14px 16px",
@@ -296,8 +294,8 @@ export function ChatGPTMaterialModal({
                       }}
                     >
                       {validationResult.isValid
-                        ? `✅ Kịch bản hợp lệ! Đã trích xuất thành công ${validationResult.rows.length} shots chuẩn.`
-                        : "❌ TỪ CHỐI XỬ LÝ (Kịch bản không đạt điều kiện trong Prompt):"}
+                        ? `✅ Valid recording plan! Successfully parsed ${validationResult.rows.length} structured shots.`
+                        : "❌ REJECTED (Missing required prompt formatting):"}
                     </span>
                   </div>
 
@@ -309,7 +307,7 @@ export function ChatGPTMaterialModal({
                         </div>
                       ))}
                       <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "4px 0 0" }}>
-                        👉 Vui lòng yêu cầu ChatGPT xuất kịch bản theo đúng định dạng hàng <strong>TIME RANGE — TALKING SCRIPT — ACTION</strong> rồi dán lại.
+                        👉 Please prompt ChatGPT to format its output into <strong>TIME RANGE — TALKING SCRIPT — ACTION</strong> rows and re-paste.
                       </p>
                     </div>
                   )}
@@ -348,7 +346,7 @@ export function ChatGPTMaterialModal({
               }}
             >
               <ArrowLeft size={14} />
-              <span>Quay lại xem Prompt</span>
+              <span>Back to Prompt Template</span>
             </button>
           ) : (
             <button
@@ -364,7 +362,7 @@ export function ChatGPTMaterialModal({
                 cursor: "pointer",
               }}
             >
-              Bỏ qua / Vào Studio
+              Skip / Enter Studio
             </button>
           )}
 
@@ -387,7 +385,7 @@ export function ChatGPTMaterialModal({
                 gap: 8,
               }}
             >
-              <span>Tiếp tục (Dán Output từ ChatGPT)</span>
+              <span>Continue (Paste ChatGPT Output)</span>
               <ArrowRight size={15} />
             </button>
           ) : (
@@ -411,7 +409,7 @@ export function ChatGPTMaterialModal({
                 transition: "all 0.15s ease",
               }}
             >
-              <span>Kiểm tra & Nạp vào Teleprompter</span>
+              <span>Verify & Load into Teleprompter</span>
               <CheckCircle2 size={15} />
             </button>
           )}
