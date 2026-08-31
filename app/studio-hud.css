@@ -1013,3 +1013,84 @@
 .hud-prop-chip-toggle:hover {
   background: rgba(255, 255, 255, 0.09);
 }
+
+/* ==========================================================================
+   Doodle Character Action Animations (Hand-drawn Loop Motion)
+   ========================================================================== */
+
+@keyframes doodleLaptop {
+  0%, 15% {
+    transform: rotate(0deg);
+  }
+  35%, 65% {
+    transform: rotate(48deg);
+  }
+  85%, 100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes doodleArm {
+  0%, 15% {
+    transform: rotate(0deg);
+  }
+  35%, 65% {
+    transform: rotate(20deg) translate(8px, 6px);
+  }
+  85%, 100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes doodlePoint {
+  0%, 100% {
+    transform: scale(0.95) translateX(-4px);
+  }
+  50% {
+    transform: scale(1.1) translateX(12px);
+  }
+}
+
+@keyframes doodleThrow {
+  0% {
+    transform: rotate(-25deg);
+  }
+  40% {
+    transform: rotate(30deg) translate(10px, -5px);
+  }
+  75%, 100% {
+    transform: rotate(-25deg);
+  }
+}
+
+@keyframes doodleShake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(12deg);
+  }
+}
+
+.animate-doodle-laptop {
+  animation: doodleLaptop 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-doodle-arm {
+  animation: doodleArm 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-doodle-point {
+  animation: doodlePoint 1.2s ease-in-out infinite;
+}
+
+.animate-doodle-throw {
+  animation: doodleThrow 1.6s ease-in-out infinite;
+}
+
+.animate-doodle-shake {
+  animation: doodleShake 1.4s ease-in-out infinite;
+}

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Play, Check, Sparkles, ArrowRight, Eye, Zap, Flame, Film } from "lucide-react";
-import { playCountdownBeep, playShotCompleteChime } from "@/lib/audio-cue";
+import { Check, ArrowRight, Sparkles, Wand2 } from "lucide-react";
+import { playCountdownBeep } from "@/lib/audio-cue";
+import { ActionDoodleCharacter } from "./ActionDoodleCharacter";
 import type { ShotItem } from "@/lib/pre-filming-llm";
 
 interface ActionMotionOverlayProps {
@@ -14,93 +15,6 @@ interface ActionMotionOverlayProps {
   onSkipGuidance?: () => void;
 }
 
-/**
- * Animated SVG Illustration motions representing repetitive physical actions.
- */
-function ActionLoopGraphic({ actionText }: { actionText: string }) {
-  const text = actionText.toLowerCase();
-
-  // 1. Point / Punch toward camera
-  if (text.includes("point") || text.includes("punch") || text.includes("chỉ tay") || text.includes("tay")) {
-    return (
-      <div className="relative w-36 h-36 flex items-center justify-center">
-        <svg viewBox="0 0 120 120" className="w-full h-full animate-pulse">
-          {/* Target Reticle */}
-          <circle cx="60" cy="60" r="48" fill="none" stroke="#00f0ff" strokeWidth="1.5" strokeDasharray="6 4" className="animate-spin" style={{ animationDuration: "12s" }} />
-          <circle cx="60" cy="60" r="32" fill="rgba(0, 240, 255, 0.1)" stroke="#00f0ff" strokeWidth="2" />
-          {/* Pointing Hand Icon */}
-          <g className="animate-bounce" style={{ animationDuration: "1.2s", transformOrigin: "center" }}>
-            <path d="M60 25 L60 65 M50 38 L60 25 L70 38" fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="60" cy="80" r="14" fill="#00f0ff" fillOpacity="0.25" stroke="#00f0ff" strokeWidth="2" />
-          </g>
-        </svg>
-        <span className="absolute -bottom-2 text-[10px] font-mono tracking-widest text-[#00f0ff] uppercase bg-black/70 px-2 py-0.5 rounded border border-[#00f0ff]/40">
-          REPEATING ACTION LOOP
-        </span>
-      </div>
-    );
-  }
-
-  // 2. Eye contact / Look directly into lens
-  if (text.includes("look") || text.includes("eye") || text.includes("nhìn") || text.includes("camera")) {
-    return (
-      <div className="relative w-36 h-36 flex items-center justify-center">
-        <svg viewBox="0 0 120 120" className="w-full h-full">
-          {/* Scanning Box */}
-          <rect x="20" y="20" width="80" height="80" rx="16" fill="rgba(0, 240, 255, 0.08)" stroke="#00f0ff" strokeWidth="2" />
-          {/* Corner brackets */}
-          <path d="M15 35 L15 15 L35 15 M85 15 L105 15 L105 35 M105 85 L105 105 L85 105 M35 105 L15 105 L15 85" fill="none" stroke="#10b981" strokeWidth="3" />
-          {/* Pulsing Eye */}
-          <g className="animate-pulse" style={{ animationDuration: "1.5s" }}>
-            <path d="M32 60 C42 44, 78 44, 88 60 C78 76, 42 76, 32 60 Z" fill="none" stroke="#00f0ff" strokeWidth="3" />
-            <circle cx="60" cy="60" r="9" fill="#10b981" />
-            <circle cx="60" cy="60" r="4" fill="#ffffff" />
-          </g>
-        </svg>
-        <span className="absolute -bottom-2 text-[10px] font-mono tracking-widest text-[#10b981] uppercase bg-black/70 px-2 py-0.5 rounded border border-[#10b981]/40">
-          EYE CONTACT LOCK
-        </span>
-      </div>
-    );
-  }
-
-  // 3. Shake head / Contrarian / Rage bait
-  if (text.includes("shake") || text.includes("head") || text.includes("lắc đầu") || text.includes("contrarian")) {
-    return (
-      <div className="relative w-36 h-36 flex items-center justify-center">
-        <svg viewBox="0 0 120 120" className="w-full h-full">
-          <circle cx="60" cy="60" r="45" fill="rgba(245, 158, 11, 0.1)" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4 4" />
-          <g className="animate-spin" style={{ animationDuration: "3s", transformOrigin: "center" }}>
-            <path d="M60 30 L60 90 M30 60 L90 60" stroke="#f59e0b" strokeWidth="2" />
-          </g>
-          <g className="animate-pulse" style={{ animationDuration: "0.8s" }}>
-            <circle cx="60" cy="60" r="22" fill="#f59e0b" fillOpacity="0.3" stroke="#f59e0b" strokeWidth="2" />
-            <text x="60" y="66" textAnchor="middle" fill="#ffffff" fontSize="18" fontWeight="bold">⚡</text>
-          </g>
-        </svg>
-        <span className="absolute -bottom-2 text-[10px] font-mono tracking-widest text-[#f59e0b] uppercase bg-black/70 px-2 py-0.5 rounded border border-[#f59e0b]/40">
-          CONTRARIAN MOTION
-        </span>
-      </div>
-    );
-  }
-
-  // 4. Default / Prop / Screen demonstration
-  return (
-    <div className="relative w-36 h-36 flex items-center justify-center">
-      <svg viewBox="0 0 120 120" className="w-full h-full">
-        <rect x="25" y="30" width="70" height="50" rx="8" fill="rgba(56, 189, 248, 0.15)" stroke="#38bdf8" strokeWidth="2" />
-        <line x1="60" y1="80" x2="60" y2="95" stroke="#38bdf8" strokeWidth="3" />
-        <line x1="45" y1="95" x2="75" y2="95" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="60" cy="55" r="10" fill="#00f0ff" className="animate-ping" style={{ animationDuration: "2s", transformOrigin: "60px 55px" }} />
-      </svg>
-      <span className="absolute -bottom-2 text-[10px] font-mono tracking-widest text-[#38bdf8] uppercase bg-black/70 px-2 py-0.5 rounded border border-[#38bdf8]/40">
-        ACTION GUIDANCE
-      </span>
-    </div>
-  );
-}
-
 export function ActionMotionOverlay({
   shot,
   currentShotIndex,
@@ -109,13 +23,31 @@ export function ActionMotionOverlay({
   onStartFilming,
   onSkipGuidance,
 }: ActionMotionOverlayProps) {
-  const [phase, setPhase] = useState<"GUIDANCE" | "COUNTDOWN">("GUIDANCE");
+  const [phase, setPhase] = useState<"PRODUCING_DOODLES" | "GUIDANCE" | "COUNTDOWN">("GUIDANCE");
   const [count, setCount] = useState<number>(3);
+  const [productionProgress, setProductionProgress] = useState<number>(0);
 
+  // When initial session starts (shot index 0), show a brief generation effect for all shot doodles
   useEffect(() => {
     if (isOpen) {
-      setPhase("GUIDANCE");
-      setCount(3);
+      if (currentShotIndex === 0) {
+        setPhase("PRODUCING_DOODLES");
+        setProductionProgress(15);
+        const t1 = setTimeout(() => setProductionProgress(55), 400);
+        const t2 = setTimeout(() => setProductionProgress(88), 900);
+        const t3 = setTimeout(() => {
+          setProductionProgress(100);
+          setPhase("GUIDANCE");
+        }, 1400);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+        };
+      } else {
+        setPhase("GUIDANCE");
+        setCount(3);
+      }
     }
   }, [isOpen, currentShotIndex]);
 
@@ -161,7 +93,7 @@ export function ActionMotionOverlay({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(3, 6, 18, 0.82)",
+        background: "rgba(3, 6, 18, 0.85)",
         backdropFilter: "blur(22px)",
         WebkitBackdropFilter: "blur(22px)",
         padding: "20px",
@@ -170,7 +102,62 @@ export function ActionMotionOverlay({
         animation: "fadeIn 0.25s ease-out",
       }}
     >
-      {phase === "GUIDANCE" ? (
+      {phase === "PRODUCING_DOODLES" ? (
+        /* PRODUCING DOODLES FOR THE WHOLE SESSION */
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 420, width: "100%" }}>
+          <div
+            style={{
+              padding: "16px",
+              background: "rgba(10, 15, 32, 0.8)",
+              border: "1px solid rgba(0, 240, 255, 0.4)",
+              borderRadius: "50%",
+              boxShadow: "0 0 35px rgba(0, 240, 255, 0.3)",
+              marginBottom: 18,
+              animationDuration: "3s",
+            }}
+            className="animate-spin"
+          >
+            <Wand2 size={32} color="#00f0ff" />
+          </div>
+
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              fontFamily: "monospace",
+              color: "#00f0ff",
+              letterSpacing: "0.1em",
+              marginBottom: 8,
+              textTransform: "uppercase",
+            }}
+          >
+            ACTION DOODLE GENERATOR
+          </span>
+
+          <h3 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px 0", color: "#fff" }}>
+            Generating Character Doodles ({totalShots} Shots)
+          </h3>
+
+          <p style={{ fontSize: 13, color: "rgba(255, 255, 255, 0.6)", margin: "0 0 20px 0" }}>
+            Synthesizing animated action GIFs for your script cues before filming begins...
+          </p>
+
+          <div style={{ width: "100%", height: 6, background: "rgba(255, 255, 255, 0.1)", borderRadius: 3, overflow: "hidden", marginBottom: 12 }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${productionProgress}%`,
+                background: "linear-gradient(to right, #00f0ff, #10b981)",
+                transition: "width 0.4s ease-out",
+              }}
+            />
+          </div>
+          <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>
+            {productionProgress}% completed
+          </span>
+        </div>
+      ) : phase === "GUIDANCE" ? (
+        /* CHARACTER ACTION DOODLE GUIDANCE */
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 460, width: "100%" }}>
           {/* Header Badges */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
@@ -205,24 +192,24 @@ export function ActionMotionOverlay({
             </span>
           </div>
 
-          {/* Action Motion GIF Graphic */}
+          {/* Animated Hand-drawn Character Action Doodle */}
           <div
             style={{
-              padding: "16px",
-              background: "rgba(10, 15, 32, 0.7)",
-              border: "1px solid rgba(0, 240, 255, 0.3)",
+              padding: "12px",
+              background: "rgba(10, 15, 32, 0.8)",
+              border: "1px solid rgba(0, 240, 255, 0.35)",
               borderRadius: 24,
               boxShadow: "0 0 40px rgba(0, 240, 255, 0.2)",
               marginBottom: 18,
             }}
           >
-            <ActionLoopGraphic actionText={shot.action || ""} />
+            <ActionDoodleCharacter actionText={shot.action || ""} />
           </div>
 
           {/* Action Instruction Label */}
           <div
             style={{
-              fontSize: 15,
+              fontSize: 14.5,
               fontWeight: 700,
               color: "#f1f5f9",
               background: "rgba(255, 255, 255, 0.06)",
@@ -234,7 +221,7 @@ export function ActionMotionOverlay({
             }}
           >
             <span style={{ color: "#00f0ff", marginRight: 6 }}>🎬 Action:</span>
-            {shot.action || "Look directly into camera lens with confident posture"}
+            {shot.action || "Perform action with natural eye contact"}
           </div>
 
           {/* Spoken Dialogue Preview */}
