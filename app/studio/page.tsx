@@ -8,12 +8,11 @@ import { auth, db } from "../../lib/firebase";
 import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { AppShell } from "../../components/app/AppShell";
 import { AuthProgress } from "../../components/app/AuthProgress";
-import { PreFilmingPane } from "../../components/studio/PreFilmingPane";
 import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";
 import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "../../lib/face-scan";
 import type { PersonaVector } from "../../lib/persona";
 import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
-import { Clapperboard, Camera, ArrowLeft, ArrowRight, Play, CheckCircle2 } from "lucide-react";
+import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2 } from "lucide-react";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
   classifySpeechRate,
@@ -120,7 +119,6 @@ export default function StudioPage() {
   const [founderContext, setFounderContext] = useState<FounderContext>({});
   const [activePlan, setActivePlan] = useState<PreFilmingPlan | null>(null);
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<"prefilming" | "filming">("filming");
 
   const [scriptText, setScriptText] = useState("");
   // Script handed over from Pre-Filming AI Director — waits for explicit "Use it".
@@ -162,13 +160,6 @@ export default function StudioPage() {
   useEffect(() => {
     transcriptRef.current = transcript;
   }, [transcript]);
-
-  function handleLoadPlanIntoFilming(planToLoad: PreFilmingPlan) {
-    setActivePlan(planToLoad);
-    setScriptText(planToLoad.fullScript);
-    setCurrentShotIndex(0);
-    setActiveTab("filming");
-  }
 
   // Auth + onboarding gate, and pull the persona baseline / last session plan.
   useEffect(() => {
@@ -653,40 +644,12 @@ export default function StudioPage() {
 
   return (
     <AppShell userEmail={user.email} uid={user.uid}>
-      <div className="app-main-inner-wide studio-page">
+      <div className="app-main-inner studio-page" style={{ margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <p className="onboarding-step-label" style={{ margin: 0 }}>Studio · Pre-Filming Director & Live Filming HUD</p>
+          <p className="onboarding-step-label" style={{ margin: 0 }}>Studio · Live Filming HUD</p>
         </div>
 
-        {/* Tab switcher for mobile / responsive */}
-        <div className="studio-view-tabs">
-          <button
-            type="button"
-            className={`studio-tab-btn ${activeTab === "prefilming" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("prefilming")}
-          >
-            <Clapperboard size={15} /> Pre-Filming AI Director
-          </button>
-          <button
-            type="button"
-            className={`studio-tab-btn ${activeTab === "filming" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("filming")}
-          >
-            <Camera size={15} /> Live Filming Studio
-          </button>
-        </div>
-
-        <div className="studio-split-screen">
-          {/* LEFT PANE: Pre-Filming AI Director */}
-          <div className={`studio-pane-prefilming ${activeTab !== "prefilming" ? "max-lg:hidden" : ""}`}>
-            <PreFilmingPane
-              founderContext={founderContext}
-              onLoadScriptIntoFilming={handleLoadPlanIntoFilming}
-            />
-          </div>
-
-          {/* RIGHT PANE: Filming Studio, Teleprompter & Live HUD */}
-          <div className={`studio-pane-filming ${activeTab !== "filming" ? "max-lg:hidden" : ""}`}>
+        <div className="studio-pane-filming">
             {/* Active Teleprompter Shot Tracker (if plan is loaded) */}
             {activePlan && (
               <div className="teleprompter-active-card">
@@ -1053,7 +1016,6 @@ export default function StudioPage() {
             <PlanBlock label="Pacing" text={plan.pacing} />
           </div>
         )}
-          </div>
         </div>
       </div>
     </AppShell>
