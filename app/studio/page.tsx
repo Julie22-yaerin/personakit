@@ -13,10 +13,9 @@ import { deriveLiveMetrics, detectFaceForVideo, type LiveDisplayMetrics } from "
 import type { PersonaVector } from "../../lib/persona";
 import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
 import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen, Bot } from "lucide-react";
-import { ScriptCompareModal } from "../../components/studio/ScriptCompareModal";
 import { ChatGPTMaterialModal } from "../../components/studio/ChatGPTMaterialModal";
 import { TakeFoldersSection, type TakeMaterialProject } from "../../components/studio/TakeFoldersSection";
-import type { ScriptComparisonResult, ScriptComparisonVersion } from "../../lib/script-transformer";
+import type { ValidationResult } from "../../lib/script-validator";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
   classifySpeechRate,
@@ -125,7 +124,6 @@ export default function StudioPage() {
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
 
   const [scriptText, setScriptText] = useState("");
-  const [comparisonResult, setComparisonResult] = useState<ScriptComparisonResult | null>(null);
   const [isChatGPTModalOpen, setIsChatGPTModalOpen] = useState(true);
   const [takeProjects, setTakeProjects] = useState<TakeMaterialProject[]>([
     {
@@ -427,48 +425,46 @@ export default function StudioPage() {
     );
   }
 
-  async function handlePrepareScript(textToProcess?: string) {
-    const target = (typeof textToProcess === "string" ? textToProcess : scriptText).trim();
-    if (!target) return;
-    setScriptLoading(true);
-    setScriptError(null);
-    try {
-      const res = await authedFetch("/api/studio/script/process", {
-        sourceText: target,
-        context: founderContext,
-      });
-      const parsed = await safeReadJson<ScriptComparisonResult>(res);
-      if (!parsed.ok || !parsed.data) throw new Error(parsed.error ?? "Script optimization failed");
-      setComparisonResult(parsed.data);
-    } catch (err) {
-      setScriptError(err instanceof Error ? err.message : "Script optimization failed");
-    } finally {
-      setScriptLoading(false);
-    }
-  }
+  function handleLoadValidScript(validation: ValidationResult) {
+    const title = `Short #${takeProjects.length + 1}`;
+    setScriptText(validation.rawScript);
 
-  function handleSelectComparisonVersion(version: ScriptComparisonVersion) {
     const plan: PreFilmingPlan = {
-      title: version.title,
-      totalDuration: version.totalDuration,
-      hookStrategy: version.title.includes("Enhanced")
-        ? "3s Viral Hook + Rage-Bait Contrarian + Dynamic Actions"
-        : "Original Linear Delivery",
-      shots: version.rows.map((r) => ({
+      title,
+      totalDuration: validation.totalDuration,
+      hookStrategy: "ChatGPT Plan (Time Range — Talking Script — Action)",
+      shots: validation.rows.map((r) => ({
         shotNumber: r.shotNumber,
         timeRange: r.timeRange,
-        label: r.hookType || `Shot ${r.shotNumber}`,
+        label: `Shot ${r.shotNumber}`,
         dialogue: r.script,
         action: r.action,
-        hookCode: r.hookType ? "⚡ HOOK" : undefined,
       })),
-      fullScript: version.fullScript,
+      fullScript: validation.rawScript,
     };
 
     setActivePlan(plan);
-    setScriptText(version.fullScript);
     setCurrentShotIndex(0);
-    setComparisonResult(null);
+
+    const now = new Date();
+    const dateStr = `Take shot: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+
+    const newTake: TakeMaterialProject = {
+      id: `take-${Date.now()}`,
+      title,
+      dateTakeShot: dateStr,
+      totalDuration: validation.totalDuration,
+      videoUrl: null,
+      scriptText: validation.rawScript,
+      shots: validation.rows.map((r) => ({
+        shotNumber: r.shotNumber,
+        timeRange: r.timeRange,
+        script: r.script,
+        action: r.action,
+      })),
+    };
+
+    setTakeProjects((prev) => [newTake, ...prev]);
   }
 
   function handleUpdateTakeFolder(id: string, newTitle: string) {
@@ -925,22 +921,22 @@ export default function StudioPage() {
                 rows={3}
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
-                placeholder="Dán kịch bản vào đây để tối ưu hóa (chia câu ngắn, thêm 3s Hook, Rage-Bait, Time-ranges & Actions)..."
+                placeholder="Dán kịch bản hoặc bấm nút bên dưới để mở Prompt mẫu gửi cho ChatGPT..."
                 disabled={isRecording}
                 style={{ fontSize: 12.5 }}
               />
               <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                 <button
+                  type="button"
                   className="btn btn-primary btn-sm"
-                  onClick={() => handlePrepareScript()}
-                  disabled={scriptLoading || isRecording || !scriptText.trim()}
+                  onClick={() => setIsChatGPTModalOpen(true)}
+                  disabled={isRecording}
                   style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  <Sparkles size={14} />
-                  {scriptLoading ? "Processing & Optimizing..." : "Process Script (Hooks & Rage-Bait)"}
+                  <Bot size={14} />
+                  <span>Mở Prompt Mẫu & Dán Output ChatGPT</span>
                 </button>
               </div>
-              {scriptError && <p className="error" style={{ marginTop: 6, fontSize: 12 }}>{scriptError}</p>}
             </FrostedGlassCard>
 
             <div className="studio-canvas-wrap" style={{ minHeight: "auto" }}>
@@ -1233,23 +1229,10 @@ export default function StudioPage() {
         </div>
       </div>
 
-      {comparisonResult && (
-        <ScriptCompareModal
-          comparison={comparisonResult}
-          onSelectVersion={handleSelectComparisonVersion}
-          onClose={() => setComparisonResult(null)}
-        />
-      )}
-
       <ChatGPTMaterialModal
         isOpen={isChatGPTModalOpen}
         onClose={() => setIsChatGPTModalOpen(false)}
-        onOptimizeScript={(text) => handlePrepareScript(text)}
-        onLoadDirectToFilming={(text) => {
-          setScriptText(text);
-          handleAddTakeFolder(`Short #${takeProjects.length + 1}`, text);
-        }}
-        scriptLoading={scriptLoading}
+        onLoadValidScript={handleLoadValidScript}
       />
     </AppShell>
   );
