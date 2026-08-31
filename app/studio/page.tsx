@@ -15,6 +15,8 @@ import type { PreFilmingPlan, FounderContext } from "../../lib/pre-filming-llm";
 import { Camera, ArrowLeft, ArrowRight, Play, CheckCircle2, Sparkles, FolderOpen } from "lucide-react";
 import { ScriptCompareModal } from "../../components/studio/ScriptCompareModal";
 import { ScriptTeleprompterModal } from "../../components/studio/ScriptTeleprompterModal";
+import { TakeFoldersSection } from "../../components/studio/TakeFoldersSection";
+import type { TakeMaterialProject } from "../../components/studio/TakeMaterialsModal";
 import type { ScriptComparisonResult, ScriptComparisonVersion } from "../../lib/script-transformer";
 import { isSpeechRecognitionSupported, startLiveTranscription, type LiveTranscript } from "../../lib/speech";
 import {
@@ -125,7 +127,66 @@ export default function StudioPage() {
 
   const [scriptText, setScriptText] = useState("");
   const [comparisonResult, setComparisonResult] = useState<ScriptComparisonResult | null>(null);
-  const [isFolderModalOpen, setIsFolderModalOpen] = useState(true);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [takeProjects, setTakeProjects] = useState<TakeMaterialProject[]>([
+    {
+      id: "short-1",
+      title: "Short #1",
+      dateTakeShot: "Take shot: 31/08/2026 12:45",
+      totalDuration: "00:30",
+      scriptText: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống. Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn. Hãy chia nhỏ thành từng cú máy 15 giây.",
+      shots: [
+        {
+          shotNumber: 1,
+          timeRange: "00:00 - 00:03",
+          script: "Dừng lại ngay nếu bạn vẫn đang quay video theo cách truyền thống.",
+          action: "⚡ Nhìn xoáy thẳng vào ống kính máy quay, gõ tay ngắt nhịp",
+          hookType: "🔥 3s Pattern Interrupt",
+        },
+        {
+          shotNumber: 2,
+          timeRange: "00:03 - 00:10",
+          script: "Sự thật mất lòng mà 95% founder không dám thừa nhận: Kịch bản dài dòng đang giết chết tỷ lệ giữ chân của bạn.",
+          action: "⚡ Lắc đầu nhẹ, hạ thấp giọng tạo độ chân thực",
+          hookType: "⚡ Rage-Bait / Contrarian",
+        },
+        {
+          shotNumber: 3,
+          timeRange: "00:10 - 00:20",
+          script: "Hãy chia nhỏ thành từng cú máy 15 giây và quay từng hành động một.",
+          action: "🎬 Chỉ tay sang màn hình dẫn chứng",
+        },
+      ],
+    },
+    {
+      id: "short-2",
+      title: "Short #2",
+      dateTakeShot: "Take shot: 31/08/2026 13:00",
+      totalDuration: "00:45",
+      scriptText: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật. Quá nhiều nút bấm, quá nhiều rối rắm trước khi bấm máy. Đây là cách chúng tôi giải quyết bài toán đó trong 1 shot duy nhất.",
+      shots: [
+        {
+          shotNumber: 1,
+          timeRange: "00:00 - 00:05",
+          script: "Hầu hết các công cụ quay video hiện tại khiến bạn cảm thấy như đang làm phẫu thuật.",
+          action: "🎬 Nâng ly cà phê, ánh mắt tự nhiên hướng vào camera",
+          hookType: "🎯 Problem Hook",
+        },
+        {
+          shotNumber: 2,
+          timeRange: "00:05 - 00:15",
+          script: "Quá nhiều nút bấm, quá nhiều rối rắm trước khi bấm máy.",
+          action: "🎬 Đưa tay nhấn mạnh từ khóa",
+        },
+        {
+          shotNumber: 3,
+          timeRange: "00:15 - 00:30",
+          script: "Đây là cách chúng tôi giải quyết bài toán đó trong 1 shot duy nhất.",
+          action: "🎬 Mỉm cười, chốt luận điểm vững vàng",
+        },
+      ],
+    },
+  ]);
   // Script handed over from Pre-Filming AI Director — waits for explicit "Use it".
   const [receivedScript, setReceivedScript] = useState<{ title: string; content: string } | null>(null);
   const [scriptGraph, setScriptGraph] = useState<ScriptGraph | null>(null);
@@ -411,6 +472,66 @@ export default function StudioPage() {
     setComparisonResult(null);
   }
 
+  function handleAddTakeFolder(title: string, rawScript: string) {
+    const sentences = rawScript
+      .split(/(?<=[.!?。！？\n])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    let currTime = 0;
+    const generatedShots = sentences.map((sent, idx) => {
+      const duration = Math.max(3, Math.min(8, Math.round(sent.split(/\s+/).length * 0.45)));
+      const startMin = Math.floor(currTime / 60);
+      const startSec = currTime % 60;
+      const endMin = Math.floor((currTime + duration) / 60);
+      const endSec = (currTime + duration) % 60;
+      currTime += duration;
+
+      const timeRange = `${startMin}:${startSec < 10 ? "0" : ""}${startSec} - ${endMin}:${endSec < 10 ? "0" : ""}${endSec}`;
+      return {
+        shotNumber: idx + 1,
+        timeRange,
+        script: sent,
+        action: idx === 0 ? "⚡ Nhìn thẳng camera, tạo điểm chạm ban đầu" : "🎬 Cử chỉ tay nhấn mạnh thông điệp",
+      };
+    });
+
+    const now = new Date();
+    const dateStr = `Take shot: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+
+    const newTake: TakeMaterialProject = {
+      id: `take-${Date.now()}`,
+      title: title || `Short #${takeProjects.length + 1}`,
+      dateTakeShot: dateStr,
+      totalDuration: `${currTime}s`,
+      scriptText: rawScript,
+      shots: generatedShots,
+    };
+
+    setTakeProjects((prev) => [newTake, ...prev]);
+  }
+
+  function handleLoadTakeToTeleprompter(take: TakeMaterialProject) {
+    const planToLoad: PreFilmingPlan = {
+      title: take.title,
+      totalDuration: take.totalDuration,
+      hookStrategy: "Folder Shot Sequence",
+      shots: take.shots.map((s) => ({
+        shotNumber: s.shotNumber,
+        timeRange: s.timeRange,
+        label: s.hookType || `Shot ${s.shotNumber}`,
+        dialogue: s.script,
+        action: s.action || "Giao tiếp mắt tự nhiên",
+        hookCode: s.hookType ? "⚡ HOOK" : undefined,
+      })),
+      fullScript: take.scriptText,
+    };
+
+    setActivePlan(planToLoad);
+    setScriptText(take.scriptText);
+    setCurrentShotIndex(0);
+  }
+
   /**
    * DRM §11-14 — real-time coaching is signal-driven, not LLM opinion:
    * gather whatever deterministic signals are currently actionable
@@ -514,7 +635,37 @@ export default function StudioPage() {
     };
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
-      setRecordedUrl(URL.createObjectURL(blob));
+      const url = URL.createObjectURL(blob);
+      setRecordedUrl(url);
+
+      const now = new Date();
+      const dateStr = `Take shot: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+      const shotItems = activePlan?.shots.map((s) => ({
+        shotNumber: s.shotNumber,
+        timeRange: s.timeRange,
+        script: s.dialogue,
+        action: s.action,
+        hookType: s.hookCode ? "⚡ Hook / Cue" : undefined,
+      })) || [
+        {
+          shotNumber: 1,
+          timeRange: "00:00 - 00:15",
+          script: scriptText || "Recorded Take Script",
+          action: "Nhìn thẳng vào ống kính máy quay",
+        },
+      ];
+
+      const newTakeProject: TakeMaterialProject = {
+        id: `take-${Date.now()}`,
+        title: `Short #${takeProjects.length + 1}`,
+        dateTakeShot: dateStr,
+        totalDuration: activePlan?.totalDuration || "00:30",
+        videoUrl: url,
+        scriptText: scriptText || (activePlan?.fullScript ?? ""),
+        shots: shotItems,
+      };
+
+      setTakeProjects((prev) => [newTakeProject, ...prev]);
     };
     recorder.start();
     mediaRecorderRef.current = recorder;
@@ -865,6 +1016,13 @@ export default function StudioPage() {
               )}
               {calibrationError && <p className="error" style={{ marginTop: 6 }}>{calibrationError}</p>}
             </div>
+
+            {/* Take & Script Material Folders (Directly below Filming Frame) */}
+            <TakeFoldersSection
+              takes={takeProjects}
+              onAddTakeFolder={handleAddTakeFolder}
+              onLoadTakeToTeleprompter={handleLoadTakeToTeleprompter}
+            />
 
         {(transcript || isRecording) && (
           <FrostedGlassCard
