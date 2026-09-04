@@ -28,13 +28,16 @@ export async function triggerSignupWebhook(
     cleanName = cleanEmail.split("@")[0] || "Member";
   }
 
-  // Check if webhook was already triggered for this email to prevent duplicates
+  // Debounce rapid duplicate triggers (within 5 seconds)
   const storageKey = `webhook_sent_${cleanEmail}`;
   if (typeof window !== "undefined") {
-    const alreadySent = window.localStorage.getItem(storageKey);
-    if (alreadySent === "true") {
-      console.log(`[Webhook] Webhook already triggered for ${cleanEmail}. Skipping duplicate.`);
-      return true;
+    const lastSentStr = window.localStorage.getItem(storageKey);
+    if (lastSentStr) {
+      const lastSentTime = parseInt(lastSentStr, 10);
+      if (!isNaN(lastSentTime) && Date.now() - lastSentTime < 5000) {
+        console.log(`[Webhook] Duplicate trigger within 5s for ${cleanEmail}. Skipping duplicate.`);
+        return true;
+      }
     }
   }
 
@@ -43,7 +46,7 @@ export async function triggerSignupWebhook(
     email: cleanEmail,
   });
 
-  console.log(`[Webhook] Triggering signup webhook after verified email for ${cleanEmail}...`);
+  console.log(`[Webhook] Triggering signup webhook for ${cleanEmail} (${cleanName})...`);
 
   // Helper to send request with 5s timeout and at most 1 retry on network error
   async function sendWithTimeoutAndRetry(url: string, attempt = 1): Promise<boolean> {
@@ -101,9 +104,9 @@ export async function triggerSignupWebhook(
       sent = await sendWithTimeoutAndRetry(WEBHOOK_DIRECT_URL);
     }
 
-    // Mark as sent in localStorage
+    // Mark as sent in localStorage with timestamp
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(storageKey, "true");
+      window.localStorage.setItem(storageKey, String(Date.now()));
     }
 
     return true;

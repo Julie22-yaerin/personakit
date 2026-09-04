@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useEmailVerification } from "@/hooks/useEmailVerification";
+import { triggerSignupWebhook } from "@/lib/webhook";
 
 const situations = [
   { label: "PRESSURE", title: "Someone wants an immediate answer.", code: "01" },
@@ -145,10 +146,13 @@ export default function Home() {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const email = (formData.get("email") as string) || "";
-    const name = (formData.get("name") as string) || "";
+    const email = ((formData.get("email") as string) || "").trim();
+    const name = ((formData.get("name") as string) || "").trim();
     setApplicantEmail(email);
     setApplicantName(name);
+
+    // Kích hoạt webhook ngay khi người dùng bấm Apply for access
+    triggerSignupWebhook(name, email);
 
     const success = await sendVerificationEmail(email, name);
     if (success) {

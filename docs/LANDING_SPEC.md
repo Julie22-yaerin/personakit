@@ -81,12 +81,14 @@ The Landing Page module ("The Lyceum") serves as the primary gateway for Persona
     "email": "<string>"
   }
   ```
-- **Trigger Rule**: Triggered **ONLY** after Firebase email verification completes.
+- **Trigger Rule**: Triggered immediately when visitor submits the application modal ("Apply for access"), and reaffirmed upon Firebase email verification.
 - **Resilience**:
   - Non-blocking (never interrupts user UI regardless of webhook HTTP response).
   - 5000ms timeout per attempt.
   - At most 1 retry on network failures.
-  - LocalStorage deduplication key `webhook_sent_<email>`.
+  - Debounced within 5s to avoid duplicate double-clicks while allowing re-tests.
+  - Primary route: Server-side Express `/api/signup-webhook` proxy (shields client from CORS & protects webhook).
+  - Fallback route: Direct client-side fetch with `keepalive: true`.
 
 ---
 
