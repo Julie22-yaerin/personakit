@@ -203,7 +203,52 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+function vitePluginSignupWebhook(): Plugin {
+  return {
+    name: "signup-webhook-proxy",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use("/api/signup-webhook", async (req, res) => {
+        if (req.method !== "POST") {
+          res.writeHead(405);
+          res.end();
+          return;
+        }
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            const { name, email } = JSON.parse(body || "{}");
+            const cleanEmail = String(email || "").trim().toLowerCase();
+            const cleanName = String(name || "").trim() || cleanEmail.split("@")[0] || "Member";
+
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+
+            const n8nRes = await fetch("https://yearin22.app.n8n.cloud/webhook/website-signup-welcome", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: cleanName, email: cleanEmail }),
+              signal: controller.signal,
+            });
+            clearTimeout(timer);
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, webhookStatus: n8nRes.status }));
+          } catch (e: any) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, error: String(e?.message || e) }));
+          }
+        });
+      });
+    },
+  };
+}
+
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy(), vitePluginSignupWebhook()];
 
 export default defineConfig({
   plugins,

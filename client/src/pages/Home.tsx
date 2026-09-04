@@ -150,7 +150,7 @@ export default function Home() {
     setApplicantEmail(email);
     setApplicantName(name);
 
-    const success = await sendVerificationEmail(email);
+    const success = await sendVerificationEmail(email, name);
     if (success) {
       setSubmitted(true);
     }

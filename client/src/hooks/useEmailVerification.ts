@@ -8,6 +8,7 @@ import {
   type User,
 } from "firebase/auth";
 import { auth, initAnalytics } from "@/lib/firebase";
+import { triggerSignupWebhook } from "@/lib/webhook";
 
 export type VerificationStatus =
   | "idle"
@@ -26,7 +27,7 @@ export interface EmailVerificationState {
   email: string | null;
   error: string | null;
   user: User | null;
-  sendVerificationEmail: (email: string) => Promise<boolean>;
+  sendVerificationEmail: (email: string, applicantName?: string) => Promise<boolean>;
   verifyCurrentUrl: () => Promise<boolean>;
   resendVerification: () => Promise<boolean>;
   checkStatus: () => Promise<boolean>;
@@ -36,6 +37,7 @@ export interface EmailVerificationState {
 const STORAGE_KEY_EMAIL = "emailForSignIn";
 const STORAGE_KEY_PENDING = "pending_verification_email";
 const STORAGE_KEY_VERIFIED = "verified_email";
+const STORAGE_KEY_NAME = "pending_applicant_name";
 
 export function useEmailVerification(): EmailVerificationState {
   const [status, setStatus] = useState<VerificationStatus>("idle");
@@ -54,7 +56,7 @@ export function useEmailVerification(): EmailVerificationState {
 
   // Send verification link to user's email
   const sendVerificationEmail = useCallback(
-    async (targetEmail: string): Promise<boolean> => {
+    async (targetEmail: string, applicantName?: string): Promise<boolean> => {
       const trimmed = targetEmail.trim();
       if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
         setError("Vui lòng nhập địa chỉ email hợp lệ.");
@@ -81,6 +83,9 @@ export function useEmailVerification(): EmailVerificationState {
         if (typeof window !== "undefined") {
           window.localStorage.setItem(STORAGE_KEY_EMAIL, trimmed);
           window.localStorage.setItem(STORAGE_KEY_PENDING, trimmed);
+          if (applicantName) {
+            window.localStorage.setItem(STORAGE_KEY_NAME, applicantName.trim());
+          }
         }
 
         setEmail(trimmed);
@@ -143,6 +148,14 @@ export function useEmailVerification(): EmailVerificationState {
           // Clean URL parameters
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
+
+          // TRIGGER WEBHOOK ONLY AFTER VERIFIED EMAIL:
+          const savedName =
+            window.localStorage.getItem(STORAGE_KEY_NAME) ||
+            result.user.displayName ||
+            "";
+          triggerSignupWebhook(savedName, savedEmail);
+
           return true;
         }
       } catch (err: any) {
@@ -160,8 +173,12 @@ export function useEmailVerification(): EmailVerificationState {
       try {
         await applyActionCode(auth, oobCode);
         setStatus("verified");
-        if (email) {
-          window.localStorage.setItem(STORAGE_KEY_VERIFIED, email);
+        const targetEmail =
+          email || window.localStorage.getItem(STORAGE_KEY_PENDING) || "";
+        if (targetEmail) {
+          window.localStorage.setItem(STORAGE_KEY_VERIFIED, targetEmail);
+          const savedName = window.localStorage.getItem(STORAGE_KEY_NAME) || "";
+          triggerSignupWebhook(savedName, targetEmail);
         }
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
@@ -194,7 +211,11 @@ export function useEmailVerification(): EmailVerificationState {
         : null);
 
     if (target) {
-      return sendVerificationEmail(target);
+      const savedName =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem(STORAGE_KEY_NAME) || undefined
+          : undefined;
+      return sendVerificationEmail(target, savedName);
     }
     setError("Không tìm thấy địa chỉ email để gửi lại.");
     return false;
@@ -213,6 +234,11 @@ export function useEmailVerification(): EmailVerificationState {
               STORAGE_KEY_VERIFIED,
               auth.currentUser.email
             );
+            const savedName =
+              window.localStorage.getItem(STORAGE_KEY_NAME) ||
+              auth.currentUser.displayName ||
+              "";
+            triggerSignupWebhook(savedName, auth.currentUser.email);
           }
           return true;
         }
@@ -241,6 +267,11 @@ export function useEmailVerification(): EmailVerificationState {
         if (currentUser.email) {
           setEmail(currentUser.email);
           window.localStorage.setItem(STORAGE_KEY_VERIFIED, currentUser.email);
+          const savedName =
+            window.localStorage.getItem(STORAGE_KEY_NAME) ||
+            currentUser.displayName ||
+            "";
+          triggerSignupWebhook(savedName, currentUser.email);
         }
       }
     });
