@@ -1,16 +1,20 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
+  AlertCircle,
   ArrowRight,
   ArrowUpRight,
   Check,
   ChevronDown,
+  Mail,
   Menu,
   Play,
   Plus,
+  RefreshCw,
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import { useEmailVerification } from "@/hooks/useEmailVerification";
 
 const situations = [
   { label: "PRESSURE", title: "Someone wants an immediate answer.", code: "01" },
@@ -55,18 +59,30 @@ const metrics = [
 
 function Reveal({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const node = document.querySelectorAll<HTMLElement>(".reveal");
+    const el = ref.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => entry.isIntersecting && setVisible(true)),
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
       { threshold: 0.12 },
     );
-    node.forEach((element) => observer.observe(element));
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
   return (
-    <div className={`reveal ${visible ? "is-visible" : ""} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+    <div
+      ref={ref}
+      className={`reveal ${visible ? "is-visible" : ""} ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
       {children}
     </div>
   );
@@ -96,6 +112,23 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false);
   const [simulationActive, setSimulationActive] = useState(false);
   const [expandedPack, setExpandedPack] = useState<number | null>(null);
+  const [applicantName, setApplicantName] = useState("");
+  const [applicantEmail, setApplicantEmail] = useState("");
+  const [showVerifiedToast, setShowVerifiedToast] = useState(true);
+
+  const {
+    status: verificationStatus,
+    isSending,
+    isSent,
+    isVerifying,
+    isVerified,
+    email: verifiedEmail,
+    error: verificationError,
+    sendVerificationEmail,
+    resendVerification,
+    checkStatus,
+    reset: resetVerification,
+  } = useEmailVerification();
 
   const goTo = (id: string) => {
     setMenuOpen(false);
@@ -105,6 +138,22 @@ export default function Home() {
   const openApply = () => {
     setApplyOpen(true);
     setSubmitted(false);
+    resetVerification();
+  };
+
+  const handleApplySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const email = (formData.get("email") as string) || "";
+    const name = (formData.get("name") as string) || "";
+    setApplicantEmail(email);
+    setApplicantName(name);
+
+    const success = await sendVerificationEmail(email);
+    if (success) {
+      setSubmitted(true);
+    }
   };
 
   return (
@@ -354,7 +403,263 @@ export default function Home() {
         <div className="container footer-bottom"><span>© 2026 The Lyceum</span><span>FEEL IT. DON’T LET IT DECIDE.</span><span>BUILT FOR THE MOMENT.</span></div>
       </footer>
 
-      {applyOpen && <div className="modal-backdrop" role="presentation" onClick={(event) => event.target === event.currentTarget && setApplyOpen(false)}><div className="apply-modal" role="dialog" aria-modal="true" aria-labelledby="apply-title"><button className="modal-close" onClick={() => setApplyOpen(false)} aria-label="Close application" type="button"><X size={18} /></button>{submitted ? <div className="submitted-state"><div className="submitted-icon"><Check size={22} /></div><p className="eyebrow">APPLICATION RECEIVED</p><h2>Interest noted.</h2><p>We’ll be in touch.</p><button className="primary-cta" onClick={() => setApplyOpen(false)} type="button">Return to The Lyceum <ArrowUpRight size={16} /></button></div> : <><p className="eyebrow">FOUNDING MEMBERSHIP</p><h2 id="apply-title">Start with a<br /><em>considered yes.</em></h2><p className="modal-intro">Tell us where you want more control.</p><form onSubmit={(event) => { event.preventDefault(); setSubmitted(true); }}><label>Name<input required name="name" placeholder="Your name" /></label><label>Email<input required name="email" type="email" placeholder="you@example.com" /></label><label>What is your role?<textarea required name="context" rows={3} placeholder="Founder, designer, manager, student…" /></label><label>What would you budget for a 3-month customized program?<select required name="budget"><option value="" disabled>Select a range</option><option value="under-500">Under $500</option><option value="500-1000">$500 — $1,000</option><option value="1000-2000">$1,000 — $2,000</option><option value="2000-plus">$2,000+</option></select></label><button className="primary-cta" type="submit">Apply for access <ArrowUpRight size={16} /></button></form><p className="fine-print">No pressure. Just intent.</p></>}</div></div>}
+      {/* Floating Verified Notification */}
+      {isVerified && showVerifiedToast && (
+        <aside
+          aria-label="Xác thực email thành công"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 90,
+            background: "#1d2b3a",
+            color: "#f5efed",
+            border: "1px solid #cbd9e6",
+            boxShadow: "0 12px 36px rgba(0,0,0,0.35)",
+            padding: "14px 20px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontFamily: "var(--mono)",
+            fontSize: 12,
+          }}
+        >
+          <Check size={18} color="#799a8c" />
+          <span>
+            Email <strong>{verifiedEmail || applicantEmail}</strong> đã xác thực Firebase thành công!
+          </span>
+          <button
+            onClick={() => setShowVerifiedToast(false)}
+            style={{
+              background: "none",
+              border: 0,
+              color: "inherit",
+              cursor: "pointer",
+              padding: "2px 6px",
+              marginLeft: 8,
+              fontSize: 14,
+            }}
+            type="button"
+            aria-label="Đóng thông báo"
+          >
+            ✕
+          </button>
+        </aside>
+      )}
+
+      {applyOpen && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={(event) => event.target === event.currentTarget && setApplyOpen(false)}
+        >
+          <div
+            className="apply-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="apply-title"
+          >
+            <button
+              className="modal-close"
+              onClick={() => setApplyOpen(false)}
+              aria-label="Close application"
+              type="button"
+            >
+              <X size={18} />
+            </button>
+
+            {submitted || isVerified ? (
+              <div className="submitted-state">
+                <div
+                  className="submitted-icon"
+                  style={{
+                    borderColor: isVerified ? "#799a8c" : "var(--navy)",
+                    color: isVerified ? "#799a8c" : "var(--navy)",
+                  }}
+                >
+                  {isVerified ? <Check size={24} /> : <Mail size={24} />}
+                </div>
+                <p className="eyebrow" style={{ color: isVerified ? "#799a8c" : undefined }}>
+                  {isVerified ? "XÁC MINH EMAIL THÀNH CÔNG" : "ĐÃ GỬI EMAIL XÁC THỰC"}
+                </p>
+                <h2>
+                  {isVerified
+                    ? "Đã xác nhận thành công."
+                    : "Kiểm tra hộp thư của bạn."}
+                </h2>
+                <p>
+                  {isVerified
+                    ? `Email ${applicantEmail || verifiedEmail || ""} đã được xác minh qua Firebase. Đơn ứng tuyển của bạn đã sẵn sàng.`
+                    : `Firebase đã gửi liên kết xác thực đến ${applicantEmail || verifiedEmail}. Vui lòng mở email và nhấn vào liên kết để hoàn tất đơn ứng tuyển.`}
+                </p>
+
+                {!isVerified && (
+                  <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 11,
+                        fontFamily: "var(--mono)",
+                        color: "var(--muted-ink)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          background: isVerifying ? "#3b82f6" : "#e0a133",
+                          display: "inline-block",
+                        }}
+                      />
+                      <span>
+                        {isVerifying
+                          ? "Đang xử lý xác thực..."
+                          : "Trạng thái: Đang chờ bạn mở liên kết trong email..."}
+                      </span>
+                    </div>
+
+                    {verificationError && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          color: "#c2410c",
+                          background: "rgba(194, 65, 12, 0.08)",
+                          padding: "8px 12px",
+                          borderRadius: 2,
+                          fontSize: 12,
+                        }}
+                      >
+                        <AlertCircle size={15} />
+                        <span>{verificationError}</span>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
+                      <button
+                        className="primary-cta"
+                        style={{ padding: "10px 16px", fontSize: 10 }}
+                        onClick={resendVerification}
+                        disabled={isSending}
+                        type="button"
+                      >
+                        {isSending ? "Đang gửi..." : "Gửi lại email"}
+                      </button>
+                      <button
+                        className="primary-cta"
+                        style={{
+                          padding: "10px 16px",
+                          fontSize: 10,
+                          background: "transparent",
+                          borderColor: "var(--line)",
+                          color: "var(--ink)",
+                        }}
+                        onClick={checkStatus}
+                        type="button"
+                      >
+                        Kiểm tra trạng thái
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isVerified && (
+                  <button
+                    className="primary-cta"
+                    style={{ marginTop: 24 }}
+                    onClick={() => setApplyOpen(false)}
+                    type="button"
+                  >
+                    Hoàn tất <ArrowUpRight size={16} />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <p className="eyebrow">FOUNDING MEMBERSHIP</p>
+                <h2 id="apply-title">
+                  Start with a<br />
+                  <em>considered yes.</em>
+                </h2>
+                <p className="modal-intro">Tell us where you want more control.</p>
+
+                {verificationError && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "#c2410c",
+                      background: "rgba(194, 65, 12, 0.08)",
+                      padding: "10px 14px",
+                      borderRadius: 2,
+                      fontSize: 12,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <AlertCircle size={16} />
+                    <span>{verificationError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleApplySubmit}>
+                  <label>
+                    Name
+                    <input required name="name" placeholder="Your name" />
+                  </label>
+                  <label>
+                    Email (sẽ nhận email xác thực)
+                    <input
+                      required
+                      name="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      defaultValue={applicantEmail || verifiedEmail || ""}
+                    />
+                  </label>
+                  <label>
+                    What is your role?
+                    <textarea
+                      required
+                      name="context"
+                      rows={3}
+                      placeholder="Founder, designer, manager, student…"
+                    />
+                  </label>
+                  <label>
+                    What would you budget for a 3-month customized program?
+                    <select required name="budget" defaultValue="">
+                      <option value="" disabled>
+                        Select a range
+                      </option>
+                      <option value="under-500">Under $500</option>
+                      <option value="500-1000">$500 — $1,000</option>
+                      <option value="1000-2000">$1,000 — $2,000</option>
+                      <option value="2000-plus">$2,000+</option>
+                    </select>
+                  </label>
+                  <button className="primary-cta" type="submit" disabled={isSending}>
+                    {isSending ? (
+                      "Đang gửi email xác thực..."
+                    ) : (
+                      <>
+                        Apply for access <ArrowUpRight size={16} />
+                      </>
+                    )}
+                  </button>
+                </form>
+                <p className="fine-print">
+                  Xác minh email tự động gửi qua Firebase Authentication.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
