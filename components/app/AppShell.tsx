@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { auth, handleNewDeviceAuth } from "../../lib/firebase";
-import { Logo } from "../landing/Logo";
+import { Logo } from "@/components/ui/Logo";
 import { PixelCat } from "./PixelCat";
 import { PersonaDrawer } from "./PersonaDrawer";
 

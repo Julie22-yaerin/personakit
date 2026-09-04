@@ -15,7 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { auth, db, googleProvider, handleNewDeviceAuth } from "../../lib/firebase";
-import { Logo } from "../../components/landing/Logo";
+import { Logo } from "@/components/ui/Logo";
 
 type Mode = "signup" | "signin" | "reset";
 

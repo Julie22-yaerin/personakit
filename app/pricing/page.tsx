@@ -3,8 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import PricingSection from "@/components/ui/pricing-section";
-import { Logo } from "@/components/landing/Logo";
-import "@/app/persona-landing.css";
+import { Logo } from "@/components/ui/Logo";
+import "./pricing.css";
 
 export default function PricingPage() {
   return (

@@ -22,7 +22,7 @@ import {
   type NewOnboardingData,
   type OnboardingStageId,
 } from "../../lib/onboarding-questions";
-import { Logo } from "../../components/landing/Logo";
+import { Logo } from "@/components/ui/Logo";
 import { authedFetch, safeReadJson } from "../../lib/api-client";
 import { ArrowRight, ArrowLeft, Check, Sparkles, AlertCircle } from "lucide-react";
 import { FrostedGlassCard } from "@/components/ui/interactive-frosted-glass-card";

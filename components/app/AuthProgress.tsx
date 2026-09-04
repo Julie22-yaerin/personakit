@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Logo } from "../landing/Logo";
+import { Logo } from "@/components/ui/Logo";
 
 interface AuthProgressProps {
   label?: string;

@@ -34,25 +34,25 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://thelyceum.site"),
   title: {
-    default: "PERSONA — Founder Persona Intelligence",
-    template: "%s · PERSONA",
+    default: "The Lyceum — Psychology, practiced.",
+    template: "%s · The Lyceum",
   },
   description:
-    "Your persona is not a document. Measure, test, and improve the identity behind your content.",
+    "Applied psychology for real human situations. The Lyceum helps you think clearly when emotions are loud.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: "/",
-    siteName: "PERSONA",
-    title: "PERSONA — Founder Persona Intelligence",
+    siteName: "The Lyceum",
+    title: "The Lyceum — Psychology, practiced.",
     description:
-      "Your persona is not a document. Measure, test, and improve the identity behind your content.",
+      "Applied psychology for real human situations. The Lyceum helps you think clearly when emotions are loud.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PERSONA — Founder Persona Intelligence",
+    title: "The Lyceum — Psychology, practiced.",
     description:
-      "Your persona is not a document. Measure, test, and improve the identity behind your content.",
+      "Applied psychology for real human situations. The Lyceum helps you think clearly when emotions are loud.",
   },
 };
 

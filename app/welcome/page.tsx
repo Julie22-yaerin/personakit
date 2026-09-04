@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Sparkles, LayoutGrid, Camera } from "lucide-react";
-import { Logo } from "@/components/landing/Logo";
+import { Logo } from "@/components/ui/Logo";
 import { AnimationBackground } from "@/components/ui/bloim-animation-background";
 
 export default function WelcomePage() {
