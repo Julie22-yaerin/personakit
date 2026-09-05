@@ -221,9 +221,21 @@ function vitePluginSignupWebhook(): Plugin {
 
         req.on("end", async () => {
           try {
-            const { name, email } = JSON.parse(body || "{}");
+            const parsed = JSON.parse(body || "{}");
+            const { name, email, interest, context, situation, goal, booking_link } = parsed;
             const cleanEmail = String(email || "").trim().toLowerCase();
             const cleanName = String(name || "").trim() || cleanEmail.split("@")[0] || "Member";
+
+            const payload: Record<string, string> = {
+              name: cleanName,
+              email: cleanEmail,
+            };
+
+            if (interest && String(interest).trim()) payload.interest = String(interest).trim();
+            if (context && String(context).trim()) payload.context = String(context).trim();
+            if (situation && String(situation).trim()) payload.situation = String(situation).trim();
+            if (goal && String(goal).trim()) payload.goal = String(goal).trim();
+            if (booking_link && String(booking_link).trim()) payload.booking_link = String(booking_link).trim();
 
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 5000);
@@ -231,16 +243,16 @@ function vitePluginSignupWebhook(): Plugin {
             const n8nRes = await fetch("https://yearin22.app.n8n.cloud/webhook/website-signup-welcome", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: cleanName, email: cleanEmail }),
+              body: JSON.stringify(payload),
               signal: controller.signal,
             });
             clearTimeout(timer);
 
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: true, webhookStatus: n8nRes.status }));
+            res.writeHead(n8nRes.ok ? 200 : n8nRes.status, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: n8nRes.ok, webhookStatus: n8nRes.status }));
           } catch (e: any) {
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: true, error: String(e?.message || e) }));
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: false, error: String(e?.message || e) }));
           }
         });
       });

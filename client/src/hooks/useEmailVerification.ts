@@ -8,7 +8,25 @@ import {
   type User,
 } from "firebase/auth";
 import { auth, initAnalytics } from "@/lib/firebase";
-import { triggerSignupWebhook } from "@/lib/webhook";
+import {
+  triggerSignupWebhook,
+  STORAGE_KEY_PENDING_PAYLOAD,
+  type SignupPayload,
+} from "@/lib/webhook";
+
+function getStoredPayload(fallbackEmail: string, fallbackName?: string): SignupPayload {
+  let payload: SignupPayload = { name: fallbackName || "", email: fallbackEmail };
+  if (typeof window !== "undefined") {
+    const raw = window.localStorage.getItem(STORAGE_KEY_PENDING_PAYLOAD);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        payload = { ...parsed, email: fallbackEmail, name: fallbackName || parsed.name || "" };
+      } catch {}
+    }
+  }
+  return payload;
+}
 
 export type VerificationStatus =
   | "idle"
@@ -154,7 +172,7 @@ export function useEmailVerification(): EmailVerificationState {
             window.localStorage.getItem(STORAGE_KEY_NAME) ||
             result.user.displayName ||
             "";
-          triggerSignupWebhook(savedName, savedEmail);
+          triggerSignupWebhook(getStoredPayload(savedEmail, savedName));
 
           return true;
         }
@@ -178,7 +196,7 @@ export function useEmailVerification(): EmailVerificationState {
         if (targetEmail) {
           window.localStorage.setItem(STORAGE_KEY_VERIFIED, targetEmail);
           const savedName = window.localStorage.getItem(STORAGE_KEY_NAME) || "";
-          triggerSignupWebhook(savedName, targetEmail);
+          triggerSignupWebhook(getStoredPayload(targetEmail, savedName));
         }
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
@@ -238,7 +256,7 @@ export function useEmailVerification(): EmailVerificationState {
               window.localStorage.getItem(STORAGE_KEY_NAME) ||
               auth.currentUser.displayName ||
               "";
-            triggerSignupWebhook(savedName, auth.currentUser.email);
+            triggerSignupWebhook(getStoredPayload(auth.currentUser.email, savedName));
           }
           return true;
         }
@@ -271,7 +289,7 @@ export function useEmailVerification(): EmailVerificationState {
             window.localStorage.getItem(STORAGE_KEY_NAME) ||
             currentUser.displayName ||
             "";
-          triggerSignupWebhook(savedName, currentUser.email);
+          triggerSignupWebhook(getStoredPayload(currentUser.email, savedName));
         }
       }
     });

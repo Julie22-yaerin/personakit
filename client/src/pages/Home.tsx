@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useEmailVerification } from "@/hooks/useEmailVerification";
-import { triggerSignupWebhook } from "@/lib/webhook";
+import { triggerSignupWebhook, type SignupPayload } from "@/lib/webhook";
 
 const situations = [
   { label: "PRESSURE", title: "Someone wants an immediate answer.", code: "01" },
@@ -112,7 +112,16 @@ export default function Home() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [simulationActive, setSimulationActive] = useState(false);
-  const [expandedPack, setExpandedPack] = useState<number | null>(null);
+  const [formValues, setFormValues] = useState({
+    name: "",
+    email: "",
+    context: "",
+    situation: "",
+    goal: "",
+    interest: "Strategic No",
+  });
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicantName, setApplicantName] = useState("");
   const [applicantEmail, setApplicantEmail] = useState("");
   const [showVerifiedToast, setShowVerifiedToast] = useState(true);
@@ -139,24 +148,66 @@ export default function Home() {
   const openApply = () => {
     setApplyOpen(true);
     setSubmitted(false);
+    setSubmitError(null);
     resetVerification();
   };
 
   const handleApplySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const email = ((formData.get("email") as string) || "").trim();
-    const name = ((formData.get("name") as string) || "").trim();
+    setSubmitError(null);
+
+    const name = formValues.name.trim();
+    const email = formValues.email.trim();
+
+    // Client-side validation: Name & Email
+    if (!name) {
+      setSubmitError("Vui lòng nhập tên của bạn.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setSubmitError("Vui lòng nhập địa chỉ email hợp lệ (ví dụ: you@example.com).");
+      return;
+    }
+
+    setIsSubmitting(true);
     setApplicantEmail(email);
     setApplicantName(name);
 
-    // Kích hoạt webhook ngay khi người dùng bấm Apply for access
-    triggerSignupWebhook(name, email);
+    const payload: SignupPayload = {
+      name,
+      email,
+      context: formValues.context.trim() || undefined,
+      situation: formValues.situation.trim() || undefined,
+      goal: formValues.goal.trim() || undefined,
+      interest: formValues.interest.trim() || undefined,
+    };
 
-    const success = await sendVerificationEmail(email, name);
-    if (success) {
+    try {
+      // 1. Gửi request POST tới webhook n8n
+      const webhookResult = await triggerSignupWebhook(payload);
+
+      // Webhook trả về: Chỉ cần 2xx là thành công
+      if (!webhookResult.success) {
+        setSubmitError(
+          webhookResult.error ||
+            "Không thể kết nối đến máy chủ webhook. Vui lòng kiểm tra kết nối mạng và thử lại."
+        );
+        setIsSubmitting(false);
+        return; // Giữ nguyên toàn bộ dữ liệu đã nhập trên form
+      }
+
+      // 2. Gửi email xác thực Firebase song song (không chặn luồng n8n)
+      sendVerificationEmail(email, name).catch((err) => {
+        console.warn("[Firebase] Email send warning:", err);
+      });
+
+      setIsSubmitting(false);
       setSubmitted(true);
+    } catch (err: any) {
+      setSubmitError("Đã có lỗi xảy ra trong quá trình gửi đăng ký. Vui lòng thử lại.");
+      setIsSubmitting(false);
     }
   };
 
@@ -592,8 +643,9 @@ export default function Home() {
                 </h2>
                 <p className="modal-intro">Tell us where you want more control.</p>
 
-                {verificationError && (
+                {(submitError || verificationError) && (
                   <div
+                    role="alert"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -604,52 +656,82 @@ export default function Home() {
                       borderRadius: 2,
                       fontSize: 12,
                       marginBottom: 16,
+                      lineHeight: 1.4,
                     }}
                   >
-                    <AlertCircle size={16} />
-                    <span>{verificationError}</span>
+                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    <span>{submitError || verificationError}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleApplySubmit}>
+                <form onSubmit={handleApplySubmit} noValidate>
                   <label>
-                    Name
-                    <input required name="name" placeholder="Your name" />
+                    Name *
+                    <input
+                      required
+                      name="name"
+                      value={formValues.name}
+                      onChange={(e) => setFormValues((v) => ({ ...v, name: e.target.value }))}
+                      placeholder="Your name"
+                    />
                   </label>
                   <label>
-                    Email (sẽ nhận email xác thực)
+                    Email *
                     <input
                       required
                       name="email"
                       type="email"
+                      value={formValues.email}
+                      onChange={(e) => setFormValues((v) => ({ ...v, email: e.target.value }))}
                       placeholder="you@example.com"
-                      defaultValue={applicantEmail || verifiedEmail || ""}
                     />
                   </label>
                   <label>
-                    What is your role?
+                    Context / Role (tùy chọn)
                     <textarea
-                      required
                       name="context"
-                      rows={3}
+                      rows={2}
+                      value={formValues.context}
+                      onChange={(e) => setFormValues((v) => ({ ...v, context: e.target.value }))}
                       placeholder="Founder, designer, manager, student…"
                     />
                   </label>
                   <label>
-                    What would you budget for a 3-month customized program?
-                    <select required name="budget" defaultValue="">
-                      <option value="" disabled>
-                        Select a range
-                      </option>
-                      <option value="under-500">Under $500</option>
-                      <option value="500-1000">$500 — $1,000</option>
-                      <option value="1000-2000">$1,000 — $2,000</option>
-                      <option value="2000-plus">$2,000+</option>
+                    Situation (tình huống đang gặp - tùy chọn)
+                    <input
+                      name="situation"
+                      value={formValues.situation}
+                      onChange={(e) => setFormValues((v) => ({ ...v, situation: e.target.value }))}
+                      placeholder="Misunderstanding, high pressure, boundary setting…"
+                    />
+                  </label>
+                  <label>
+                    Goal (mục tiêu muốn đạt - tùy chọn)
+                    <input
+                      name="goal"
+                      value={formValues.goal}
+                      onChange={(e) => setFormValues((v) => ({ ...v, goal: e.target.value }))}
+                      placeholder="Communicate calmly, lower defensiveness…"
+                    />
+                  </label>
+                  <label>
+                    Interest (chủ đề quan tâm)
+                    <select
+                      name="interest"
+                      value={formValues.interest}
+                      onChange={(e) => setFormValues((v) => ({ ...v, interest: e.target.value }))}
+                    >
+                      <option value="Strategic No">Strategic No (Protect time without coldness)</option>
+                      <option value="Pressure & Emotional Noise">Pressure & Emotional Noise (Stay centered)</option>
+                      <option value="Reading People">Reading People (Recognise the pattern)</option>
+                      <option value="Relationship Hard Situations">Relationship Hard Situations (Repair)</option>
+                      <option value="Starting Attachments">Starting Attachments (Connection with centre)</option>
+                      <option value="Fine Influence Private Lesson">Fine Influence (Voice & Tactical Empathy)</option>
                     </select>
                   </label>
-                  <button className="primary-cta" type="submit" disabled={isSending}>
-                    {isSending ? (
-                      "Đang gửi email xác thực..."
+                  <button className="primary-cta" type="submit" disabled={isSubmitting || isSending}>
+                    {isSubmitting || isSending ? (
+                      "Đang gửi đăng ký..."
                     ) : (
                       <>
                         Apply for access <ArrowUpRight size={16} />
@@ -658,7 +740,7 @@ export default function Home() {
                   </button>
                 </form>
                 <p className="fine-print">
-                  Xác minh email tự động gửi qua Firebase Authentication.
+                  Thông tin được kết nối tự động với hệ thống tiếp nhận The Lyceum.
                 </p>
               </>
             )}

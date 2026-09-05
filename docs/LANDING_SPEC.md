@@ -77,8 +77,13 @@ The Landing Page module ("The Lyceum") serves as the primary gateway for Persona
 - **Payload Schema**:
   ```json
   {
-    "name": "<string>",
-    "email": "<string>"
+    "name": "<string, required>",
+    "email": "<string, required>",
+    "interest": "<string, optional>",
+    "context": "<string, optional>",
+    "situation": "<string, optional>",
+    "goal": "<string, optional>",
+    "booking_link": "<string, optional>"
   }
   ```
 - **Trigger Rule**: Triggered immediately when visitor submits the application modal ("Apply for access"), and reaffirmed upon Firebase email verification.
