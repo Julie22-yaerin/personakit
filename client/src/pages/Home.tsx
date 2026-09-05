@@ -112,6 +112,7 @@ export default function Home() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [simulationActive, setSimulationActive] = useState(false);
+  const [expandedPack, setExpandedPack] = useState<number | null>(null);
   const [formValues, setFormValues] = useState({
     name: "",
     email: "",
