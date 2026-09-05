@@ -173,6 +173,7 @@ export default function Home() {
           <button onClick={() => goTo("experience")} type="button">Experience</button>
           <button onClick={() => goTo("packs")} type="button">Packs</button>
           <button onClick={() => goTo("philosophy")} type="button">Philosophy</button>
+          <a href="/sample" className="nav-sample-link">Sample</a>
         </nav>
         <div className="nav-actions">
           <button className="nav-apply" onClick={openApply} type="button">Apply <ArrowUpRight size={14} /></button>
@@ -403,7 +404,7 @@ export default function Home() {
       </main>
 
       <footer className="site-footer section-dark">
-        <div className="container footer-top"><div className="footer-brand"><a className="wordmark" href="#top" onClick={(event) => { event.preventDefault(); goTo("top"); }}><span className="wordmark-mark">◦</span><span>The Lyceum</span></a><p>Applied psychology. Practiced.</p></div><div className="footer-nav"><div><span>Explore</span><button onClick={() => goTo("method")} type="button">Method</button><button onClick={() => goTo("experience")} type="button">Experience</button><button onClick={() => goTo("packs")} type="button">Packs</button><button onClick={() => goTo("philosophy")} type="button">Philosophy</button></div><div><span>Elsewhere</span><a href="#privacy">Privacy</a><a href="#terms">Terms</a><a href="mailto:hello@thelyceum.studio">Contact</a></div></div></div>
+        <div className="container footer-top"><div className="footer-brand"><a className="wordmark" href="#top" onClick={(event) => { event.preventDefault(); goTo("top"); }}><span className="wordmark-mark">◦</span><span>The Lyceum</span></a><p>Applied psychology. Practiced.</p></div><div className="footer-nav"><div><span>Explore</span><button onClick={() => goTo("method")} type="button">Method</button><button onClick={() => goTo("experience")} type="button">Experience</button><button onClick={() => goTo("packs")} type="button">Packs</button><button onClick={() => goTo("philosophy")} type="button">Philosophy</button><a href="/sample">Sample Lesson</a></div><div><span>Elsewhere</span><a href="#privacy">Privacy</a><a href="#terms">Terms</a><a href="mailto:hello@thelyceum.studio">Contact</a></div></div></div>
         <div className="container footer-bottom"><span>© 2026 The Lyceum</span><span>FEEL IT. DON’T LET IT DECIDE.</span><span>BUILT FOR THE MOMENT.</span></div>
       </footer>
 
