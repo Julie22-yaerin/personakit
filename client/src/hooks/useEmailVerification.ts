@@ -77,7 +77,7 @@ export function useEmailVerification(): EmailVerificationState {
     async (targetEmail: string, applicantName?: string): Promise<boolean> => {
       const trimmed = targetEmail.trim();
       if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-        setError("Vui lòng nhập địa chỉ email hợp lệ.");
+        setError("Please enter a valid email address.");
         setStatus("error");
         return false;
       }
@@ -111,15 +111,15 @@ export function useEmailVerification(): EmailVerificationState {
         return true;
       } catch (err: any) {
         console.error("Firebase sendSignInLinkToEmail error:", err);
-        let msg = "Không thể gửi email xác thực. Vui lòng thử lại.";
+        let msg = "Failed to send verification email. Please try again.";
         if (err?.code === "auth/invalid-email") {
-          msg = "Địa chỉ email không đúng định dạng.";
+          msg = "Invalid email address format.";
         } else if (err?.code === "auth/too-many-requests") {
-          msg = "Quá nhiều yêu cầu trong thời gian ngắn. Vui lòng đợi vài phút rồi thử lại.";
+          msg = "Too many requests. Please wait a few minutes and try again.";
         } else if (err?.code === "auth/unauthorized-continue-uri") {
-          msg = "Tên miền chuyển hướng chưa được cho phép trong Firebase Auth.";
+          msg = "Domain is not authorized in Firebase Auth.";
         } else if (err?.code === "auth/operation-not-allowed") {
-          msg = "Phương thức đăng nhập qua Email Link chưa được bật trong Firebase Console (Authentication > Sign-in method > Email/Password > Email link).";
+          msg = "Email link sign-in is not enabled in Firebase Console.";
         } else if (err?.message) {
           msg = err.message;
         }
@@ -151,7 +151,7 @@ export function useEmailVerification(): EmailVerificationState {
 
         if (!savedEmail) {
           savedEmail = window.prompt(
-            "Vui lòng nhập lại email của bạn để hoàn tất xác minh:"
+            "Please re-enter your email to complete verification:"
           );
         }
 
@@ -178,7 +178,7 @@ export function useEmailVerification(): EmailVerificationState {
         }
       } catch (err: any) {
         console.error("signInWithEmailLink error:", err);
-        setError(err?.message || "Liên kết xác thực không hợp lệ hoặc đã hết hạn.");
+        setError(err?.message || "Verification link is invalid or has expired.");
         setStatus("error");
         return false;
       }
@@ -203,7 +203,7 @@ export function useEmailVerification(): EmailVerificationState {
         return true;
       } catch (err: any) {
         console.error("applyActionCode error:", err);
-        setError(err?.message || "Mã xác thực không hợp lệ hoặc đã hết hạn.");
+        setError(err?.message || "Verification code is invalid or has expired.");
         setStatus("error");
         return false;
       }
@@ -235,7 +235,7 @@ export function useEmailVerification(): EmailVerificationState {
           : undefined;
       return sendVerificationEmail(target, savedName);
     }
-    setError("Không tìm thấy địa chỉ email để gửi lại.");
+    setError("No email address found to resend.");
     return false;
   }, [email, sendVerificationEmail]);
 

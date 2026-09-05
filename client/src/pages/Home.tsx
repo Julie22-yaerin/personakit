@@ -162,13 +162,13 @@ export default function Home() {
 
     // Client-side validation: Name & Email
     if (!name) {
-      setSubmitError("Vui lòng nhập tên của bạn.");
+      setSubmitError("Please enter your name.");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setSubmitError("Vui lòng nhập địa chỉ email hợp lệ (ví dụ: you@example.com).");
+      setSubmitError("Please enter a valid email address (e.g. you@example.com).");
       return;
     }
 
@@ -186,20 +186,20 @@ export default function Home() {
     };
 
     try {
-      // 1. Gửi request POST tới webhook n8n
+      // 1. Dispatch POST request to n8n webhook
       const webhookResult = await triggerSignupWebhook(payload);
 
-      // Webhook trả về: Chỉ cần 2xx là thành công
+      // Webhook response: 2xx indicates success
       if (!webhookResult.success) {
         setSubmitError(
           webhookResult.error ||
-            "Không thể kết nối đến máy chủ webhook. Vui lòng kiểm tra kết nối mạng và thử lại."
+            "Unable to connect to the server. Please check your connection and try again."
         );
         setIsSubmitting(false);
-        return; // Giữ nguyên toàn bộ dữ liệu đã nhập trên form
+        return; // Retain all entered form inputs
       }
 
-      // 2. Gửi email xác thực Firebase song song (không chặn luồng n8n)
+      // 2. Dispatch Firebase verification email in parallel
       sendVerificationEmail(email, name).catch((err) => {
         console.warn("[Firebase] Email send warning:", err);
       });
@@ -207,7 +207,7 @@ export default function Home() {
       setIsSubmitting(false);
       setSubmitted(true);
     } catch (err: any) {
-      setSubmitError("Đã có lỗi xảy ra trong quá trình gửi đăng ký. Vui lòng thử lại.");
+      setSubmitError("An error occurred while submitting your application. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -463,7 +463,7 @@ export default function Home() {
       {/* Floating Verified Notification */}
       {isVerified && showVerifiedToast && (
         <aside
-          aria-label="Xác thực email thành công"
+          aria-label="Email verified successfully"
           style={{
             position: "fixed",
             bottom: 24,
@@ -483,7 +483,7 @@ export default function Home() {
         >
           <Check size={18} color="#799a8c" />
           <span>
-            Email <strong>{verifiedEmail || applicantEmail}</strong> đã xác thực Firebase thành công!
+            Email <strong>{verifiedEmail || applicantEmail}</strong> has been successfully verified!
           </span>
           <button
             onClick={() => setShowVerifiedToast(false)}
@@ -497,7 +497,7 @@ export default function Home() {
               fontSize: 14,
             }}
             type="button"
-            aria-label="Đóng thông báo"
+            aria-label="Close notification"
           >
             ✕
           </button>
@@ -537,17 +537,17 @@ export default function Home() {
                   {isVerified ? <Check size={24} /> : <Mail size={24} />}
                 </div>
                 <p className="eyebrow" style={{ color: isVerified ? "#799a8c" : undefined }}>
-                  {isVerified ? "XÁC MINH EMAIL THÀNH CÔNG" : "ĐÃ GỬI EMAIL XÁC THỰC"}
+                  {isVerified ? "EMAIL VERIFIED" : "VERIFICATION EMAIL SENT"}
                 </p>
                 <h2>
                   {isVerified
-                    ? "Đã xác nhận thành công."
-                    : "Kiểm tra hộp thư của bạn."}
+                    ? "Confirmed successfully."
+                    : "Check your inbox."}
                 </h2>
                 <p>
                   {isVerified
-                    ? `Email ${applicantEmail || verifiedEmail || ""} đã được xác minh qua Firebase. Đơn ứng tuyển của bạn đã sẵn sàng.`
-                    : `Firebase đã gửi liên kết xác thực đến ${applicantEmail || verifiedEmail}. Vui lòng mở email và nhấn vào liên kết để hoàn tất đơn ứng tuyển.`}
+                    ? `Email ${applicantEmail || verifiedEmail || ""} has been verified. Your application is ready.`
+                    : `A verification link has been sent to ${applicantEmail || verifiedEmail}. Please open your email and click the link to finalize your application.`}
                 </p>
 
                 {!isVerified && (
@@ -573,8 +573,8 @@ export default function Home() {
                       />
                       <span>
                         {isVerifying
-                          ? "Đang xử lý xác thực..."
-                          : "Trạng thái: Đang chờ bạn mở liên kết trong email..."}
+                          ? "Processing verification..."
+                          : "Status: Waiting for email link confirmation..."}
                       </span>
                     </div>
 
@@ -604,7 +604,7 @@ export default function Home() {
                         disabled={isSending}
                         type="button"
                       >
-                        {isSending ? "Đang gửi..." : "Gửi lại email"}
+                        {isSending ? "Sending..." : "Resend email"}
                       </button>
                       <button
                         className="primary-cta"
@@ -618,7 +618,7 @@ export default function Home() {
                         onClick={checkStatus}
                         type="button"
                       >
-                        Kiểm tra trạng thái
+                        Check status
                       </button>
                     </div>
                   </div>
@@ -631,7 +631,7 @@ export default function Home() {
                     onClick={() => setApplyOpen(false)}
                     type="button"
                   >
-                    Hoàn tất <ArrowUpRight size={16} />
+                    Done <ArrowUpRight size={16} />
                   </button>
                 )}
               </div>
@@ -688,7 +688,7 @@ export default function Home() {
                     />
                   </label>
                   <label>
-                    Context / Role (tùy chọn)
+                    Context / Role (optional)
                     <textarea
                       name="context"
                       rows={2}
@@ -698,7 +698,7 @@ export default function Home() {
                     />
                   </label>
                   <label>
-                    Situation (tình huống đang gặp - tùy chọn)
+                    Situation (optional)
                     <input
                       name="situation"
                       value={formValues.situation}
@@ -707,7 +707,7 @@ export default function Home() {
                     />
                   </label>
                   <label>
-                    Goal (mục tiêu muốn đạt - tùy chọn)
+                    Goal (optional)
                     <input
                       name="goal"
                       value={formValues.goal}
@@ -716,7 +716,7 @@ export default function Home() {
                     />
                   </label>
                   <label>
-                    Interest (chủ đề quan tâm)
+                    Interest (optional)
                     <select
                       name="interest"
                       value={formValues.interest}
@@ -732,7 +732,7 @@ export default function Home() {
                   </label>
                   <button className="primary-cta" type="submit" disabled={isSubmitting || isSending}>
                     {isSubmitting || isSending ? (
-                      "Đang gửi đăng ký..."
+                      "Submitting application..."
                     ) : (
                       <>
                         Apply for access <ArrowUpRight size={16} />
@@ -741,7 +741,7 @@ export default function Home() {
                   </button>
                 </form>
                 <p className="fine-print">
-                  Thông tin được kết nối tự động với hệ thống tiếp nhận The Lyceum.
+                  Information is automatically routed to The Lyceum admissions system.
                 </p>
               </>
             )}

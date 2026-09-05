@@ -181,7 +181,7 @@ export async function triggerSignupWebhook(
     return {
       success: false,
       status: result.status,
-      error: result.error || "Gửi webhook thất bại",
+      error: result.error || "Webhook dispatch failed",
     };
   } catch (err: any) {
     console.warn("[Webhook] Failure:", err);
