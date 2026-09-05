@@ -11,6 +11,7 @@ const WEBHOOK_URL = "https://yearin22.app.n8n.cloud/webhook/website-signup-welco
 interface WebhookPayload {
   name: string;
   email: string;
+  budget?: string;
   interest?: string;
   context?: string;
   situation?: string;
@@ -59,7 +60,7 @@ async function startServer() {
   // Server-side webhook proxy endpoint
   app.post("/api/signup-webhook", async (req, res) => {
     try {
-      const { name, email, interest, context, situation, goal, booking_link } = req.body || {};
+      const { name, email, budget, interest, context, situation, goal, booking_link } = req.body || {};
       if (!email) {
         return res.status(400).json({ error: "Email is required" });
       }
@@ -72,6 +73,7 @@ async function startServer() {
         email: formattedEmail,
       };
 
+      if (budget && String(budget).trim()) payload.budget = String(budget).trim();
       if (interest && String(interest).trim()) payload.interest = String(interest).trim();
       if (context && String(context).trim()) payload.context = String(context).trim();
       if (situation && String(situation).trim()) payload.situation = String(situation).trim();

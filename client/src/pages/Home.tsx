@@ -117,9 +117,7 @@ export default function Home() {
     name: "",
     email: "",
     context: "",
-    situation: "",
-    goal: "",
-    interest: "Strategic No",
+    budget: "Under $100",
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -180,9 +178,7 @@ export default function Home() {
       name,
       email,
       context: formValues.context.trim() || undefined,
-      situation: formValues.situation.trim() || undefined,
-      goal: formValues.goal.trim() || undefined,
-      interest: formValues.interest.trim() || undefined,
+      budget: formValues.budget.trim() || undefined,
     };
 
     try {
@@ -698,36 +694,15 @@ export default function Home() {
                     />
                   </label>
                   <label>
-                    Situation (optional)
-                    <input
-                      name="situation"
-                      value={formValues.situation}
-                      onChange={(e) => setFormValues((v) => ({ ...v, situation: e.target.value }))}
-                      placeholder="Misunderstanding, high pressure, boundary setting…"
-                    />
-                  </label>
-                  <label>
-                    Goal (optional)
-                    <input
-                      name="goal"
-                      value={formValues.goal}
-                      onChange={(e) => setFormValues((v) => ({ ...v, goal: e.target.value }))}
-                      placeholder="Communicate calmly, lower defensiveness…"
-                    />
-                  </label>
-                  <label>
-                    Interest (optional)
+                    Budget
                     <select
-                      name="interest"
-                      value={formValues.interest}
-                      onChange={(e) => setFormValues((v) => ({ ...v, interest: e.target.value }))}
+                      name="budget"
+                      value={formValues.budget}
+                      onChange={(e) => setFormValues((v) => ({ ...v, budget: e.target.value }))}
                     >
-                      <option value="Strategic No">Strategic No (Protect time without coldness)</option>
-                      <option value="Pressure & Emotional Noise">Pressure & Emotional Noise (Stay centered)</option>
-                      <option value="Reading People">Reading People (Recognise the pattern)</option>
-                      <option value="Relationship Hard Situations">Relationship Hard Situations (Repair)</option>
-                      <option value="Starting Attachments">Starting Attachments (Connection with centre)</option>
-                      <option value="Fine Influence Private Lesson">Fine Influence (Voice & Tactical Empathy)</option>
+                      <option value="Under $100">Under $100</option>
+                      <option value="$100 – $200">$100 – $200</option>
+                      <option value="$400+">$400+</option>
                     </select>
                   </label>
                   <button className="primary-cta" type="submit" disabled={isSubmitting || isSending}>

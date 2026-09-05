@@ -22,7 +22,7 @@ function vitePluginSignupWebhook(): Plugin {
         req.on("end", async () => {
           try {
             const parsed = JSON.parse(body || "{}");
-            const { name, email, interest, context, situation, goal, booking_link } = parsed;
+            const { name, email, budget, interest, context, situation, goal, booking_link } = parsed;
             const cleanEmail = String(email || "").trim().toLowerCase();
             const cleanName = String(name || "").trim() || cleanEmail.split("@")[0] || "Member";
 
@@ -31,6 +31,7 @@ function vitePluginSignupWebhook(): Plugin {
               email: cleanEmail,
             };
 
+            if (budget && String(budget).trim()) payload.budget = String(budget).trim();
             if (interest && String(interest).trim()) payload.interest = String(interest).trim();
             if (context && String(context).trim()) payload.context = String(context).trim();
             if (situation && String(situation).trim()) payload.situation = String(situation).trim();

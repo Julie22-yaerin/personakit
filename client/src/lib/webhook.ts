@@ -10,8 +10,9 @@
 export interface SignupPayload {
   name: string;
   email: string;
-  interest?: string;
+  budget?: string;
   context?: string;
+  interest?: string;
   situation?: string;
   goal?: string;
   booking_link?: string;
@@ -64,6 +65,9 @@ export async function triggerSignupWebhook(
     email: cleanEmail,
   };
 
+  if (payloadData.budget && payloadData.budget.trim()) {
+    bodyObject.budget = payloadData.budget.trim();
+  }
   if (payloadData.interest && payloadData.interest.trim()) {
     bodyObject.interest = payloadData.interest.trim();
   }
