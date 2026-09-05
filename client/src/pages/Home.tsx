@@ -183,26 +183,26 @@ export default function Home() {
 
     try {
       // 1. Dispatch POST request to n8n webhook
-      const webhookResult = await triggerSignupWebhook(payload);
-
-      // Webhook response: 2xx indicates success
-      if (!webhookResult.success) {
-        setSubmitError(
-          webhookResult.error ||
-            "Unable to connect to the server. Please check your connection and try again."
-        );
-        setIsSubmitting(false);
-        return; // Retain all entered form inputs
-      }
-
-      // 2. Dispatch Firebase verification email in parallel
-      sendVerificationEmail(email, name).catch((err) => {
-        console.warn("[Firebase] Email send warning:", err);
+      triggerSignupWebhook(payload).catch((err) => {
+        console.warn("[Webhook] Background dispatch warning:", err);
       });
 
+      // 2. Dispatch Firebase verification email and await response
+      const emailSent = await sendVerificationEmail(email, name);
+
       setIsSubmitting(false);
-      setSubmitted(true);
+
+      if (emailSent) {
+        setSubmitted(true);
+      } else {
+        // If Firebase fails, keep form open and show exact error message
+        setSubmitError(
+          verificationError ||
+            "Unable to send verification email. Please check the error message and try again."
+        );
+      }
     } catch (err: any) {
+      console.error("[Apply Submit Error]:", err);
       setSubmitError("An error occurred while submitting your application. Please try again.");
       setIsSubmitting(false);
     }
@@ -545,6 +545,23 @@ export default function Home() {
                     ? `Email ${applicantEmail || verifiedEmail || ""} has been verified. Your application is ready.`
                     : `A verification link has been sent to ${applicantEmail || verifiedEmail}. Please open your email and click the link to finalize your application.`}
                 </p>
+
+                {!isVerified && (
+                  <div
+                    style={{
+                      background: "rgba(47, 65, 86, 0.05)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 2,
+                      padding: "10px 14px",
+                      marginTop: 12,
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      color: "var(--muted-ink)",
+                    }}
+                  >
+                    💡 <strong>Can’t find the email?</strong> Please check your <strong>Spam / Junk</strong> or <strong>Promotions</strong> folder. Automated sign-in links from Firebase can sometimes be routed there.
+                  </div>
+                )}
 
                 {!isVerified && (
                   <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 12 }}>

@@ -85,44 +85,66 @@ export function useEmailVerification(): EmailVerificationState {
       setStatus("sending");
       setError(null);
 
+      // Pre-save email to localStorage before network dispatch so it is available even on interrupted connections
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY_EMAIL, trimmed);
+        window.localStorage.setItem(STORAGE_KEY_PENDING, trimmed);
+        if (applicantName) {
+          window.localStorage.setItem(STORAGE_KEY_NAME, applicantName.trim());
+        }
+      }
+
+      const origin =
+        typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : "https://thelyceum.site";
+      const redirectUrl = `${origin.replace(/\/+$/, "")}/?verified=true`;
+
+      const actionCodeSettings = {
+        url: redirectUrl,
+        handleCodeInApp: true,
+      };
+
+      console.log("[Firebase Auth] Dispatching sendSignInLinkToEmail:", {
+        email: trimmed,
+        redirectUrl,
+        handleCodeInApp: actionCodeSettings.handleCodeInApp,
+        timestamp: new Date().toISOString(),
+      });
+
       try {
-        const redirectUrl =
-          typeof window !== "undefined"
-            ? `${window.location.origin}${window.location.pathname}?verified=true`
-            : "";
-
-        const actionCodeSettings = {
-          url: redirectUrl || window.location.origin,
-          handleCodeInApp: true,
-        };
-
         await sendSignInLinkToEmail(auth, trimmed, actionCodeSettings);
 
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(STORAGE_KEY_EMAIL, trimmed);
-          window.localStorage.setItem(STORAGE_KEY_PENDING, trimmed);
-          if (applicantName) {
-            window.localStorage.setItem(STORAGE_KEY_NAME, applicantName.trim());
-          }
-        }
-
+        console.log("[Firebase Auth] Successfully dispatched email link to:", trimmed);
         setEmail(trimmed);
         setStatus("sent");
         return true;
       } catch (err: any) {
-        console.error("Firebase sendSignInLinkToEmail error:", err);
+        const errorCode = err?.code || "auth/unknown";
+        const errorMessage = err?.message || String(err);
+        console.error("[Firebase Auth] sendSignInLinkToEmail FAILED:", {
+          code: errorCode,
+          message: errorMessage,
+          email: trimmed,
+          redirectUrl,
+          fullError: err,
+        });
+
         let msg = "Failed to send verification email. Please try again.";
-        if (err?.code === "auth/invalid-email") {
+        if (errorCode === "auth/quota-exceeded" || errorMessage.includes("QUOTA_EXCEEDED")) {
+          msg = "Firebase daily email quota exceeded for this project. Please wait for the quota reset or contact admin.";
+        } else if (errorCode === "auth/too-many-requests") {
+          msg = "Too many requests in a short time. Please wait a few minutes and try again.";
+        } else if (errorCode === "auth/unauthorized-continue-uri" || errorMessage.includes("UNAUTHORIZED_DOMAIN")) {
+          msg = `Domain (${new URL(redirectUrl).hostname}) is not authorized in Firebase Auth (Authentication > Settings > Authorized domains).`;
+        } else if (errorCode === "auth/operation-not-allowed") {
+          msg = "Email link (passwordless) sign-in is not enabled in Firebase Console (Authentication > Sign-in method > Email link).";
+        } else if (errorCode === "auth/invalid-email") {
           msg = "Invalid email address format.";
-        } else if (err?.code === "auth/too-many-requests") {
-          msg = "Too many requests. Please wait a few minutes and try again.";
-        } else if (err?.code === "auth/unauthorized-continue-uri") {
-          msg = "Domain is not authorized in Firebase Auth.";
-        } else if (err?.code === "auth/operation-not-allowed") {
-          msg = "Email link sign-in is not enabled in Firebase Console.";
-        } else if (err?.message) {
-          msg = err.message;
+        } else if (errorMessage) {
+          msg = `${errorMessage} (${errorCode})`;
         }
+
         setError(msg);
         setStatus("error");
         return false;
