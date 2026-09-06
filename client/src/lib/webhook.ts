@@ -2,9 +2,9 @@
  * Signup Webhook Integration
  * Endpoint: https://yearin22.app.n8n.cloud/webhook/website-signup-welcome
  * Method: POST
- * Body: { "name": string, "email": string }
+ * Body: { "name": string, "email": string, "budget"?: string, "context"?: string, "device_id"?: string }
  *
- * Triggered ONLY AFTER user verifies their email via Firebase email link.
+ * Strict Deduplication: 1 email = 1 registration, 1 IP = 1 registration, 1 device = 1 registration.
  */
 
 export interface SignupPayload {
@@ -12,6 +12,7 @@ export interface SignupPayload {
   email: string;
   budget?: string;
   context?: string;
+  device_id?: string;
   interest?: string;
   situation?: string;
   goal?: string;
@@ -59,11 +60,20 @@ export async function triggerSignupWebhook(
     cleanName = cleanEmail.split("@")[0] || "Member";
   }
 
-  // Build payload with only defined, non-empty snake_case fields
+// Build payload with only defined, non-empty snake_case fields
   const bodyObject: Record<string, string> = {
     name: cleanName,
     email: cleanEmail,
   };
+
+  if (payloadData.device_id && payloadData.device_id.trim()) {
+    bodyObject.device_id = payloadData.device_id.trim();
+  } else if (typeof window !== "undefined") {
+    const storedDeviceId = window.localStorage.getItem("lyceum_device_id");
+    if (storedDeviceId) {
+      bodyObject.device_id = storedDeviceId.trim();
+    }
+  }
 
   if (payloadData.budget && payloadData.budget.trim()) {
     bodyObject.budget = payloadData.budget.trim();
@@ -84,7 +94,7 @@ export async function triggerSignupWebhook(
     bodyObject.booking_link = payloadData.booking_link.trim();
   }
 
-  // Save to localStorage for email verification persistence
+  // Save to localStorage for applicant persistence
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(STORAGE_KEY_PENDING_PAYLOAD, JSON.stringify(bodyObject));
@@ -94,14 +104,14 @@ export async function triggerSignupWebhook(
     }
   }
 
-  // Debounce rapid duplicate triggers (within 5 seconds)
+  // Debounce rapid duplicate triggers (within 3 seconds)
   const storageKey = `webhook_sent_${cleanEmail}`;
   if (typeof window !== "undefined") {
     const lastSentStr = window.localStorage.getItem(storageKey);
     if (lastSentStr) {
       const lastSentTime = parseInt(lastSentStr, 10);
-      if (!isNaN(lastSentTime) && Date.now() - lastSentTime < 5000) {
-        console.log(`[Webhook] Duplicate trigger within 5s for ${cleanEmail}. Skipping duplicate.`);
+      if (!isNaN(lastSentTime) && Date.now() - lastSentTime < 3000) {
+        console.log(`[Webhook] Duplicate trigger within 3s for ${cleanEmail}. Skipping rapid duplicate.`);
         return { success: true, status: 200 };
       }
     }
@@ -148,28 +158,40 @@ export async function triggerSignupWebhook(
   try {
     let result: { ok: boolean; status?: number; error?: string } = { ok: false };
 
-    // 1. Try server-side endpoint first (avoid CORS and keep webhook URL server-side)
+    // 1. Try server-side endpoint first (handles rate limiting and 1-per-email/IP/device enforcement)
     try {
       const serverRes = await fetch("/api/signup-webhook", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-device-id": bodyObject.device_id || "",
         },
         body: payload,
         keepalive: true,
       });
+
+      const json = await serverRes.json().catch(() => ({}));
+
       if (serverRes.ok) {
-        const json = await serverRes.json().catch(() => ({}));
         result = { ok: true, status: json.webhookStatus || serverRes.status };
       } else {
-        result = { ok: false, status: serverRes.status };
+        // IMPORTANT: If server rejected with 409 Conflict (duplicate email, IP, or device),
+        // or 400 (bad request), DO NOT fall back to direct webhook! Abort immediately with server error.
+        if (serverRes.status === 409 || serverRes.status === 400 || serverRes.status === 429) {
+          return {
+            success: false,
+            status: serverRes.status,
+            error: json.error || "An application has already been submitted.",
+          };
+        }
+        result = { ok: false, status: serverRes.status, error: json.error || "Server error" };
       }
     } catch (err: any) {
-      // Server endpoint unreachable, fallback to direct webhook
+      // Server endpoint unreachable (network failure), fallback to direct webhook
       result = { ok: false, error: err?.message || "Server proxy unavailable" };
     }
 
-    // 2. Direct fallback if server-side proxy failed or returned non-2xx
+    // 2. Direct fallback ONLY if server-side proxy failed due to network/server failure
     if (!result.ok) {
       result = await sendWithTimeoutAndRetry(WEBHOOK_DIRECT_URL);
     }

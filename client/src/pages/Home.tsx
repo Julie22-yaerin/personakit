@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   Check,
   ChevronDown,
-  Mail,
   Menu,
   Play,
   Plus,
@@ -14,8 +13,27 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { useEmailVerification } from "@/hooks/useEmailVerification";
 import { triggerSignupWebhook, type SignupPayload } from "@/lib/webhook";
+
+function getOrCreateDeviceId(): string {
+  if (typeof window === "undefined") return "";
+  const KEY = "lyceum_device_id";
+  try {
+    let id = window.localStorage.getItem(KEY);
+    if (!id) {
+      const match = document.cookie.match(/(?:^|;\s*)lyceum_device_id=([^;]+)/);
+      if (match) id = decodeURIComponent(match[1]);
+    }
+    if (!id) {
+      id = "dev_" + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    }
+    window.localStorage.setItem(KEY, id);
+    document.cookie = `lyceum_device_id=${encodeURIComponent(id)}; path=/; max-age=315360000; SameSite=Lax`;
+    return id;
+  } catch {
+    return "";
+  }
+}
 
 const situations = [
   { label: "PRESSURE", title: "Someone wants an immediate answer.", code: "01" },
@@ -123,21 +141,33 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicantName, setApplicantName] = useState("");
   const [applicantEmail, setApplicantEmail] = useState("");
-  const [showVerifiedToast, setShowVerifiedToast] = useState(true);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [alreadySubmittedReason, setAlreadySubmittedReason] = useState<string | null>(null);
 
-  const {
-    status: verificationStatus,
-    isSending,
-    isSent,
-    isVerifying,
-    isVerified,
-    email: verifiedEmail,
-    error: verificationError,
-    sendVerificationEmail,
-    resendVerification,
-    checkStatus,
-    reset: resetVerification,
-  } = useEmailVerification();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const deviceId = getOrCreateDeviceId();
+    const isLocalSubmitted = window.localStorage.getItem("lyceum_application_submitted") === "true";
+    if (isLocalSubmitted) {
+      setAlreadySubmitted(true);
+      setAlreadySubmittedReason("device");
+      const savedEmail = window.localStorage.getItem("lyceum_submitted_email");
+      const savedName = window.localStorage.getItem("lyceum_submitted_name");
+      if (savedEmail) setApplicantEmail(savedEmail);
+      if (savedName) setApplicantName(savedName);
+    }
+
+    // Check with server if IP, device, or stored email has already been registered
+    fetch(`/api/check-submission?deviceId=${encodeURIComponent(deviceId)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.alreadySubmitted) {
+          setAlreadySubmitted(true);
+          setAlreadySubmittedReason(data.reason || "device");
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const goTo = (id: string) => {
     setMenuOpen(false);
@@ -146,9 +176,7 @@ export default function Home() {
 
   const openApply = () => {
     setApplyOpen(true);
-    setSubmitted(false);
     setSubmitError(null);
-    resetVerification();
   };
 
   const handleApplySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -174,32 +202,30 @@ export default function Home() {
     setApplicantEmail(email);
     setApplicantName(name);
 
+    const deviceId = getOrCreateDeviceId();
+
     const payload: SignupPayload = {
       name,
       email,
       context: formValues.context.trim() || undefined,
       budget: formValues.budget.trim() || undefined,
+      device_id: deviceId,
     };
 
     try {
-      // 1. Dispatch POST request to n8n webhook
-      triggerSignupWebhook(payload).catch((err) => {
-        console.warn("[Webhook] Background dispatch warning:", err);
-      });
-
-      // 2. Dispatch Firebase verification email and await response
-      const emailSent = await sendVerificationEmail(email, name);
-
+      const result = await triggerSignupWebhook(payload);
       setIsSubmitting(false);
 
-      if (emailSent) {
+      if (result.success) {
         setSubmitted(true);
+        setAlreadySubmitted(true);
+        try {
+          window.localStorage.setItem("lyceum_application_submitted", "true");
+          window.localStorage.setItem("lyceum_submitted_email", email);
+          window.localStorage.setItem("lyceum_submitted_name", name);
+        } catch {}
       } else {
-        // If Firebase fails, keep form open and show exact error message
-        setSubmitError(
-          verificationError ||
-            "Unable to send verification email. Please check the error message and try again."
-        );
+        setSubmitError(result.error || "Unable to submit your application. Please try again.");
       }
     } catch (err: any) {
       console.error("[Apply Submit Error]:", err);
@@ -456,50 +482,6 @@ export default function Home() {
         <div className="container footer-bottom"><span>© 2026 The Lyceum</span><span>FEEL IT. DON’T LET IT DECIDE.</span><span>BUILT FOR THE MOMENT.</span></div>
       </footer>
 
-      {/* Floating Verified Notification */}
-      {isVerified && showVerifiedToast && (
-        <aside
-          aria-label="Email verified successfully"
-          style={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            zIndex: 90,
-            background: "#1d2b3a",
-            color: "#f5efed",
-            border: "1px solid #cbd9e6",
-            boxShadow: "0 12px 36px rgba(0,0,0,0.35)",
-            padding: "14px 20px",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            fontFamily: "var(--mono)",
-            fontSize: 12,
-          }}
-        >
-          <Check size={18} color="#799a8c" />
-          <span>
-            Email <strong>{verifiedEmail || applicantEmail}</strong> has been successfully verified!
-          </span>
-          <button
-            onClick={() => setShowVerifiedToast(false)}
-            style={{
-              background: "none",
-              border: 0,
-              color: "inherit",
-              cursor: "pointer",
-              padding: "2px 6px",
-              marginLeft: 8,
-              fontSize: 14,
-            }}
-            type="button"
-            aria-label="Close notification"
-          >
-            ✕
-          </button>
-        </aside>
-      )}
-
       {applyOpen && (
         <div
           className="modal-backdrop"
@@ -521,132 +503,62 @@ export default function Home() {
               <X size={18} />
             </button>
 
-            {submitted || isVerified ? (
+            {submitted ? (
               <div className="submitted-state">
                 <div
                   className="submitted-icon"
                   style={{
-                    borderColor: isVerified ? "#799a8c" : "var(--navy)",
-                    color: isVerified ? "#799a8c" : "var(--navy)",
+                    borderColor: "#799a8c",
+                    color: "#799a8c",
                   }}
                 >
-                  {isVerified ? <Check size={24} /> : <Mail size={24} />}
+                  <Check size={24} />
                 </div>
-                <p className="eyebrow" style={{ color: isVerified ? "#799a8c" : undefined }}>
-                  {isVerified ? "EMAIL VERIFIED" : "VERIFICATION EMAIL SENT"}
+                <p className="eyebrow" style={{ color: "#799a8c" }}>
+                  APPLICATION RECEIVED
                 </p>
                 <h2>
-                  {isVerified
-                    ? "Confirmed successfully."
-                    : "Check your inbox."}
+                  Thank you, {applicantName || "for applying"}.
                 </h2>
                 <p>
-                  {isVerified
-                    ? `Email ${applicantEmail || verifiedEmail || ""} has been verified. Your application is ready.`
-                    : `A verification link has been sent to ${applicantEmail || verifiedEmail}. Please open your email and click the link to finalize your application.`}
+                  Your application has been received. Our team will review your submission and contact you at{" "}
+                  <strong>{applicantEmail}</strong> shortly.
                 </p>
-
-                {!isVerified && (
-                  <div
-                    style={{
-                      background: "rgba(47, 65, 86, 0.05)",
-                      border: "1px solid var(--line)",
-                      borderRadius: 2,
-                      padding: "10px 14px",
-                      marginTop: 12,
-                      fontSize: 12,
-                      lineHeight: 1.5,
-                      color: "var(--muted-ink)",
-                    }}
-                  >
-                    💡 <strong>Can’t find the email?</strong> Please check your <strong>Spam / Junk</strong> or <strong>Promotions</strong> folder. Automated sign-in links from Firebase can sometimes be routed there.
-                  </div>
-                )}
-
-                {!isVerified && (
-                  <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        fontSize: 11,
-                        fontFamily: "var(--mono)",
-                        color: "var(--muted-ink)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: isVerifying ? "#3b82f6" : "#e0a133",
-                          display: "inline-block",
-                        }}
-                      />
-                      <span>
-                        {isVerifying
-                          ? "Processing verification..."
-                          : "Status: Waiting for email link confirmation..."}
-                      </span>
-                    </div>
-
-                    {verificationError && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          color: "#c2410c",
-                          background: "rgba(194, 65, 12, 0.08)",
-                          padding: "8px 12px",
-                          borderRadius: 2,
-                          fontSize: 12,
-                        }}
-                      >
-                        <AlertCircle size={15} />
-                        <span>{verificationError}</span>
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
-                      <button
-                        className="primary-cta"
-                        style={{ padding: "10px 16px", fontSize: 10 }}
-                        onClick={resendVerification}
-                        disabled={isSending}
-                        type="button"
-                      >
-                        {isSending ? "Sending..." : "Resend email"}
-                      </button>
-                      <button
-                        className="primary-cta"
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 10,
-                          background: "transparent",
-                          borderColor: "var(--line)",
-                          color: "var(--ink)",
-                        }}
-                        onClick={checkStatus}
-                        type="button"
-                      >
-                        Check status
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {isVerified && (
-                  <button
-                    className="primary-cta"
-                    style={{ marginTop: 24 }}
-                    onClick={() => setApplyOpen(false)}
-                    type="button"
-                  >
-                    Done <ArrowUpRight size={16} />
-                  </button>
-                )}
+                <button
+                  className="primary-cta"
+                  style={{ marginTop: 24 }}
+                  onClick={() => setApplyOpen(false)}
+                  type="button"
+                >
+                  Done <ArrowUpRight size={16} />
+                </button>
+              </div>
+            ) : alreadySubmitted ? (
+              <div className="submitted-state">
+                <div
+                  className="submitted-icon"
+                  style={{
+                    borderColor: "#c2410c",
+                    color: "#c2410c",
+                  }}
+                >
+                  <Check size={24} />
+                </div>
+                <p className="eyebrow" style={{ color: "#c2410c" }}>
+                  APPLICATION ON FILE
+                </p>
+                <h2>Already submitted.</h2>
+                <p>
+                  An application has already been received from this {alreadySubmittedReason === "ip" ? "IP address" : "device"}. To maintain the integrity of our cohort, each applicant is limited to one submission.
+                </p>
+                <button
+                  className="primary-cta"
+                  style={{ marginTop: 24 }}
+                  onClick={() => setApplyOpen(false)}
+                  type="button"
+                >
+                  Close <ArrowUpRight size={16} />
+                </button>
               </div>
             ) : (
               <>
@@ -657,7 +569,7 @@ export default function Home() {
                 </h2>
                 <p className="modal-intro">Tell us where you want more control.</p>
 
-                {(submitError || verificationError) && (
+                {submitError && (
                   <div
                     role="alert"
                     style={{
@@ -674,7 +586,7 @@ export default function Home() {
                     }}
                   >
                     <AlertCircle size={16} style={{ flexShrink: 0 }} />
-                    <span>{submitError || verificationError}</span>
+                    <span>{submitError}</span>
                   </div>
                 )}
 
@@ -722,8 +634,8 @@ export default function Home() {
                       <option value="$400+">$400+</option>
                     </select>
                   </label>
-                  <button className="primary-cta" type="submit" disabled={isSubmitting || isSending}>
-                    {isSubmitting || isSending ? (
+                  <button className="primary-cta" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
                       "Submitting application..."
                     ) : (
                       <>
