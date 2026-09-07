@@ -131,36 +131,47 @@
 .embedded-voice-copy p { max-width: 320px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 @media (max-width: 760px) { .embedded-voice-copy { margin-top: 18px; } .embedded-voice-copy p { font-size: 10px; } }
 
-/* Surprise interaction card: no title or scenario copy, only one large centered voice orb. */
-.card-situation .inner-card-layout { grid-template-columns: 1fr; min-height: 465px; }
-.card-situation .inner-card-copy { display: none; }
-.card-situation .inner-card-art { width: 100%; height: 430px; display: grid; place-items: center; }
-.card-situation .inner-card-art > .voice-assistant.embedded { width: 230px; height: 230px; transform: scale(1.72); transform-origin: center; }
-.card-situation .inner-card-art > .voice-assistant.embedded .voice-bubble { width: 92px; height: 92px; }
-.card-situation .inner-card-art > .voice-assistant.embedded .voice-bubble:hover { width: 105px; height: 105px; }
-.card-situation .inner-card-art > .voice-assistant.embedded .ripple { width: 92px; height: 92px; }
-.card-situation .inner-card-art > .voice-assistant.embedded .voice-tooltip { right: 146px; top: 102px; }
-.card-situation .inner-card-art > .voice-assistant.embedded .art-label { bottom: 1px; }
-.card-situation .card-footer { opacity: .75; }
-@media (max-width: 760px) {
-  .card-situation .inner-card-layout { min-height: 535px; }
-  .card-situation .inner-card-art { height: 500px; }
-  .card-situation .inner-card-art > .voice-assistant.embedded { transform: scale(1.42); }
+/* Lesson Switcher Pill Controls */
+.lesson-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(10, 25, 47, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 20px;
 }
-
-/* All post-cover cards now use the same surprise-centered voice interaction. */
-.lesson-card:not(.card-cover) .inner-card-layout { grid-template-columns: 1fr; min-height: 465px; }
-.lesson-card:not(.card-cover) .inner-card-copy { display: none; }
-.lesson-card:not(.card-cover) .inner-card-art { width: 100%; height: 430px; display: grid; place-items: center; }
-.lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded { width: 230px; height: 230px; transform: scale(1.72); transform-origin: center; }
-.lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded .voice-bubble { width: 92px; height: 92px; }
-.lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded .voice-bubble:hover { width: 105px; height: 105px; }
-.lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded .ripple { width: 92px; height: 92px; }
-.lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded .voice-tooltip { right: 146px; top: 102px; }
-.lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded .art-label { bottom: 1px; }
-.lesson-card:not(.card-cover) .card-footer { opacity: .75; }
+.dark-card-app .lesson-switcher {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lesson-pill {
+  padding: 5px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.lesson-pill:hover {
+  color: var(--beige-2);
+}
+.lesson-pill.is-active {
+  color: var(--beige);
+  background: var(--navy);
+  box-shadow: 0 2px 8px rgba(10, 25, 47, .2);
+}
+.dark-card-app .lesson-pill.is-active {
+  background: var(--beige-2);
+  color: var(--navy);
+}
 @media (max-width: 760px) {
-  .lesson-card:not(.card-cover) .inner-card-layout { min-height: 535px; }
-  .lesson-card:not(.card-cover) .inner-card-art { height: 500px; }
-  .lesson-card:not(.card-cover) .inner-card-art > .voice-assistant.embedded { transform: scale(1.42); }
+  .lesson-switcher {
+    overflow-x: auto;
+    max-width: 100%;
+  }
 }
