@@ -434,3 +434,366 @@
     max-width: 100%;
   }
 }
+
+/* ==========================================================================
+   S2S COMBAT SIMULATOR & 45-SECOND PRESSURE CHAMBER STYLES
+   ========================================================================== */
+
+.pressure-chamber-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Simulation Status Badge */
+.simulation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.simulation-badge.state-priming {
+  background: rgba(220, 38, 38, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.simulation-badge.state-recording {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
+}
+
+.simulation-badge.state-processing {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+}
+
+.simulation-badge.state-strike.verdict-pass {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.simulation-badge.state-strike.verdict-rework {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.pulse-radar-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  animation: radar-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes radar-pulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+/* 45-Second Countdown Timer */
+.countdown-timer-stage {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 18px auto;
+  display: grid;
+  place-items: center;
+}
+
+.countdown-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.countdown-svg circle.bg {
+  stroke: var(--line);
+  stroke-width: 4;
+  fill: none;
+  opacity: 0.35;
+}
+
+.countdown-svg circle.progress {
+  stroke: #ef4444;
+  stroke-width: 5;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+}
+
+.countdown-svg circle.progress.warn {
+  stroke: #f59e0b;
+}
+
+.countdown-svg circle.progress.danger {
+  stroke: #dc2626;
+  filter: drop-shadow(0 0 6px rgba(220, 38, 38, 0.8));
+}
+
+.countdown-center {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-seconds {
+  font-family: 'DM Mono', monospace;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.dark-card-app .countdown-seconds {
+  color: #f2eee4;
+}
+
+.countdown-label {
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Live Volume Meter Bar */
+.live-volume-meter {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+  margin: 8px auto 14px;
+}
+
+.live-volume-bar {
+  width: 3px;
+  height: 4px;
+  background: #ef4444;
+  border-radius: 2px;
+  transition: height 0.08s ease;
+}
+
+/* Real-time Transcription Box */
+.live-transcript-box {
+  width: 100%;
+  max-width: 640px;
+  min-height: 72px;
+  margin: 14px auto;
+  padding: 14px 18px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px dashed var(--line);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.dark-card-app .live-transcript-box {
+  background: rgba(10, 25, 47, 0.45);
+  border-color: rgba(215, 191, 157, 0.25);
+}
+
+.live-transcript-box.is-recording {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.08);
+}
+
+.live-transcript-placeholder {
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Action Controls & Commit Button */
+.combat-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.btn-commit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 24px;
+  background: #ef4444;
+  color: #fff;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-commit:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  color: var(--ink);
+  border-color: var(--beige-2);
+}
+
+/* Tactical Strike Diagnosis & Verdict Card */
+.strike-verdict-card {
+  width: 100%;
+  max-width: 680px;
+  margin: 16px auto 0;
+  text-align: left;
+  border-radius: 6px;
+  padding: 24px 28px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+  box-shadow: 0 15px 40px rgba(10, 25, 47, 0.08);
+  animation: card-in 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.dark-card-app .strike-verdict-card {
+  background: rgba(14, 28, 48, 0.85);
+  border-color: rgba(215, 191, 157, 0.25);
+}
+
+.verdict-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.verdict-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.verdict-title.pass {
+  color: #10b981;
+}
+
+.verdict-title.rework {
+  color: #ef4444;
+}
+
+.verdict-scores {
+  display: flex;
+  gap: 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.score-tag {
+  padding: 4px 8px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark-card-app .score-tag {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.score-tag strong {
+  color: var(--beige-2);
+}
+
+.diagnosis-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+  margin-bottom: 18px;
+}
+
+.verbatim-target-box {
+  padding: 14px 18px;
+  background: rgba(215, 191, 157, 0.12);
+  border-left: 3px solid var(--beige-2);
+  border-radius: 0 4px 4px 0;
+  margin-top: 14px;
+}
+
+.verbatim-target-box small {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--beige-2);
+  margin-bottom: 6px;
+}
+
+.verbatim-target-box p {
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--navy);
+}
+
+.dark-card-app .verbatim-target-box p {
+  color: #f2eee4;
+}
+

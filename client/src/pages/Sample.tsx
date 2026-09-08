@@ -10,543 +10,660 @@ import {
   Sparkles,
   Sun,
   Waves,
+  ShieldAlert,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
+  Volume2,
+  Square,
+  Copy,
+  Check
 } from "lucide-react";
+import { AudioRecorder } from "@/lib/audio-recorder";
+import {
+  analyzeCombatTranscript,
+  playTtsVoice,
+  AnalysisResponse
+} from "@/lib/tutor-api";
 
-interface LessonCard {
-  eyebrow: string;
-  title: string;
-  spokenScript: string;
-  accent: string;
-  isSpar?: boolean;
-  sparOpponentLine?: string;
-  sparFeedback?: string;
-}
+type CombatState = "idle" | "priming" | "recording" | "processing" | "strike";
 
-interface Lesson {
+interface Scenario {
   id: string;
   code: string;
   shortName: string;
-  cards: LessonCard[];
+  title: string;
+  eyebrow: string;
+  nightmareScenario: string;
+  opponentLine: string;
+  expectedCounterStatement: string;
+  formulaName: string;
+  formulaSteps: string[];
+  trapBlunders: string[];
 }
 
-const lessons: Lesson[] = [
+const SCENARIOS: Scenario[] = [
   {
     id: "ML-CSR-001",
     code: "01",
     shortName: "01 · Friend Betrayal",
-    cards: [
-      {
-        eyebrow: "LESSON 01 · COUNTER-BETRAYAL",
-        title: "The C-S-R Neutralization",
-        spokenScript:
-          "Welcome to Counter-Betrayal. When a jealous friend publicly mocks your success, never defend yourself. Pathologize their attack, reframe their insult as a cry for help, and demote their status with cold distance. Tap Continue or click the orb to begin.",
-        accent: "cover",
-      },
-      {
-        eyebrow: "STEP 01 · VIVID PRIMING",
-        title: "The Classroom Ambush",
-        spokenScript:
-          "You walk into the classroom. Your close friend is sitting with a group of popular students. As you approach, they laugh loudly: 'Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A, or just beg for it?' You feel the heat in your face. The whole group is staring. You have five seconds before you look like an easy target. What do you say?",
-        accent: "situation",
-      },
-      {
-        eyebrow: "STEP 02 · TRAP IDENTIFICATION",
-        title: "The Whiner & The Fake Aggressor",
-        spokenScript:
-          "Do not whine with 'I didn't beg, I studied hard!' That makes you look guilty and desperate for validation. And never blow up with 'Shut up, you're just stupid and jealous!' That proves they triggered an emotional collapse and they win. Reject both traps.",
-        accent: "compare",
-      },
-      {
-        eyebrow: "STEP 03 · SURGICAL STRIKE",
-        title: "The Sympathy Trap & Exit",
-        spokenScript:
-          "Deploy the C-S-R formula. Calibrate: freeze for two seconds with a deadpan poker face. Sympathy Trap: speak with calm, medical concern: 'Are you okay? You seem really stressed and fixated on my grades lately. If the coursework is getting too hard for you, just ask and I can tutor you.' Redefine: break eye contact and turn away.",
-        accent: "why",
-      },
-      {
-        eyebrow: "STEP 04 · LIVE SPAR DRILL",
-        title: "Neutralize the Backstabber",
-        spokenScript:
-          "Your friend tries to deflect the pressure: 'Whoa, chill! I was just joking. Can't you take a joke?' Deliver your failsafe counter now.",
-        accent: "practice",
-        isSpar: true,
-        sparOpponentLine:
-          "“Whoa, chill! I was just joking. Can't you take a joke?”",
-        sparFeedback:
-          "Devastating frame reversal. You rejected the fake joke defense, exposed their insecurity, and executed a clean status demotion.",
-      },
+    title: "The Classroom Ambush",
+    eyebrow: "MODULE 01 · COUNTER-BETRAYAL (C-S-R)",
+    nightmareScenario:
+      "Imagine walking into the classroom. Your close friend is sitting with a group of popular students. As you approach, they laugh loudly for everyone to hear: 'Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A on the test, or just beg for it?' You feel the heat in your face. The whole group is staring. You have five seconds before you look like an easy target. What do you say right now?",
+    opponentLine:
+      "Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A, or just beg for it?",
+    expectedCounterStatement:
+      "Are you okay? You seem really stressed and fixated on my grades lately. If the coursework is getting too hard for you, just ask and I can tutor you.",
+    formulaName: "The C-S-R Neutralization",
+    formulaSteps: [
+      "Calibrate: 2-second deadpan poker face.",
+      "Sympathy Trap: Speak with calm, medical concern questioning their stress.",
+      "Redefine: Demote status, break eye contact, turn away."
     ],
+    trapBlunders: [
+      "The Whiner: 'I didn't beg! I studied hard for that!' (Confirms guilt, status drops to zero)",
+      "The Fake Aggressor: 'Shut up, you're just stupid and jealous!' (Emotional collapse gives them total victory)"
+    ]
   },
   {
     id: "ML-ELW-001",
     code: "02",
     shortName: "02 · Boss Defense",
-    cards: [
-      {
-        eyebrow: "LESSON 02 · WORKPLACE BOUNDARIES",
-        title: "The E-L-W Boundary Defense",
-        spokenScript:
-          "Welcome to Workplace Boundary Defense. When an exploitative boss dumps high-stakes work on you during burnout, never beg or play the martyr. Deploy threat transference: force authority to sign off on the financial risk of your exhaustion. Tap Continue or click the orb to begin.",
-        accent: "cover",
-      },
-      {
-        eyebrow: "STEP 01 · VIVID PRIMING",
-        title: "The Friday 5:30 PM Ambush",
-        spokenScript:
-          "It is 5:30 PM on a Friday. Running on three hours of sleep, you are completely burned out. Your boss drops a heavy folder on your desk: 'I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you to push through and close it.' If you accept, your health collapses. If you say no, you look disloyal. Your boss is staring at you. What do you say?",
-        accent: "situation",
-      },
-      {
-        eyebrow: "STEP 02 · TRAP IDENTIFICATION",
-        title: "The Emotional Beggar & The Martyr",
-        spokenScript:
-          "Do not beg: 'Boss, I'm so tired, I can't do this anymore.' They will say 'We're all tired, this is business,' making you look like a liability. And never play the martyr with 'Okay, I'll do my best.' You will crash, miss a critical detail, lose the account, and take the blame.",
-        accent: "compare",
-      },
-      {
-        eyebrow: "STEP 03 · SURGICAL STRIKE",
-        title: "Cognitive Limit & Risk Ownership",
-        spokenScript:
-          "Deploy the E-L-W formula. Empathy: acknowledge the stakes: 'I know exactly how critical the fifty-thousand-dollar Miller account is for our Q3 targets.' Limit: report your state like a battery gauge: 'However, my cognitive bandwidth is currently below the baseline required to secure a deal of this size safely.' Worst-Case Transference: put the risk on them: 'If I jump in exhausted and we lose the client permanently, are you willing to take one hundred percent responsibility for that loss with executives? Or should we hand this to someone fully rested to guarantee the win?'",
-        accent: "why",
-      },
-      {
-        eyebrow: "STEP 04 · LIVE SPAR DRILL",
-        title: "Hold the Risk Against Your Boss",
-        spokenScript:
-          "Your boss tries a guilt-trip and vague bribe: 'Look, just drink some coffee. You're my best closer. Do this and I'll owe you a huge favor next week. Come on.' Deliver your risk ownership move now.",
-        accent: "practice",
-        isSpar: true,
-        sparOpponentLine:
-          "“Look, just drink some coffee. You're my best closer. Do this and I'll owe you a huge favor next week. Come on.”",
-        sparFeedback:
-          "Masterful boundary lock. By requiring written confirmation of risk ownership, you forced management to back down without looking lazy.",
-      },
+    title: "The Friday 5:30 PM Ambush",
+    eyebrow: "MODULE 02 · WORKPLACE BOUNDARIES (E-L-W)",
+    nightmareScenario:
+      "It is 5:30 PM on a Friday. Running on three hours of sleep, you are completely burned out. Your boss drops a heavy folder on your desk: 'I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you to push through and close it.' If you accept, your health collapses. If you say no, you look disloyal. Your boss is staring at you. What do you say right now?",
+    opponentLine:
+      "I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you.",
+    expectedCounterStatement:
+      "I know exactly how critical the fifty-thousand-dollar Miller account is for our Q3 targets. However, my cognitive bandwidth is currently below the baseline required to secure a deal of this size safely. If I jump in exhausted and we lose the client permanently, are you willing to take one hundred percent responsibility for that loss with executives? Or should we hand this to someone fully rested to guarantee the win?",
+    formulaName: "The E-L-W Risk Transference",
+    formulaSteps: [
+      "Empathy: Acknowledge client stakes ($50k deal).",
+      "Limit: Report cognitive state like a battery gauge without apologizing.",
+      "Worst-Case Transference: Force management to sign off on the financial risk."
     ],
-  },
+    trapBlunders: [
+      "The Emotional Beggar: 'Boss, I'm so tired, I can't do this anymore.' (Labels you a liability)",
+      "The Martyr: 'Okay, I'll do my best.' (Guarantees crash, blame, and repeated exploitation)"
+    ]
+  }
 ];
 
+const RECORDING_LIMIT_MS = 45000; // TASK 1: 45-second limit
+
 export default function Sample() {
-  const [lessonIndex, setLessonIndex] = useState(0);
-  const [cardIndex, setCardIndex] = useState(0);
-  const [dark, setDark] = useState(false);
-  const [voiceState, setVoiceState] = useState<
-    "idle" | "listening" | "thinking" | "speaking"
-  >("idle");
-  const [subtitleText, setSubtitleText] = useState("");
-  const [finished, setFinished] = useState(false);
+  const [scenarioIndex, setScenarioIndex] = useState(0);
+  const [combatState, setCombatState] = useState<CombatState>("idle");
+  const [remainingMs, setRemainingMs] = useState(RECORDING_LIMIT_MS);
+  const [liveVolume, setLiveVolume] = useState(0);
+  const [liveTranscript, setLiveTranscript] = useState("");
+  const [evaluation, setEvaluation] = useState<AnalysisResponse | null>(null);
+  const [isDark, setIsDark] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const currentLesson = lessons[lessonIndex] || lessons[0];
-  const card = currentLesson.cards[cardIndex] || currentLesson.cards[0];
-  const progress = Math.round(
-    (cardIndex / (currentLesson.cards.length - 1)) * 100
-  );
+  const scenario = SCENARIOS[scenarioIndex];
 
-  const cleanupRef = useRef<(() => void) | null>(null);
+  const recorderRef = useRef<AudioRecorder | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const audioPlaybackRef = useRef<(() => void) | null>(null);
+  const autoTransitionTimerRef = useRef<any>(null);
 
-  const stopAllAudio = () => {
+  // Sync dark mode
+  useEffect(() => {
+    const isDarkMode =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setIsDark(isDarkMode);
+  }, []);
+
+  // Stop everything on unmount or scenario switch
+  const abortActiveEngagements = () => {
+    if (recorderRef.current) {
+      recorderRef.current.cancel();
+      recorderRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
-    if (cleanupRef.current) {
-      cleanupRef.current();
-      cleanupRef.current = null;
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current);
+      autoTransitionTimerRef.current = null;
     }
-    setVoiceState("idle");
   };
 
-  // Stop audio whenever changing cards or lessons
   useEffect(() => {
-    stopAllAudio();
-    setSubtitleText("");
-  }, [lessonIndex, cardIndex]);
-
-  const speak = (
-    text: string,
-    onComplete?: () => void
-  ) => {
-    const hasSpeech =
-      typeof window !== "undefined" &&
-      "speechSynthesis" in window &&
-      typeof window.speechSynthesis?.speak === "function";
-
-    if (!hasSpeech) {
-      setVoiceState("speaking");
-      setSubtitleText(text);
-      const timer = setTimeout(() => {
-        setVoiceState("idle");
-        onComplete?.();
-      }, Math.min(Math.max(text.length * 60, 2500), 9000));
-      cleanupRef.current = () => clearTimeout(timer);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 0.96;
-
-    const voices = window.speechSynthesis.getVoices();
-    const englishVoice =
-      voices.find(
-        (v) =>
-          v.lang.startsWith("en") &&
-          (v.name.includes("Natural") ||
-            v.name.includes("Daniel") ||
-            v.name.includes("Samantha") ||
-            v.name.includes("Google UK") ||
-            v.name.includes("Alex") ||
-            v.name.includes("Serena"))
-      ) || voices.find((v) => v.lang.startsWith("en"));
-
-    if (englishVoice) {
-      utterance.voice = englishVoice;
-    }
-
-    setVoiceState("speaking");
-    setSubtitleText(text);
-
-    utterance.onend = () => {
-      setVoiceState("idle");
-      onComplete?.();
+    return () => {
+      abortActiveEngagements();
     };
+  }, [scenarioIndex]);
 
-    utterance.onerror = () => {
-      setVoiceState("idle");
-      onComplete?.();
-    };
+  // STATE 1: Start Vivid Priming (Nightmare Scenario)
+  const startPriming = () => {
+    abortActiveEngagements();
+    setCombatState("priming");
+    setEvaluation(null);
+    setLiveTranscript("");
+    setRemainingMs(RECORDING_LIMIT_MS);
 
-    window.speechSynthesis.speak(utterance);
-    cleanupRef.current = () => {
-      window.speechSynthesis.cancel();
-    };
-  };
-
-  const handleSparSequence = () => {
-    if (voiceState !== "idle") {
-      stopAllAudio();
-      return;
-    }
-
-    const opponentPrompt =
-      card.sparOpponentLine ||
-      "Come on, we're a team here. Don't be like that, it's just a few slides.";
-
-    // 1. Opponent speaks challenge
-    speak(opponentPrompt, () => {
-      // 2. Start listening to user
-      setVoiceState("listening");
-      setSubtitleText("Listening to your counter-statement...");
-
-      const SpeechRecognition =
-        (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
-          .SpeechRecognition ||
-        (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
-          .webkitSpeechRecognition;
-
-      let recognitionInstance: any = null;
-
-      if (SpeechRecognition) {
-        try {
-          recognitionInstance = new SpeechRecognition();
-          recognitionInstance.lang = "en-US";
-          recognitionInstance.interimResults = false;
-          recognitionInstance.maxAlternatives = 1;
-
-          recognitionInstance.onresult = () => {
-            setVoiceState("thinking");
-            setSubtitleText("Analyzing vocal delivery & frame control...");
-            window.setTimeout(() => {
-              speak(
-                card.sparFeedback ||
-                  "Boundary held flawlessly. Zero JADE detected."
-              );
-            }, 1200);
-          };
-
-          recognitionInstance.onerror = () => {
-            setVoiceState("thinking");
-            window.setTimeout(() => {
-              speak(
-                card.sparFeedback ||
-                  "Boundary held. Frame preserved under pressure."
-              );
-            }, 1000);
-          };
-
-          recognitionInstance.start();
-          cleanupRef.current = () => {
-            try {
-              recognitionInstance.abort();
-            } catch {}
-          };
-          return;
-        } catch {}
+    // Speak nightmare scenario aloud via TTS
+    playTtsVoice(
+      scenario.nightmareScenario,
+      () => {
+        // Audio started
+      },
+      () => {
+        // On priming audio end, automatically trigger State 2 (Recording)
+        startRecordingPhase();
       }
+    );
+  };
 
-      // Fallback simulation timer if mic API is restricted
-      const timer = window.setTimeout(() => {
-        setVoiceState("thinking");
-        setSubtitleText("Evaluating composure...");
-        const evalTimer = window.setTimeout(() => {
-          speak(
-            card.sparFeedback ||
-              "Boundary held flawlessly. Zero JADE detected. Downward vocal inflection maintained."
-          );
-        }, 1200);
-        cleanupRef.current = () => window.clearTimeout(evalTimer);
-      }, 4000);
+  // STATE 2: Start 45-Second Pressure Chamber Recording
+  const startRecordingPhase = async () => {
+    abortActiveEngagements();
+    setCombatState("recording");
+    setRemainingMs(RECORDING_LIMIT_MS);
+    setLiveTranscript("");
 
-      cleanupRef.current = () => window.clearTimeout(timer);
+    // 1. Initialize AudioRecorder with 45-second ceiling
+    const recorder = new AudioRecorder({
+      maxDurationMs: RECORDING_LIMIT_MS,
+      onTick: (remMs) => {
+        setRemainingMs(remMs);
+      },
+      onVolume: (vol) => {
+        setLiveVolume(vol);
+      },
+      onMaxDurationReached: () => {
+        // 45 seconds expired -> Auto-commit response
+        commitRecording();
+      },
     });
-  };
 
-  const handleBubbleClick = () => {
-    if (voiceState === "speaking") {
-      stopAllAudio();
-      return;
+    recorderRef.current = recorder;
+
+    try {
+      await recorder.start();
+    } catch (err) {
+      console.warn("[Pressure Chamber] Mic permission error:", err);
     }
 
-    if (card.isSpar) {
-      handleSparSequence();
-    } else {
-      speak(card.spokenScript);
+    // 2. Start concurrent SpeechRecognition for live on-screen transcript
+    const SpeechRec =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (SpeechRec) {
+      try {
+        const recognition = new SpeechRec();
+        recognition.lang = "en-US";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event: any) => {
+          let text = "";
+          for (let i = 0; i < event.results.length; i++) {
+            text += event.results[i][0].transcript + " ";
+          }
+          setLiveTranscript(text.trim());
+        };
+
+        recognition.onerror = () => {};
+        recognition.start();
+        recognitionRef.current = recognition;
+      } catch (err) {
+        console.warn("[Pressure Chamber] SpeechRecognition error:", err);
+      }
     }
   };
 
-  const switchLesson = (newIndex: number) => {
-    if (newIndex === lessonIndex) return;
-    stopAllAudio();
-    setLessonIndex(newIndex);
-    setCardIndex(0);
-    setFinished(false);
+  // STATE 3: Commit Recording & Process (STT -> LLM)
+  const commitRecording = async () => {
+    if (combatState !== "recording") return;
+
+    setCombatState("processing");
+
+    // Stop speech recognition
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+
+    let finalTranscript = liveTranscript.trim();
+
+    // Stop audio recorder and get blob
+    if (recorderRef.current) {
+      try {
+        const { blob } = await recorderRef.current.stop();
+        recorderRef.current = null;
+      } catch (e) {
+        console.warn("[Pressure Chamber] Stop error:", e);
+      }
+    }
+
+    // Fallback prompt if transcript is empty
+    if (!finalTranscript) {
+      finalTranscript = "No audible words detected";
+    }
+
+    // Send to Combat Instructor for Clinical Analysis
+    try {
+      const result = await analyzeCombatTranscript({
+        transcript: finalTranscript,
+        scenarioTitle: scenario.title,
+        scenarioText: scenario.nightmareScenario,
+        opponentPrompt: scenario.opponentLine,
+        expectedCounterStatement: scenario.expectedCounterStatement,
+        trapBlunders: scenario.trapBlunders,
+        lessonId: scenario.id,
+      });
+
+      setEvaluation(result);
+      setCombatState("strike");
+
+      // STATE 4: Voice response from AI instructor via TTS
+      playTtsVoice(result.spokenFeedback);
+    } catch (err) {
+      console.error("[Pressure Chamber] Evaluation failed:", err);
+      // Fallback verdict
+      const fallbackResult: AnalysisResponse = {
+        verdict: "REWORK",
+        score: 50,
+        spokenFeedback:
+          "Signal interrupted. Reset your posture, take command of the room, and deliver the exact counter-statement now.",
+        detailedAnalysis: "Connection timeout. Prepare for re-engagement.",
+        verbatimCounterStatement: scenario.expectedCounterStatement,
+        jadeScore: 50,
+        composureScore: 50,
+      };
+      setEvaluation(fallbackResult);
+      setCombatState("strike");
+      playTtsVoice(fallbackResult.spokenFeedback);
+    }
   };
 
-  const next = () => {
-    stopAllAudio();
-    setCardIndex((val) => Math.min(val + 1, currentLesson.cards.length - 1));
+  // Switch Scenarios
+  const switchScenario = (idx: number) => {
+    if (idx === scenarioIndex) return;
+    abortActiveEngagements();
+    setScenarioIndex(idx);
+    setCombatState("idle");
+    setEvaluation(null);
+    setLiveTranscript("");
   };
 
-  const prev = () => {
-    stopAllAudio();
-    setCardIndex((val) => Math.max(val - 1, 0));
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const statusLabel =
-    voiceState === "speaking"
-      ? "AI is speaking · Tap to pause"
-      : voiceState === "listening"
-      ? "Listening · Speak boundary now"
-      : voiceState === "thinking"
-      ? "Analyzing vocal delivery..."
-      : card.isSpar
-      ? "Tap orb to start live spar"
-      : "Tap orb to hear lesson";
+  // Timer calculations
+  const remainingSeconds = (remainingMs / 1000).toFixed(1);
+  const progressPercent = (remainingMs / RECORDING_LIMIT_MS) * 100;
+  const radius = 90;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   return (
-    <div className={dark ? "card-app dark-card-app" : "card-app"}>
-      {/* Global Topbar */}
+    <div className={`card-app ${isDark ? "dark-card-app" : ""}`}>
+      {/* Topbar */}
       <header className="card-topbar">
-        <a href="/" className="card-brand" title="Return to The Lyceum">
-          <div className="card-brand-mark">◦</div>
-          <div>
-            <strong>The Lyceum</strong>
-            <small>Voice-to-Voice Simulation</small>
-          </div>
-        </a>
+        <div className="card-brand">
+          <a href="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span className="card-brand-mark">◦</span>
+            <div>
+              <strong>The Lyceum</strong>
+              <small>S2S Combat Simulator</small>
+            </div>
+          </a>
+        </div>
 
-        {/* 3 Sample Lessons Switcher */}
-        <div className="lesson-switcher" aria-label="Select sample lesson">
-          {lessons.map((item, idx) => (
+        {/* Scenario Switcher */}
+        <div className="lesson-switcher">
+          {SCENARIOS.map((s, idx) => (
             <button
-              key={item.id}
-              className={`lesson-pill ${
-                idx === lessonIndex ? "is-active" : ""
-              }`}
-              onClick={() => switchLesson(idx)}
+              key={s.id}
+              className={`lesson-pill ${scenarioIndex === idx ? "is-active" : ""}`}
+              onClick={() => switchScenario(idx)}
               type="button"
             >
-              {item.shortName}
+              {s.shortName}
             </button>
           ))}
         </div>
 
-        {/* Progress indicator */}
-        <div className="top-progress">
-          <span>LESSON {currentLesson.code} / 02</span>
-          <div>
-            <i style={{ width: `${Math.max(7, progress)}%` }} />
-          </div>
-          <em>
-            {String(cardIndex + 1).padStart(2, "0")} —{" "}
-            {String(currentLesson.cards.length).padStart(2, "0")}
-          </em>
-        </div>
-
+        {/* Right side controls */}
         <div className="card-user">
           <button
             className="theme-toggle"
-            onClick={() => setDark((val) => !val)}
-            aria-label="Toggle theme"
+            onClick={() => setIsDark(!isDark)}
+            title="Toggle theme"
+            type="button"
           >
-            {dark ? <Sun size={15} /> : <Moon size={15} />}
+            {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <span className="avatar">A</span>
-          <span className="user-name">Member</span>
-          <ChevronDown size={13} />
+          <a
+            href="/"
+            style={{
+              color: "var(--muted)",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              fontSize: "11px",
+              fontFamily: "'DM Mono', monospace",
+            }}
+          >
+            <ArrowLeft size={13} /> Exit Chamber
+          </a>
         </div>
       </header>
 
-      {/* Stage */}
+      {/* Main Simulator Stage */}
       <main className="card-stage">
         <div className="stage-note">
-          <span>S2S AI TUTOR HARNESS</span>
-          <i />
-          <span>VOICE SYNTHESIS ACTIVE</span>
-          <i />
-          <span>MODULE {currentLesson.id}</span>
+          <i></i> SPEECH-TO-SPEECH (S2S) BEHAVIORAL PRESSURE CHAMBER <i></i>
         </div>
 
-        {/* Clean Center Card */}
-        <div
-          className={`lesson-card card-${card.accent}`}
-          key={`${lessonIndex}-${cardIndex}`}
-        >
-          <div className="card-number">
-            {String(cardIndex + 1).padStart(2, "0")}{" "}
-            <span>/ {String(currentLesson.cards.length).padStart(2, "0")}</span>
-          </div>
-
-          <div className="clean-card-content">
-            {/* 1-2 Lines of Title */}
-            <div className="clean-card-header">
-              <div className="card-eyebrow">
-                <Sparkles size={13} /> {card.eyebrow}
+        <div className="lesson-card">
+          <div className="pressure-chamber-wrapper">
+            
+            {/* Status Header Badge */}
+            {combatState === "idle" && (
+              <div className="simulation-badge">
+                <ShieldAlert size={12} /> STANDBY · READY FOR ENGAGEMENT
               </div>
-              <h1 className="clean-card-title">{card.title}</h1>
-            </div>
+            )}
 
-            {/* Big Center Voice Bubble Stage */}
-            <div className="hero-voice-stage">
-              <div className="hero-orbit orbit-a" />
-              <div className="hero-orbit orbit-b" />
+            {combatState === "priming" && (
+              <div className="simulation-badge state-priming">
+                <span className="pulse-radar-indicator"></span>
+                SIMULATION ACTIVE · NIGHTMARE SCENARIO
+              </div>
+            )}
 
-              {voiceState !== "idle" && (
-                <>
-                  <div className="hero-ripple ripple-1" />
-                  <div className="hero-ripple ripple-2" />
-                  <div className="hero-ripple ripple-3" />
-                </>
-              )}
+            {combatState === "recording" && (
+              <div className="simulation-badge state-recording">
+                <span className="pulse-radar-indicator"></span>
+                LIVE MIC ACTIVE · 45S PRESSURE CHAMBER
+              </div>
+            )}
 
-              <button
-                type="button"
-                className={`hero-voice-bubble state-${voiceState}`}
-                onClick={handleBubbleClick}
-                aria-label={statusLabel}
-              >
-                <span className="hero-bubble-shine" />
-                {voiceState === "speaking" ? (
-                  <Waves size={52} className="bubble-icon" />
-                ) : voiceState === "listening" ? (
-                  <Mic size={50} className="bubble-icon mic-active" />
-                ) : voiceState === "thinking" ? (
-                  <Sparkles size={48} className="bubble-icon spin-slow" />
-                ) : (
-                  <Headphones size={48} className="bubble-icon" />
-                )}
-              </button>
+            {combatState === "processing" && (
+              <div className="simulation-badge state-processing">
+                <Sparkles size={12} />
+                ANALYZING TACTICS & VOCAL CADENCE...
+              </div>
+            )}
 
-              {/* Equalizer Audio Waves */}
+            {combatState === "strike" && (
               <div
-                className={`hero-wave-bars ${
-                  voiceState === "speaking" ? "is-active" : ""
+                className={`simulation-badge state-strike ${
+                  evaluation?.verdict === "PASS"
+                    ? "verdict-pass"
+                    : "verdict-rework"
                 }`}
               >
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
+                {evaluation?.verdict === "PASS" ? (
+                  <CheckCircle2 size={12} />
+                ) : (
+                  <AlertTriangle size={12} />
+                )}
+                {evaluation?.verdict === "PASS"
+                  ? "TACTICAL KILL · BOUNDARY PRESERVED"
+                  : "FATAL BLUNDER · STATUS LOSS DETECTED"}
               </div>
-
-              {/* Status Pill Button */}
-              <button
-                type="button"
-                className={`hero-status-pill state-${voiceState}`}
-                onClick={handleBubbleClick}
-              >
-                <span className="status-dot" />
-                {statusLabel}
-              </button>
-
-              {/* Spoken subtitle / caption */}
-              {subtitleText && (
-                <p className="hero-subtitle-caption">“{subtitleText}”</p>
-              )}
-            </div>
-          </div>
-
-          <div className="card-footer">
-            <span>{currentLesson.shortName}</span>
-            <span className="footer-line" />
-            <span>
-              {finished ? "SIMULATION COMPLETED" : "DELIBERATE ACTION"}
-            </span>
-          </div>
-        </div>
-
-        {/* Navigation Controls */}
-        <div className="card-controls">
-          <button onClick={prev} disabled={cardIndex === 0}>
-            <ArrowLeft size={16} /> Back
-          </button>
-          <div className="control-dots">
-            {currentLesson.cards.map((_, index) => (
-              <button
-                aria-label={`Go to card ${index + 1}`}
-                key={index}
-                onClick={() => {
-                  stopAllAudio();
-                  setCardIndex(index);
-                }}
-                className={
-                  index === cardIndex
-                    ? "active"
-                    : index < cardIndex
-                    ? "visited"
-                    : ""
-                }
-              />
-            ))}
-          </div>
-          <button
-            onClick={
-              cardIndex === currentLesson.cards.length - 1
-                ? () => setFinished(true)
-                : next
-            }
-          >
-            {cardIndex === currentLesson.cards.length - 1 ? (
-              finished ? (
-                "Completed"
-              ) : (
-                "Complete lesson"
-              )
-            ) : (
-              <>
-                Continue <ArrowRight size={16} />
-              </>
             )}
-          </button>
+
+            {/* Scenario Header */}
+            <div className="clean-card-header">
+              <span className="card-eyebrow">{scenario.eyebrow}</span>
+              <h1 className="clean-card-title">{scenario.title}</h1>
+            </div>
+
+            {/* STATE 1: IDLE / PRIMING VIEW */}
+            {(combatState === "idle" || combatState === "priming") && (
+              <div style={{ width: "100%", maxWidth: "680px", margin: "10px auto 20px" }}>
+                <p className="card-body" style={{ fontSize: "16px", lineHeight: "1.7", marginBottom: "24px" }}>
+                  {scenario.nightmareScenario}
+                </p>
+
+                {/* Central Voice Orb */}
+                <div className="hero-voice-stage" style={{ height: "240px" }}>
+                  <div className="hero-orbit orbit-a"></div>
+                  <div className="hero-orbit orbit-b"></div>
+                  {combatState === "priming" && (
+                    <>
+                      <div className="hero-ripple ripple-1"></div>
+                      <div className="hero-ripple ripple-2"></div>
+                    </>
+                  )}
+                  <button
+                    className={`hero-voice-bubble ${combatState === "priming" ? "state-speaking" : ""}`}
+                    onClick={combatState === "idle" ? startPriming : startRecordingPhase}
+                    type="button"
+                    title={combatState === "idle" ? "Start Simulation" : "Skip directly to speaking"}
+                  >
+                    <div className="hero-bubble-shine"></div>
+                    {combatState === "priming" ? (
+                      <Waves size={40} className="bubble-icon" />
+                    ) : (
+                      <Volume2 size={40} className="bubble-icon" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="combat-actions">
+                  {combatState === "idle" ? (
+                    <button className="btn-commit" onClick={startPriming} type="button">
+                      Engage Simulation <ArrowRight size={14} />
+                    </button>
+                  ) : (
+                    <button className="btn-commit" onClick={startRecordingPhase} type="button">
+                      Deliver Response Now <Mic size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* STATE 2: RECORDING (45-SECOND COUNTDOWN PRESSURE CHAMBER) */}
+            {combatState === "recording" && (
+              <div style={{ width: "100%", maxWidth: "640px" }}>
+                {/* 45-Second Countdown Stage */}
+                <div className="countdown-timer-stage">
+                  <svg className="countdown-svg" viewBox="0 0 200 200">
+                    <circle className="bg" cx="100" cy="100" r={radius} />
+                    <circle
+                      className={`progress ${
+                        remainingMs < 10000
+                          ? "danger"
+                          : remainingMs < 20000
+                          ? "warn"
+                          : ""
+                      }`}
+                      cx="100"
+                      cy="100"
+                      r={radius}
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                    />
+                  </svg>
+                  <div className="countdown-center">
+                    <span className="countdown-seconds">{remainingSeconds}s</span>
+                    <span className="countdown-label">Window Remaining</span>
+                  </div>
+                </div>
+
+                {/* Volume metering bar */}
+                <div className="live-volume-meter">
+                  {[...Array(16)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="live-volume-bar"
+                      style={{
+                        height: `${Math.max(4, (liveVolume / 100) * 16 * (0.5 + Math.random() * 0.5))}px`,
+                        background: remainingMs < 10000 ? "#dc2626" : "var(--beige-2)",
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Real-time speech transcript box */}
+                <div className="live-transcript-box is-recording">
+                  {liveTranscript ? (
+                    <span>&ldquo;{liveTranscript}&rdquo;</span>
+                  ) : (
+                    <span className="live-transcript-placeholder">
+                      <Mic size={16} /> Deliver your counter-statement out loud now...
+                    </span>
+                  )}
+                </div>
+
+                {/* Controls */}
+                <div className="combat-actions">
+                  <button className="btn-commit" onClick={commitRecording} type="button">
+                    <Square size={14} /> Commit Counter-Strike
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={startRecordingPhase}
+                    type="button"
+                  >
+                    <RotateCcw size={13} /> Reset 45s
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STATE 3: PROCESSING / ANALYSIS */}
+            {combatState === "processing" && (
+              <div style={{ padding: "40px 20px" }}>
+                <div className="hero-voice-stage" style={{ height: "200px" }}>
+                  <div className="hero-orbit orbit-a"></div>
+                  <div className="hero-voice-bubble state-thinking">
+                    <Sparkles size={36} className="bubble-icon spin-slow" />
+                  </div>
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "24px", marginTop: "20px" }}>
+                  Auditing Tactical Frame...
+                </h3>
+                <p className="card-body" style={{ maxWidth: "480px", margin: "10px auto 0" }}>
+                  Screening verbal output for JADE (Justify, Argue, Defend, Explain), downward inflection, and boundary solidity.
+                </p>
+              </div>
+            )}
+
+            {/* STATE 4: THE STRIKE (EVALUATION & VERDICT) */}
+            {combatState === "strike" && evaluation && (
+              <div className="strike-verdict-card">
+                <div className="verdict-header">
+                  <div>
+                    <span
+                      style={{
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: "9px",
+                        letterSpacing: "0.14em",
+                        color: "var(--muted)",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Combat Analysis Result
+                    </span>
+                    <h2
+                      className={`verdict-title ${
+                        evaluation.verdict === "PASS" ? "pass" : "rework"
+                      }`}
+                    >
+                      {evaluation.verdict === "PASS"
+                        ? "TACTICAL KILL · PASS"
+                        : "FATAL BLUNDER · REWORK"}
+                    </h2>
+                  </div>
+                  <div className="verdict-scores">
+                    <div className="score-tag">
+                      Composure: <strong>{evaluation.composureScore}%</strong>
+                    </div>
+                    <div className="score-tag">
+                      JADE: <strong>{evaluation.jadeScore}%</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Instructor Verbal Feedback */}
+                <div className="diagnosis-text">
+                  <strong>Instructor Assessment:</strong> {evaluation.spokenFeedback}
+                </div>
+
+                {evaluation.detailedAnalysis && (
+                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 14px", lineHeight: "1.6" }}>
+                    <em>{evaluation.detailedAnalysis}</em>
+                  </p>
+                )}
+
+                {/* Target Verbatim Counter-Statement */}
+                <div className="verbatim-target-box">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <small>Verbatim Counter-Statement ({scenario.formulaName})</small>
+                    <button
+                      onClick={() => copyToClipboard(evaluation.verbatimCounterStatement)}
+                      style={{ background: "transparent", border: 0, color: "var(--beige-2)", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'DM Mono', monospace" }}
+                      type="button"
+                    >
+                      {copied ? <Check size={12} /> : <Copy size={12} />}
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <p>&ldquo;{evaluation.verbatimCounterStatement}&rdquo;</p>
+                </div>
+
+                {/* Formula Steps */}
+                <div style={{ marginTop: "16px", borderTop: "1px solid var(--line)", paddingTop: "14px" }}>
+                  <small style={{ fontFamily: "'DM Mono', monospace", fontSize: "8px", letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase" }}>
+                    Execution Formula:
+                  </small>
+                  <ul style={{ margin: "8px 0 0", paddingLeft: "18px", fontSize: "12.5px", color: "var(--muted)", lineHeight: "1.7" }}>
+                    {scenario.formulaSteps.map((step, sIdx) => (
+                      <li key={sIdx}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Actions */}
+                <div className="combat-actions" style={{ marginTop: "24px" }}>
+                  <button className="btn-commit" onClick={startRecordingPhase} type="button">
+                    <RotateCcw size={14} /> Re-engage Drill (45s)
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => switchScenario((scenarioIndex + 1) % SCENARIOS.length)}
+                    type="button"
+                  >
+                    Next Scenario <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       </main>
 
+      {/* Global Footer */}
       <footer className="card-footer-global">
-        <span>© THE LYCEUM PRIVATE COURSEWARE</span>
-        <span>CALM · SHARP · STRATEGIC</span>
+        <span>THE LYCEUM · VOICE COMBAT LABORATORY</span>
+        <span>45-SECOND PRESSURE DRILL · V2.1 S2S</span>
       </footer>
     </div>
   );

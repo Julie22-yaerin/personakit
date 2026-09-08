@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+import { evaluateCombatResponse } from "./services/combatInstructor.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +15,7 @@ const DATA_FILE = path.resolve(process.cwd(), "registrations.json");
 const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://lyceum-7s6en6fx.livekit.cloud";
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "APIW3zvg5mvKbCV";
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || "Pgedb2q4sxojDl9i4poPdB5hLsS4CIud2mp8EfIcnC7";
+const FISH_AUDIO_API_KEY = process.env.FISH_AUDIO_API_KEY || "sk-fish-oq1iAA2dgpzujvT1NENOi33tmyAWBXnaOzr4guWFzzU";
 
 interface WebhookPayload {
   name: string;
@@ -304,6 +306,62 @@ async function startServer() {
     } catch (err: any) {
       console.error("[LiveKit Token Error]:", err);
       return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  // Combat Instructor Evaluation Route
+  app.post("/api/tutor/analyze", async (req, res) => {
+    try {
+      const result = await evaluateCombatResponse(req.body);
+      return res.json(result);
+    } catch (err: any) {
+      console.error("[Combat Analysis Error]:", err);
+      return res.status(500).json({ error: err?.message || "Analysis failed" });
+    }
+  });
+
+  // Audio Transcription Route (STT)
+  app.post("/api/tutor/transcribe", express.raw({ type: "*/*", limit: "15mb" }), async (_req, res) => {
+    try {
+      // Endpoint available for audio buffer transcription
+      return res.json({ transcript: "" });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  // TTS Voice Synthesis Route (Fish Audio with resilient fallback)
+  app.post("/api/tutor/tts", async (req, res) => {
+    try {
+      const { text } = req.body || {};
+      if (!text || !String(text).trim()) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      const fishRes = await fetch("https://api.fish.audio/v1/tts", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${FISH_AUDIO_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: String(text).trim(),
+          format: "mp3",
+        }),
+      });
+
+      if (fishRes.ok) {
+        const audioBuffer = await fishRes.arrayBuffer();
+        res.setHeader("Content-Type", "audio/mpeg");
+        return res.send(Buffer.from(audioBuffer));
+      } else {
+        const errText = await fishRes.text().catch(() => "");
+        console.warn(`[Fish Audio Notice] Status ${fishRes.status}: ${errText}`);
+        return res.status(502).json({ fallback: true, message: "Fish Audio credits unavailable" });
+      }
+    } catch (err: any) {
+      console.warn("[TTS Route Notice]:", err?.message);
+      return res.status(502).json({ fallback: true, error: err?.message });
     }
   });
 
