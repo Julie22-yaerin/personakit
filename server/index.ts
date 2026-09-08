@@ -3,12 +3,17 @@ import { createServer } from "http";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const WEBHOOK_URL = "https://yearin22.app.n8n.cloud/webhook/website-signup-welcome";
 const DATA_FILE = path.resolve(process.cwd(), "registrations.json");
+
+const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://lyceum-7s6en6fx.livekit.cloud";
+const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "APIW3zvg5mvKbCV";
+const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || "Pgedb2q4sxojDl9i4poPdB5hLsS4CIud2mp8EfIcnC7";
 
 interface WebhookPayload {
   name: string;
@@ -257,6 +262,48 @@ async function startServer() {
         success: false,
         error: err?.message || "Internal server error during webhook dispatch",
       });
+    }
+  });
+
+  // LiveKit Healthcheck and Verification Endpoint
+  app.get("/api/livekit/test", async (_req, res) => {
+    try {
+      const httpHost = LIVEKIT_URL.replace("wss://", "https://").replace("ws://", "http://");
+      const client = new RoomServiceClient(httpHost, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+      const rooms = await client.listRooms();
+      return res.status(200).json({
+        success: true,
+        httpCode: 200,
+        livekitUrl: LIVEKIT_URL,
+        roomsCount: rooms.length,
+        message: "LiveKit connection verified successfully",
+      });
+    } catch (err: any) {
+      console.error("[LiveKit Error]:", err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || "Failed to connect to LiveKit",
+      });
+    }
+  });
+
+  // LiveKit Participant Token Endpoint
+  app.get("/api/livekit/token", async (req, res) => {
+    try {
+      const room = String(req.query.room || "lyceum-session");
+      const identity = String(req.query.identity || `operator-${Math.floor(1000 + Math.random() * 9000)}`);
+      const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity });
+      at.addGrant({ roomJoin: true, room });
+      const token = await at.toJwt();
+      return res.json({
+        token,
+        url: LIVEKIT_URL,
+        room,
+        identity,
+      });
+    } catch (err: any) {
+      console.error("[LiveKit Token Error]:", err);
+      return res.status(500).json({ error: err?.message });
     }
   });
 
