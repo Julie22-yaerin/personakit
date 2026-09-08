@@ -1,82 +1,98 @@
 [
   {
-    "lessonId": "lesson-high-status-no",
-    "cardId": "card-hsn-001",
-    "title": "The Study Lounge Ambush (Brad)",
-    "nightmareScenario": "It is Sunday at 4:30 PM in a crowded campus coffee shop. Your 4-person marketing project is due tomorrow at 8:00 AM. Brad slides into your booth, pushes his laptop toward you, and says: 'Hey, I’ve got this fraternity formal tonight, and since you’re so much better at this anyway, I need you to write up my slides too. We all want an A. Thanks!' Two group members are watching. You have 5 seconds before they look at you. What do you say out loud right now?",
-    "targetRole": "Brad (Charismatic, dominant classmate)",
-    "trapPatterns": [
-      "The Whiner: Pleading for fairness, submissive status drop, JADE (Justify, Argue, Defend, Explain)",
-      "The Fake Aggressor: Angry outburst, amygdala hijack, reactive abuse allowing Brad to play the calm victim"
-    ],
-    "psychologicalMechanism": "Rejection of coerced obligation. Frame Shock using low-dominance assertive phrasing ('I prefer...') combined with zero JADE and immediate handback of responsibility.",
-    "weaponizedCounterStatement": "I prefer to keep our sections separate. Let me know when you've uploaded your slides so I can compile the final deck.",
-    "vocalInstruction": "Lower your pace, lower your pitch, let the final word land with downward inflection, and hold relaxed eye contact with zero apology.",
-    "confirmationKeywords": [
-      "I got it", "Got it", "Understood", "I understand", "Let's move on", "Next", "Clear", "Makes sense", "I see the leverage"
-    ],
-    "sparPrompts": [
-      "Come on, we're a team here. I thought we were friends. Don't be like that, it's just a few slides.",
-      "Honestly, if our grade drops because the formatting is messed up, that's on you. Are you sure you won't help out?"
-    ],
-    "passCriteria": {
-      "framing": "Replaces Brad's cooperative guilt frame with personal operational preference.",
-      "language": "Zero JADE, zero insults, concise, immediate handoff of accountability.",
-      "delivery": "Medium Chill, steady vocal pitch, unhurried cadence."
-    },
-    "nextCardId": "card-hsn-002"
+    "id": "ML-CSR-001",
+    "code": "01",
+    "short_name": "01 · Friend Betrayal",
+    "title": "The C-S-R Neutralization",
+    "archetype": "The Jealous Close Friend / Backstabber",
+    "category": "Peer Social Dynamics",
+    "cards": [
+      {
+        "step": 0,
+        "eyebrow": "LESSON 01 · COUNTER-BETRAYAL",
+        "title": "The C-S-R Neutralization",
+        "spoken_script": "Welcome to Counter-Betrayal. When a jealous friend publicly mocks your success, never defend yourself. Pathologize their attack, reframe their insult as a cry for help, and demote their status with cold distance. Tap Continue or click the orb to begin.",
+        "accent": "cover"
+      },
+      {
+        "step": 1,
+        "eyebrow": "STEP 01 · VIVID PRIMING",
+        "title": "The Classroom Ambush",
+        "spoken_script": "You walk into the classroom. Your close friend is sitting with a group of popular students. As you approach, they laugh loudly: 'Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A, or just beg for it?' You feel the heat in your face. The whole group is staring. You have five seconds before you look like an easy target. What do you say?",
+        "accent": "situation"
+      },
+      {
+        "step": 2,
+        "eyebrow": "STEP 02 · TRAP IDENTIFICATION",
+        "title": "The Whiner & The Fake Aggressor",
+        "spoken_script": "Do not whine with 'I didn't beg, I studied hard!' That makes you look guilty and desperate for validation. And never blow up with 'Shut up, you're just stupid and jealous!' That proves they triggered an emotional collapse and they win. Reject both traps.",
+        "accent": "compare"
+      },
+      {
+        "step": 3,
+        "eyebrow": "STEP 03 · SURGICAL STRIKE",
+        "title": "The Sympathy Trap & Exit",
+        "spoken_script": "Deploy the C-S-R formula. Calibrate: freeze for two seconds with a deadpan poker face. Sympathy Trap: speak with calm, medical concern: 'Are you okay? You seem really stressed and fixated on my grades lately. If the coursework is getting too hard for you, just ask and I can tutor you.' Redefine: break eye contact and turn away.",
+        "accent": "why"
+      },
+      {
+        "step": 4,
+        "eyebrow": "STEP 04 · LIVE SPAR DRILL",
+        "title": "Neutralize the Backstabber",
+        "spoken_script": "Your friend tries to deflect the pressure: 'Whoa, chill! I was just joking. Can't you take a joke?' Deliver your failsafe counter now.",
+        "accent": "practice",
+        "is_spar": true,
+        "spar_opponent_line": "“Whoa, chill! I was just joking. Can't you take a joke?”",
+        "spar_feedback": "Devastating frame reversal. You rejected the fake joke defense, exposed their insecurity, and executed a clean status demotion."
+      }
+    ]
   },
   {
-    "lessonId": "lesson-high-status-no",
-    "cardId": "card-hsn-002",
-    "title": "The Library Hallway Ambush (Julian)",
-    "nightmareScenario": "You spent the entire weekend polishing final presentation slides for a high-stakes group project. Julian, who contributed nothing, approaches you in the library hallway 20 minutes before the deadline: 'Wow, I can't believe you got this done! Since you're so good at handling the boring details, I figured you’d just submit under both our names. I had a crazy week.' You have 5 seconds before he looks at you. What do you say out loud right now?",
-    "targetRole": "Julian (Charismatic, entitled classmate)",
-    "trapPatterns": [
-      "The Submissive Deflector: Complaining about fairness, inviting word salad, defending personal character",
-      "The Reactive Snapper: Hostile insults, screaming, falling into reactive abuse where Julian plays the victim"
-    ],
-    "psychologicalMechanism": "Active assertiveness over passive Gray Rocking. Refusal to chase conversational tangents. Objective 'I' framing that draws an operational boundary between separate individual contributions.",
-    "weaponizedCounterStatement": "Julian, I've noticed our work contribution on this project hasn't been shared. I'm not comfortable submitting our names together when the workload wasn't divided equally. I'm going to submit my slides individually now, and you can submit your portion directly to the instructor when you're ready.",
-    "vocalInstruction": "Steady, low-volume delivery, zero uptalk, take a 2-second deliberate pause before responding.",
-    "confirmationKeywords": [
-      "I got it", "Got it", "Understood", "I understand", "Let's move on", "Next", "Clear", "Makes sense", "I see the leverage"
-    ],
-    "sparPrompts": [
-      "Hey, come on... we're a team, right? Why are you being so difficult about a simple PowerPoint slide?",
-      "If you submit separately twenty minutes before the deadline, you're going to ruin my GPA and make the whole group look bad to the professor. Is that really the kind of person you are?"
-    ],
-    "passCriteria": {
-      "framing": "Establishes non-negotiable individual work ownership.",
-      "language": "Objective behavioral description + clear personal boundary, zero name-calling.",
-      "delivery": "Emotionally detached, steady tone, zero defensive explanations."
-    },
-    "nextCardId": "card-hsn-003"
-  },
-  {
-    "lessonId": "lesson-high-status-no",
-    "cardId": "card-hsn-003",
-    "title": "Neurological Regulation & Behavioral Forcing (Julian & Soccer Practice)",
-    "nightmareScenario": "Your marketing project is due at 8:00 AM tomorrow. You've spent 6 hours building the deck. Julian leans over your desk in the library and says: 'Hey! Since you're so amazing at this formatting stuff, do you mind finishing up the last three slides and making sure the final formatting is perfect? I’ve got soccer practice in ten minutes and then a dinner I can't miss. We'll put both our names on it. Cool?' You have 5 seconds before he looks at you. What do you say out loud right now?",
-    "targetRole": "Julian (Charismatic, manipulative peer)",
-    "trapPatterns": [
-      "Fawning: Trading long-term boundaries for temporary relief from immediate social friction",
-      "Incongruent Fight: Primitive hostility that breaks rapport and grants Julian moral victimhood"
-    ],
-    "psychologicalMechanism": "Autonomic nervous system regulation (Stanford Physiological Sigh) + Behavioral Forcing Function (Don Norman Lockout & Interlock). Step B (formatting) cannot physically occur until Step A (content generation) exists.",
-    "weaponizedCounterStatement": "I’d love to help format the final deck, but I'm completely locked out of that slide until your content is written. As soon as you write your bullet points, ping me—I'll gladly jump in and format our sections together. Have a great soccer practice!",
-    "vocalInstruction": "Execute one physiological sigh (double inhale nose, extended exhale mouth) before speaking. Maintain warm, professional detachment.",
-    "confirmationKeywords": [
-      "I got it", "Got it", "Understood", "I understand", "Let's move on", "Next", "Clear", "Makes sense", "I see the leverage"
-    ],
-    "sparPrompts": [
-      "Hey, come on, don't be like that. We're a team, right? The format is complicated and you're just way faster at it. If I miss this soccer practice, the coach is going to bench me for the playoffs. Can't you just do this one solid for me?",
-      "If our grade drops because you locked the deck, that's on you. Are you sure you won't help out?"
-    ],
-    "passCriteria": {
-      "framing": "Structural impossibility and sequential prerequisite instead of personal refusal.",
-      "language": "Warm collaborative phrasing anchored to non-negotiable interlock constraint.",
-      "delivery": "Parasympathetic calm, low heart rate, zero defensive justification."
-    }
+    "id": "ML-ELW-001",
+    "code": "02",
+    "short_name": "02 · Boss Defense",
+    "title": "The E-L-W Boundary Defense",
+    "archetype": "The Exploitative Boss / Authority Figure",
+    "category": "Corporate Workplace",
+    "cards": [
+      {
+        "step": 0,
+        "eyebrow": "LESSON 02 · WORKPLACE BOUNDARIES",
+        "title": "The E-L-W Boundary Defense",
+        "spoken_script": "Welcome to Workplace Boundary Defense. When an exploitative boss dumps high-stakes work on you during burnout, never beg or play the martyr. Deploy threat transference: force authority to sign off on the financial risk of your exhaustion. Tap Continue or click the orb to begin.",
+        "accent": "cover"
+      },
+      {
+        "step": 1,
+        "eyebrow": "STEP 01 · VIVID PRIMING",
+        "title": "The Friday 5:30 PM Ambush",
+        "spoken_script": "It is 5:30 PM on a Friday. Running on three hours of sleep, you are completely burned out. Your boss drops a heavy folder on your desk: 'I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you to push through and close it.' If you accept, your health collapses. If you say no, you look disloyal. Your boss is staring at you. What do you say?",
+        "accent": "situation"
+      },
+      {
+        "step": 2,
+        "eyebrow": "STEP 02 · TRAP IDENTIFICATION",
+        "title": "The Emotional Beggar & The Martyr",
+        "spoken_script": "Do not beg: 'Boss, I'm so tired, I can't do this anymore.' They will say 'We're all tired, this is business,' making you look like a liability. And never play the martyr with 'Okay, I'll do my best.' You will crash, miss a critical detail, lose the account, and take the blame.",
+        "accent": "compare"
+      },
+      {
+        "step": 3,
+        "eyebrow": "STEP 03 · SURGICAL STRIKE",
+        "title": "Cognitive Limit & Risk Ownership",
+        "spoken_script": "Deploy the E-L-W formula. Empathy: acknowledge the stakes: 'I know exactly how critical the fifty-thousand-dollar Miller account is for our Q3 targets.' Limit: report your state like a battery gauge: 'However, my cognitive bandwidth is currently below the baseline required to secure a deal of this size safely.' Worst-Case Transference: put the risk on them: 'If I jump in exhausted and we lose the client permanently, are you willing to take one hundred percent responsibility for that loss with executives? Or should we hand this to someone fully rested to guarantee the win?'",
+        "accent": "why"
+      },
+      {
+        "step": 4,
+        "eyebrow": "STEP 04 · LIVE SPAR DRILL",
+        "title": "Hold the Risk Against Your Boss",
+        "spoken_script": "Your boss tries a guilt-trip and vague bribe: 'Look, just drink some coffee. You're my best closer. Do this and I'll owe you a huge favor next week. Come on.' Deliver your risk ownership move now.",
+        "accent": "practice",
+        "is_spar": true,
+        "spar_opponent_line": "“Look, just drink some coffee. You're my best closer. Do this and I'll owe you a huge favor next week. Come on.”",
+        "spar_feedback": "Masterful boundary lock. By requiring written confirmation of risk ownership, you forced management to back down without looking lazy."
+      }
+    ]
   }
 ]

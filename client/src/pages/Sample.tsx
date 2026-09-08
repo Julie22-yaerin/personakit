@@ -31,142 +31,96 @@ interface Lesson {
 
 const lessons: Lesson[] = [
   {
-    id: "ML-HSN-001",
+    id: "ML-CSR-001",
     code: "01",
-    shortName: "01 · Study Lounge",
+    shortName: "01 · Friend Betrayal",
     cards: [
       {
-        eyebrow: "LESSON 01 · THE HIGH-STATUS NO",
-        title: "Refuse Without Defending",
+        eyebrow: "LESSON 01 · COUNTER-BETRAYAL",
+        title: "The C-S-R Neutralization",
         spokenScript:
-          "Welcome to The High-Status No. In this tactical simulation, you will master rejecting coerced obligation without apology, explanation, or defensive hostility. Tap the orb or click Continue to begin.",
+          "Welcome to Counter-Betrayal. When a jealous friend publicly mocks your success, never defend yourself. Pathologize their attack, reframe their insult as a cry for help, and demote their status with cold distance. Tap Continue or click the orb to begin.",
         accent: "cover",
       },
       {
         eyebrow: "STEP 01 · VIVID PRIMING",
-        title: "The Study Lounge Ambush",
+        title: "The Classroom Ambush",
         spokenScript:
-          "Sunday, 4:30 PM. Your 4-person marketing project is due tomorrow. You spent 48 hours researching and formatting the deck. Suddenly, Brad slides into your booth, flashes a charming smile, and pushes his laptop across the table: 'Hey, I’ve got a fraternity formal tonight. Since you’re so good at formatting, do my slides too. We all want an A.' Two teammates watch in silence. What do you do?",
+          "You walk into the classroom. Your close friend is sitting with a group of popular students. As you approach, they laugh loudly: 'Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A, or just beg for it?' You feel the heat in your face. The whole group is staring. You have five seconds before you look like an easy target. What do you say?",
         accent: "situation",
       },
       {
         eyebrow: "STEP 02 · TRAP IDENTIFICATION",
-        title: "The Whiner & The Exploder",
+        title: "The Whiner & The Fake Aggressor",
         spokenScript:
-          "Never whine, and never explode. Whining appeals to fairness and falls into the JADE trap: justify, argue, defend, explain. Exploding triggers an amygdala hijack, letting Brad play the calm victim while you look erratic. Reject both traps.",
+          "Do not whine with 'I didn't beg, I studied hard!' That makes you look guilty and desperate for validation. And never blow up with 'Shut up, you're just stupid and jealous!' That proves they triggered an emotional collapse and they win. Reject both traps.",
         accent: "compare",
       },
       {
         eyebrow: "STEP 03 · SURGICAL STRIKE",
-        title: "Frame Shock & Zero JADE",
+        title: "The Sympathy Trap & Exit",
         spokenScript:
-          "Deliver the counter-statement: 'I prefer to keep our sections separate. Let me know when you've uploaded your slides so I can compile the final deck.' Notice: zero excuses, zero apologies. Brad is handed one hundred percent of the operational burden right back.",
+          "Deploy the C-S-R formula. Calibrate: freeze for two seconds with a deadpan poker face. Sympathy Trap: speak with calm, medical concern: 'Are you okay? You seem really stressed and fixated on my grades lately. If the coursework is getting too hard for you, just ask and I can tutor you.' Redefine: break eye contact and turn away.",
         accent: "why",
       },
       {
         eyebrow: "STEP 04 · LIVE SPAR DRILL",
-        title: "Hold the Boundary Against Brad",
+        title: "Neutralize the Backstabber",
         spokenScript:
-          "Brad pushes back with guilt: 'Come on, we're a team here. I thought we were friends. Don't be like that, it's just a few slides.' Hold your frame. Speak your counter-statement out loud with a downward vocal inflection.",
+          "Your friend tries to deflect the pressure: 'Whoa, chill! I was just joking. Can't you take a joke?' Deliver your failsafe counter now.",
         accent: "practice",
         isSpar: true,
         sparOpponentLine:
-          "“Come on, we're a team here. I thought we were friends. Don't be like that, it's just a few slides.”",
+          "“Whoa, chill! I was just joking. Can't you take a joke?”",
         sparFeedback:
-          "Boundary held flawlessly. Zero JADE detected. Your vocal tone remained grounded and authoritative.",
+          "Devastating frame reversal. You rejected the fake joke defense, exposed their insecurity, and executed a clean status demotion.",
       },
     ],
   },
   {
-    id: "ML-HSN-002",
+    id: "ML-ELW-001",
     code: "02",
-    shortName: "02 · Hallway Ambush",
+    shortName: "02 · Boss Defense",
     cards: [
       {
-        eyebrow: "LESSON 02 · WORKLOAD SEPARATION",
-        title: "Disrupt the Charm Offensive",
+        eyebrow: "LESSON 02 · WORKPLACE BOUNDARIES",
+        title: "The E-L-W Boundary Defense",
         spokenScript:
-          "Welcome to Lesson 2. Learn how to counter weaponized charm and workload dumping in high-pressure public environments without flinching.",
+          "Welcome to Workplace Boundary Defense. When an exploitative boss dumps high-stakes work on you during burnout, never beg or play the martyr. Deploy threat transference: force authority to sign off on the financial risk of your exhaustion. Tap Continue or click the orb to begin.",
         accent: "cover",
       },
       {
         eyebrow: "STEP 01 · VIVID PRIMING",
-        title: "The Library Hallway Ambush",
+        title: "The Friday 5:30 PM Ambush",
         spokenScript:
-          "Monday noon between classes. Julian corners you by the water fountain. He puts a heavy hand on your shoulder: 'Hey brother, you are a lifesaver. Take care of that client brief for me today, I owe you big time.' He is already turning to walk away. What is your move?",
+          "It is 5:30 PM on a Friday. Running on three hours of sleep, you are completely burned out. Your boss drops a heavy folder on your desk: 'I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you to push through and close it.' If you accept, your health collapses. If you say no, you look disloyal. Your boss is staring at you. What do you say?",
         accent: "situation",
       },
       {
         eyebrow: "STEP 02 · TRAP IDENTIFICATION",
-        title: "The Polite Submission Trap",
+        title: "The Emotional Beggar & The Martyr",
         spokenScript:
-          "Most people say 'Okay, I guess so' or 'I'm really busy but I'll try.' That is submission disguised as politeness. You teach people how to treat you by what you tolerate.",
+          "Do not beg: 'Boss, I'm so tired, I can't do this anymore.' They will say 'We're all tired, this is business,' making you look like a liability. And never play the martyr with 'Okay, I'll do my best.' You will crash, miss a critical detail, lose the account, and take the blame.",
         accent: "compare",
       },
       {
         eyebrow: "STEP 03 · SURGICAL STRIKE",
-        title: "Physical Neutrality & Frame Reset",
+        title: "Cognitive Limit & Risk Ownership",
         spokenScript:
-          "Step back half a pace. Break physical contact. Look him in the eye and say: 'I am not taking on that brief. You'll need to submit it directly.' Calm tone. Neutral face. Downward inflection.",
+          "Deploy the E-L-W formula. Empathy: acknowledge the stakes: 'I know exactly how critical the fifty-thousand-dollar Miller account is for our Q3 targets.' Limit: report your state like a battery gauge: 'However, my cognitive bandwidth is currently below the baseline required to secure a deal of this size safely.' Worst-Case Transference: put the risk on them: 'If I jump in exhausted and we lose the client permanently, are you willing to take one hundred percent responsibility for that loss with executives? Or should we hand this to someone fully rested to guarantee the win?'",
         accent: "why",
       },
       {
         eyebrow: "STEP 04 · LIVE SPAR DRILL",
-        title: "Neutralize Julian's Guilt Trip",
+        title: "Hold the Risk Against Your Boss",
         spokenScript:
-          "Julian turns back with weaponized guilt: 'Are you serious? After everything I've done for you? Just this once.' Hold your space. Deliver the boundary.",
+          "Your boss tries a guilt-trip and vague bribe: 'Look, just drink some coffee. You're my best closer. Do this and I'll owe you a huge favor next week. Come on.' Deliver your risk ownership move now.",
         accent: "practice",
         isSpar: true,
         sparOpponentLine:
-          "“Are you serious? After everything I've done for you? Just this once.”",
+          "“Look, just drink some coffee. You're my best closer. Do this and I'll owe you a huge favor next week. Come on.”",
         sparFeedback:
-          "Masterful composure. You broke physical contact and rejected the false guilt trap.",
-      },
-    ],
-  },
-  {
-    id: "DB-HSN-001",
-    code: "03",
-    shortName: "03 · Behavioral Interlock",
-    cards: [
-      {
-        eyebrow: "LESSON 03 · NEUROLOGICAL REGULATION",
-        title: "The Physiological Sigh & Interlock",
-        spokenScript:
-          "Welcome to Lesson 3. In this deep behavioral module, we rewire acute autonomic arousal using the physiological sigh and establish physical lockout forcing functions.",
-        accent: "cover",
-      },
-      {
-        eyebrow: "STEP 01 · VIVID PRIMING",
-        title: "Panic in the Corridor",
-        spokenScript:
-          "Heart pounding at 128 beats per minute. Amygdala hijack active. Julian corners you before soccer practice. Your body wants to either submit or fight. Stop before speaking.",
-        accent: "situation",
-      },
-      {
-        eyebrow: "STEP 02 · BIOLOGICAL REGULATION",
-        title: "The Physiological Sigh",
-        spokenScript:
-          "Take two quick inhales through your nose, followed by a long, slow exhale through your mouth. This reinflates collapsed alveoli, offloads carbon dioxide, and restores prefrontal cortex control in under 3 seconds.",
-        accent: "compare",
-      },
-      {
-        eyebrow: "STEP 03 · BEHAVIORAL INTERLOCK",
-        title: "Norman Lockout & Clean Exit",
-        spokenScript:
-          "Deploy a Don Norman behavioral lockout: close your laptop, pack your bag, stand up. Deliver the line: 'I am unavailable for this. I will see you at practice.' Physical movement locks out further coercion.",
-        accent: "why",
-      },
-      {
-        eyebrow: "STEP 04 · LIVE SPAR DRILL",
-        title: "High-Pressure Somatic Spar",
-        spokenScript:
-          "Sigh silently. Ground your feet into the floor. Julian says: 'Just give me five minutes right now!' Deliver your lockout response firmly and walk away.",
-        accent: "practice",
-        isSpar: true,
-        sparOpponentLine: "“Just give me five minutes right now!”",
-        sparFeedback:
-          "Incredible somatic control. The physiological sigh neutralized the adrenaline surge and held the interlock.",
+          "Masterful boundary lock. By requiring written confirmation of risk ownership, you forced management to back down without looking lazy.",
       },
     ],
   },
@@ -419,7 +373,7 @@ export default function Sample() {
 
         {/* Progress indicator */}
         <div className="top-progress">
-          <span>LESSON {currentLesson.code} / 03</span>
+          <span>LESSON {currentLesson.code} / 02</span>
           <div>
             <i style={{ width: `${Math.max(7, progress)}%` }} />
           </div>

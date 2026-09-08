@@ -1,16 +1,13 @@
-# S2S AI Tutor Knowledge Base: The "High-Status No" Curriculum
+# THE LYCEUM S2S BEHAVIORAL CURRICULUM DATABASE (2026)
 
-This directory contains standardized, scientifically audited micro-lesson blueprints for the **S2S (Speech-to-Speech) AI Tutor Database**.
+This repository contains the verified, psychological and neurobiological training modules for **The Lyceum S2S AI Tutor**.
 
-## Module Overview
+## Active Curriculum Modules (2 Modules)
 
-| Module ID | Title | Scenario Context | Core Mechanism |
+| Module ID | Topic | Target Archetype | Core Formula / Mechanism |
 | :--- | :--- | :--- | :--- |
-| **`ML-HSN-001`** | **The Study Lounge Ambush** | Brad asking to write his slides before a fraternity formal. | **Frame Shock & Absolute JADE Avoidance** (*"I prefer to keep our sections separate..."*) |
-| **`ML-HSN-002`** | **The Library Hallway Ambush** | Julian asking for joint name credit 20 min before deadline. | **Objective Boundary Architecture & Workload Separation** (*"I'm not comfortable submitting our names together..."*) |
-| **`DB-HSN-001`** | **Neurological Regulation & Behavioral Forcing** | Julian leaving for soccer practice and demanding slide completion. | **Physiological Sigh (Spiegel/Huberman) + Behavioral Interlock (Norman)** (*"I'm completely locked out until your content is written..."*) |
+| **`ML-CSR-001`** | **The C-S-R Neutralization** | The Jealous Close Friend / Backstabber | **C-S-R Formula:** 2s Micro-Freeze + Sympathy Trap (Clinical Concern & Tutoring Charity) + Status Demotion |
+| **`ML-ELW-001`** | **The E-L-W Boundary Defense** | The Exploitative Boss / Authority Figure | **E-L-W Formula:** Stake Alignment + Hardware Capacity Constraint + Worst-Case Risk Transference |
 
-## Integration Standards
-- **Format:** Pure GitHub-Flavored Markdown (`knowledge.md`).
-- **AI Simulation Engine:** Includes behavioral state machines, branching dialog trees, and machine-readable JSON roleplay configs.
-- **Scientific Rigor:** All psychological and neurological claims verified against peer-reviewed literature (*Cell Reports Medicine*, Donald Norman, Daniel Goleman).
+Each module contains:
+- **`knowledge.md`**: Sensory nightmare scenario, anticipated blunder analysis, surgical strike formula, multi-turn sparring dialogue matrix, and runtime JSON specification.
