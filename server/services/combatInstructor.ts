@@ -86,20 +86,7 @@ export async function evaluateCombatResponse(input: EvaluationInput): Promise<Ev
     };
   }
 
-  // Check LLM API availability (NVIDIA NIM or OpenAI)
-  const nvidiaKey = process.env.NVIDIA_API_KEY || process.env.NVIDIA_EXTRACTOR_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
-
-  if (nvidiaKey || openaiKey) {
-    try {
-      const endpoint = openaiKey 
-        ? "https://api.openai.com/v1/chat/completions" 
-        : "https://integrate.api.nvidia.com/v1/chat/completions";
-      
-      const apiKey = openaiKey || nvidiaKey;
-      const model = openaiKey ? "gpt-4o-mini" : "meta/llama-3.3-70b-instruct";
-
-      const promptUser = `
+  const promptUser = `
 SCENARIO: ${scenarioTitle}
 CONTEXT: ${scenarioText}
 OPPONENT ATTACK: "${opponentPrompt}"
@@ -117,10 +104,72 @@ Evaluate this response now. Return JSON with this EXACT structure:
   "score": number from 0 to 100,
   "spokenFeedback": "2-3 clinical sentences to speak back to the student",
   "detailedAnalysis": "1-2 sentences breaking down their tactical error or strength",
+  "verbatimCounterStatement": "${expectedCounterStatement}",
   "jadeScore": number from 0 (no JADE) to 100 (heavy explaining),
   "composureScore": number from 0 to 100
 }
 `;
+
+  // 1. Primary Engine: Gemini 3.5 Flash
+  const geminiKey = process.env.GEMINI_API_KEY || "";
+  const geminiModel = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+
+  if (geminiKey) {
+    try {
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: `${INSTRUCTOR_SYSTEM_PROMPT}\n\n${promptUser}` }
+                ]
+              }
+            ],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.2
+            }
+          })
+        }
+      );
+
+      if (geminiRes.ok) {
+        const data = await geminiRes.json();
+        const text = data.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") || "";
+        if (text) {
+          const parsed = JSON.parse(text);
+          return {
+            verdict: parsed.verdict === "PASS" ? "PASS" : "REWORK",
+            score: Number(parsed.score) || (parsed.verdict === "PASS" ? 90 : 35),
+            spokenFeedback: parsed.spokenFeedback || "Response evaluated.",
+            detailedAnalysis: parsed.detailedAnalysis || "",
+            verbatimCounterStatement: parsed.verbatimCounterStatement || expectedCounterStatement,
+            jadeScore: Number(parsed.jadeScore) || (parsed.verdict === "PASS" ? 5 : 85),
+            composureScore: Number(parsed.composureScore) || (parsed.verdict === "PASS" ? 90 : 35),
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("[CombatInstructor] Gemini 3.5 Flash evaluation error, falling back:", err);
+    }
+  }
+
+  // 2. Secondary Engine: NVIDIA NIM or OpenAI
+  const nvidiaKey = process.env.NVIDIA_API_KEY || process.env.NVIDIA_EXTRACTOR_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  if (nvidiaKey || openaiKey) {
+    try {
+      const endpoint = openaiKey 
+        ? "https://api.openai.com/v1/chat/completions" 
+        : "https://integrate.api.nvidia.com/v1/chat/completions";
+      
+      const apiKey = openaiKey || nvidiaKey;
+      const model = openaiKey ? "gpt-4o-mini" : "meta/llama-3.3-70b-instruct";
 
       const response = await fetch(endpoint, {
         method: "POST",

@@ -24,12 +24,12 @@ export interface AnalysisResponse {
 
 export async function transcribeAudioBlob(blob: Blob): Promise<string> {
   try {
-    const formData = new FormData();
-    formData.append("audio", blob, "recording.webm");
-
     const res = await fetch("/api/tutor/transcribe", {
       method: "POST",
-      body: formData,
+      headers: {
+        "Content-Type": blob.type || "audio/webm",
+      },
+      body: blob,
     });
 
     if (res.ok) {

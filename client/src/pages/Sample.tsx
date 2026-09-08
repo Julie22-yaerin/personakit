@@ -21,6 +21,7 @@ import {
 import { AudioRecorder } from "@/lib/audio-recorder";
 import {
   analyzeCombatTranscript,
+  transcribeAudioBlob,
   playTtsVoice,
   AnalysisResponse
 } from "@/lib/tutor-api";
@@ -297,12 +298,19 @@ export default function Sample() {
       try {
         const { blob } = await recorderRef.current.stop();
         recorderRef.current = null;
+        if (!finalTranscript || finalTranscript.length < 5) {
+          const sttTranscript = await transcribeAudioBlob(blob);
+          if (sttTranscript) {
+            finalTranscript = sttTranscript;
+            setLiveTranscript(sttTranscript);
+          }
+        }
       } catch (e) {
         console.warn("[Pressure Chamber] Stop error:", e);
       }
     }
 
-    // Fallback prompt if transcript is empty
+    // Fallback prompt if transcript is still empty
     if (!finalTranscript) {
       finalTranscript = "No audible words detected";
     }

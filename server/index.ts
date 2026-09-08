@@ -3,7 +3,6 @@ import { createServer } from "http";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import { evaluateCombatResponse } from "./services/combatInstructor.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,9 +11,8 @@ const __dirname = path.dirname(__filename);
 const WEBHOOK_URL = "https://yearin22.app.n8n.cloud/webhook/website-signup-welcome";
 const DATA_FILE = path.resolve(process.cwd(), "registrations.json");
 
-const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://lyceum-7s6en6fx.livekit.cloud";
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "APIW3zvg5mvKbCV";
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || "Pgedb2q4sxojDl9i4poPdB5hLsS4CIud2mp8EfIcnC7";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 const FISH_AUDIO_API_KEY = process.env.FISH_AUDIO_API_KEY || "sk-fish-oq1iAA2dgpzujvT1NENOi33tmyAWBXnaOzr4guWFzzU";
 
 interface WebhookPayload {
@@ -267,44 +265,57 @@ async function startServer() {
     }
   });
 
-  // LiveKit Healthcheck and Verification Endpoint
-  app.get("/api/livekit/test", async (_req, res) => {
+  // Gemini 3.5 Flash Healthcheck and Verification Endpoint
+  app.get("/api/gemini/test", async (_req, res) => {
     try {
-      const httpHost = LIVEKIT_URL.replace("wss://", "https://").replace("ws://", "http://");
-      const client = new RoomServiceClient(httpHost, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
-      const rooms = await client.listRooms();
-      return res.status(200).json({
-        success: true,
-        httpCode: 200,
-        livekitUrl: LIVEKIT_URL,
-        roomsCount: rooms.length,
-        message: "LiveKit connection verified successfully",
-      });
+      const pingRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "ping" }] }],
+          }),
+        }
+      );
+
+      if (pingRes.ok) {
+        return res.status(200).json({
+          success: true,
+          httpCode: 200,
+          model: GEMINI_MODEL,
+          liveModel: "gemini-2.5-flash-native-audio-latest",
+          message: "Gemini 3.5 Flash connection verified successfully",
+        });
+      } else {
+        const errText = await pingRes.text();
+        return res.status(pingRes.status).json({
+          success: false,
+          httpCode: pingRes.status,
+          error: errText,
+        });
+      }
     } catch (err: any) {
-      console.error("[LiveKit Error]:", err);
+      console.error("[Gemini Test Error]:", err);
       return res.status(500).json({
         success: false,
-        error: err?.message || "Failed to connect to LiveKit",
+        error: err?.message || "Failed to reach Gemini API",
       });
     }
   });
 
-  // LiveKit Participant Token Endpoint
-  app.get("/api/livekit/token", async (req, res) => {
+  // Gemini Live WebRTC / WebSocket Session Config Endpoint
+  app.get("/api/gemini/live-config", async (_req, res) => {
     try {
-      const room = String(req.query.room || "lyceum-session");
-      const identity = String(req.query.identity || `operator-${Math.floor(1000 + Math.random() * 9000)}`);
-      const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity });
-      at.addGrant({ roomJoin: true, room });
-      const token = await at.toJwt();
       return res.json({
-        token,
-        url: LIVEKIT_URL,
-        room,
-        identity,
+        success: true,
+        model: GEMINI_MODEL,
+        liveModel: "gemini-2.5-flash-native-audio-latest",
+        endpoint: "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent",
+        apiKey: GEMINI_API_KEY,
       });
     } catch (err: any) {
-      console.error("[LiveKit Token Error]:", err);
+      console.error("[Gemini Live Config Error]:", err);
       return res.status(500).json({ error: err?.message });
     }
   });
@@ -320,13 +331,53 @@ async function startServer() {
     }
   });
 
-  // Audio Transcription Route (STT)
-  app.post("/api/tutor/transcribe", express.raw({ type: "*/*", limit: "15mb" }), async (_req, res) => {
+  // Audio Transcription Route (STT powered by Gemini 3.5 Flash)
+  app.post("/api/tutor/transcribe", express.raw({ type: "*/*", limit: "25mb" }), async (req, res) => {
     try {
-      // Endpoint available for audio buffer transcription
+      const buffer = req.body;
+      if (!buffer || (Buffer.isBuffer(buffer) && buffer.length === 0)) {
+        return res.json({ transcript: "" });
+      }
+
+      const rawBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+      const base64Audio = rawBuffer.toString("base64");
+      const contentType = String(req.headers["content-type"] || "audio/webm").split(";")[0].trim();
+
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: contentType || "audio/webm",
+                      data: base64Audio,
+                    },
+                  },
+                  {
+                    text: "Transcribe the spoken words in this audio verbatim. Return ONLY the transcribed words with zero preamble, quotes, or commentary.",
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      if (geminiRes.ok) {
+        const data = await geminiRes.json();
+        const text = data.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join(" ") || "";
+        return res.json({ transcript: text.trim() });
+      }
+
       return res.json({ transcript: "" });
     } catch (err: any) {
-      return res.status(500).json({ error: err?.message });
+      console.warn("[Gemini Transcribe Error]:", err);
+      return res.json({ transcript: "" });
     }
   });
 
