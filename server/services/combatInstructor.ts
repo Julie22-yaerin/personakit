@@ -4,12 +4,21 @@
  */
 
 export interface EvaluationInput {
-  transcript: string;
-  scenarioTitle: string;
-  scenarioText: string;
-  opponentPrompt: string;
-  expectedCounterStatement: string;
-  trapBlunders: string[];
+  transcript?: string;
+  scenarioTitle?: string;
+  scenarioText?: string;
+  opponentPrompt?: string;
+  expectedCounterStatement?: string;
+  goldStandardScript?: string;
+  trapBlunders?: string[];
+  blunderPatterns?: string[];
+  scenarioContext?: {
+    title?: string;
+    blunderPatterns?: string[];
+    goldStandardScript?: string;
+    scenarioText?: string;
+    opponentPrompt?: string;
+  };
   lessonId?: string;
 }
 
@@ -40,9 +49,21 @@ RULES OF ENGAGEMENT:
 `;
 
 export async function evaluateCombatResponse(input: EvaluationInput): Promise<EvaluationResult> {
-  const { transcript, scenarioTitle, scenarioText, opponentPrompt, expectedCounterStatement, trapBlunders } = input;
-
-  const cleanTranscript = (transcript || "").trim();
+  const cleanTranscript = (input?.transcript || "").trim();
+  const scenarioTitle = input?.scenarioTitle || input?.scenarioContext?.title || "Behavioral Combat Scenario";
+  const scenarioText = input?.scenarioText || input?.scenarioContext?.scenarioText || "";
+  const opponentPrompt = input?.opponentPrompt || input?.scenarioContext?.opponentPrompt || "";
+  const expectedCounterStatement = input?.expectedCounterStatement 
+    || input?.goldStandardScript 
+    || input?.scenarioContext?.goldStandardScript 
+    || "No. My work is done and submitting on schedule.";
+  const trapBlunders: string[] = Array.isArray(input?.trapBlunders)
+    ? input.trapBlunders
+    : Array.isArray(input?.blunderPatterns)
+    ? input.blunderPatterns
+    : Array.isArray(input?.scenarioContext?.blunderPatterns)
+    ? input.scenarioContext!.blunderPatterns!
+    : [];
 
   // If silent or blank
   if (!cleanTranscript || cleanTranscript.length < 3) {
