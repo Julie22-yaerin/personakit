@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  ChevronDown,
-  Headphones,
   Mic,
   Moon,
   Sparkles,
@@ -15,9 +13,10 @@ import {
   AlertTriangle,
   RotateCcw,
   Volume2,
-  Square,
   Copy,
-  Check
+  Check,
+  Flame,
+  Swords
 } from "lucide-react";
 import { AudioRecorder } from "@/lib/audio-recorder";
 import {
@@ -27,6 +26,7 @@ import {
 } from "@/lib/tutor-api";
 
 type CombatState = "idle" | "priming" | "recording" | "processing" | "strike";
+type DrillMode = "initial" | "recalibration" | "boss";
 
 interface Scenario {
   id: string;
@@ -34,11 +34,14 @@ interface Scenario {
   shortName: string;
   title: string;
   eyebrow: string;
-  nightmareScenario: string;
+  ambushTriggerLine: string;
   opponentLine: string;
   expectedCounterStatement: string;
   formulaName: string;
   formulaSteps: string[];
+  mechanicalBreakdown: string;
+  bossGauntletLine: string;
+  bossGauntletCounter: string;
   trapBlunders: string[];
 }
 
@@ -49,10 +52,10 @@ const SCENARIOS: Scenario[] = [
     shortName: "01 · Friend Betrayal",
     title: "The Classroom Ambush",
     eyebrow: "MODULE 01 · COUNTER-BETRAYAL (C-S-R)",
-    nightmareScenario:
-      "Imagine walking into the classroom. Your close friend is sitting with a group of popular students. As you approach, they laugh loudly for everyone to hear: 'Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A on the test, or just beg for it?' You feel the heat in your face. The whole group is staring. You have five seconds before you look like an easy target. What do you say right now?",
+    ambushTriggerLine:
+      "Oh god, are you seriously brown-nosing the teacher again? Did you wash their car over the weekend to get that grade, or just beg for it? 5 seconds. Mic is hot. Deliver your counter-statement.",
     opponentLine:
-      "Oh, here comes the teacher's pet. Did you wash the teacher's car to get that A, or just beg for it?",
+      "Oh god, are you seriously brown-nosing the teacher again? Did you wash their car over the weekend to get that A, or just beg for it?",
     expectedCounterStatement:
       "Are you okay? You seem really stressed and fixated on my grades lately. If the coursework is getting too hard for you, just ask and I can tutor you.",
     formulaName: "The C-S-R Neutralization",
@@ -61,9 +64,16 @@ const SCENARIOS: Scenario[] = [
       "Sympathy Trap: Speak with calm, medical concern questioning their stress.",
       "Redefine: Demote status, break eye contact, turn away."
     ],
+    mechanicalBreakdown:
+      "Hold a 2-second neutral silence. Speak with calm, clinical curiosity rather than indignation. Drop vocal pitch on the final syllable and immediately disengage eye contact.",
+    bossGauntletLine:
+      "Wow, getting defensive now? So you admit you're fake. Everyone in class knows it anyway.",
+    bossGauntletCounter:
+      "If you're having trouble passing the class, talk to the teacher. I'm done discussing this with you.",
     trapBlunders: [
-      "The Whiner: 'I didn't beg! I studied hard for that!' (Confirms guilt, status drops to zero)",
-      "The Fake Aggressor: 'Shut up, you're just stupid and jealous!' (Emotional collapse gives them total victory)"
+      "The Submissive Plea: 'I didn't beg! I studied hard for that!' (Status = Dead)",
+      "Emotional Dysregulation: 'Shut up, you're an idiot!' (Frame = Broken)",
+      "Logical Explaining: Listing hours spent studying (Frame = Subordinate)"
     ]
   },
   {
@@ -72,8 +82,8 @@ const SCENARIOS: Scenario[] = [
     shortName: "02 · Boss Defense",
     title: "The Friday 5:30 PM Ambush",
     eyebrow: "MODULE 02 · WORKPLACE BOUNDARIES (E-L-W)",
-    nightmareScenario:
-      "It is 5:30 PM on a Friday. Running on three hours of sleep, you are completely burned out. Your boss drops a heavy folder on your desk: 'I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you to push through and close it.' If you accept, your health collapses. If you say no, you look disloyal. Your boss is staring at you. What do you say right now?",
+    ambushTriggerLine:
+      "Look, I don't care that it's 5:30 on a Friday. I need you to take the lead on the fifty-thousand-dollar Miller account this weekend. We cannot drop this deal, and I'm counting on you to push through and close it. 5 seconds. Mic is hot. Deliver your counter-statement.",
     opponentLine:
       "I need you to take the lead on the Miller account this weekend. It's a fifty-thousand-dollar deal, we cannot drop it. I'm counting on you.",
     expectedCounterStatement:
@@ -84,22 +94,61 @@ const SCENARIOS: Scenario[] = [
       "Limit: Report cognitive state like a battery gauge without apologizing.",
       "Worst-Case Transference: Force management to sign off on the financial risk."
     ],
+    mechanicalBreakdown:
+      "Zero vocal apology or hesitation. Treat 'bandwidth exhaustion' as an unalterable operational constraint, not an emotional complaint. Make the executive sign-off question binary.",
+    bossGauntletLine:
+      "I don't care about your bandwidth. Everyone's tired. If you don't take this deal, I'll find someone who actually cares about their career here.",
+    bossGauntletCounter:
+      "If that's the directive, send an email confirming I am required to work while exhausted and that management absorbs one hundred percent of client churn risk. The moment that's in writing, I will log on.",
     trapBlunders: [
-      "The Emotional Beggar: 'Boss, I'm so tired, I can't do this anymore.' (Labels you a liability)",
-      "The Martyr: 'Okay, I'll do my best.' (Guarantees crash, blame, and repeated exploitation)"
+      "The Submissive Plea: 'Boss, please, I'm so tired, I can't do this.' (Status = Dead)",
+      "The Martyr: 'Okay, I'll do my best.' (Guarantees crash, blame, and exploitation)",
+      "Emotional Dysregulation: 'This company treats people like slaves!' (Frame = Broken)"
+    ]
+  },
+  {
+    id: "ML-HSN-001",
+    code: "03",
+    shortName: "03 · High-Status No",
+    title: "The Study Lounge Ambush",
+    eyebrow: "MODULE 03 · SETTING BOUNDARIES (HIGH-STATUS NO)",
+    ambushTriggerLine:
+      "Hey, look—I’ve got this fraternity formal tonight, and since you’ve already got the formatting down and you’re honestly so much better at this anyway, I need you to finish up my slides and submit the deck for us. 5 seconds. Mic is hot. Deliver your counter-statement.",
+    opponentLine:
+      "Hey, look—I've got this formal tonight, and since you've already got the formatting down, I need you to finish up my slides and submit the deck.",
+    expectedCounterStatement:
+      "Brad, my slides are locked and submitting tonight. If your section isn't ready by midnight, that's on you.",
+    formulaName: "The High-Status No",
+    formulaSteps: [
+      "Zero JADE: No apology, no explanation, no justification.",
+      "Unshakable Frame: Lock boundaries with clear ownership of consequences.",
+      "Downward Inflection: State facts, not requests."
+    ],
+    mechanicalBreakdown:
+      "Flat cadence, zero smile, downward terminal pitch on 'on you'. Do not look away or fidget with papers.",
+    bossGauntletLine:
+      "Come on, don't be like that! If we fail, you fail too. We're a team, don't screw me over right before graduation!",
+    bossGauntletCounter:
+      "The team rubric grades individual contributions. My section is done. What you submit for yours is entirely your decision.",
+    trapBlunders: [
+      "The Whiner: 'That's not fair, Brad, you never do any work!' (Status = Dead)",
+      "The Over-Explainer: 'I have other exams and I'm really tired tonight.' (Invites negotiation)",
+      "Passive-Aggressive Compliance: 'Fine, but this is the last time.' (Frame = Broken)"
     ]
   }
 ];
 
-const RECORDING_LIMIT_MS = 45000; // TASK 1: 45-second limit
+const RECORDING_LIMIT_MS = 45000; // 45-second limit
 
 export default function Sample() {
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [combatState, setCombatState] = useState<CombatState>("idle");
+  const [drillMode, setDrillMode] = useState<DrillMode>("initial");
   const [remainingMs, setRemainingMs] = useState(RECORDING_LIMIT_MS);
   const [liveVolume, setLiveVolume] = useState(0);
   const [liveTranscript, setLiveTranscript] = useState("");
   const [evaluation, setEvaluation] = useState<AnalysisResponse | null>(null);
+  const [bossSuccess, setBossSuccess] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -107,8 +156,6 @@ export default function Sample() {
 
   const recorderRef = useRef<AudioRecorder | null>(null);
   const recognitionRef = useRef<any>(null);
-  const audioPlaybackRef = useRef<(() => void) | null>(null);
-  const autoTransitionTimerRef = useRef<any>(null);
 
   // Sync dark mode
   useEffect(() => {
@@ -133,10 +180,6 @@ export default function Sample() {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
-    if (autoTransitionTimerRef.current) {
-      clearTimeout(autoTransitionTimerRef.current);
-      autoTransitionTimerRef.current = null;
-    }
   };
 
   useEffect(() => {
@@ -145,28 +188,36 @@ export default function Sample() {
     };
   }, [scenarioIndex]);
 
-  // STATE 1: Start Vivid Priming (Nightmare Scenario)
-  const startPriming = () => {
+  // PHASE 1: Start Cold In-Media-Res Ambush
+  const startPriming = (mode: DrillMode = "initial") => {
     abortActiveEngagements();
+    setDrillMode(mode);
     setCombatState("priming");
     setEvaluation(null);
+    setBossSuccess(false);
     setLiveTranscript("");
     setRemainingMs(RECORDING_LIMIT_MS);
 
-    // Speak nightmare scenario aloud via TTS
+    // Determine prompt to voice
+    let spokenScript = scenario.ambushTriggerLine;
+    if (mode === "recalibration") {
+      spokenScript = `Recalibration drill. Ambush re-engaged. ${scenario.opponentLine} 5 seconds. Mic is hot. Deliver the clean protocol now.`;
+    } else if (mode === "boss") {
+      spokenScript = `Hardcore Boss Mode. High pressure incoming. ${scenario.bossGauntletLine} 5 seconds. Mic is hot. Hold your frame now.`;
+    }
+
+    // Speak trigger line aloud via TTS with zero narrator buffer
     playTtsVoice(
-      scenario.nightmareScenario,
+      spokenScript,
+      () => {},
       () => {
-        // Audio started
-      },
-      () => {
-        // On priming audio end, automatically trigger State 2 (Recording)
+        // Automatically start Phase 2: Recording
         startRecordingPhase();
       }
     );
   };
 
-  // STATE 2: Start 45-Second Pressure Chamber Recording
+  // PHASE 2: Start 45-Second Hot Counter (Recording)
   const startRecordingPhase = async () => {
     abortActiveEngagements();
     setCombatState("recording");
@@ -225,7 +276,7 @@ export default function Sample() {
     }
   };
 
-  // STATE 3: Commit Recording & Process (STT -> LLM)
+  // PHASE 3: Commit Recording & Process (Tactical Autopsy)
   const commitRecording = async () => {
     if (combatState !== "recording") return;
 
@@ -256,14 +307,17 @@ export default function Sample() {
       finalTranscript = "No audible words detected";
     }
 
+    const currentOpponent = drillMode === "boss" ? scenario.bossGauntletLine : scenario.opponentLine;
+    const currentTarget = drillMode === "boss" ? scenario.bossGauntletCounter : scenario.expectedCounterStatement;
+
     // Send to Combat Instructor for Clinical Analysis
     try {
       const result = await analyzeCombatTranscript({
         transcript: finalTranscript,
         scenarioTitle: scenario.title,
-        scenarioText: scenario.nightmareScenario,
-        opponentPrompt: scenario.opponentLine,
-        expectedCounterStatement: scenario.expectedCounterStatement,
+        scenarioText: scenario.ambushTriggerLine,
+        opponentPrompt: currentOpponent,
+        expectedCounterStatement: currentTarget,
         trapBlunders: scenario.trapBlunders,
         lessonId: scenario.id,
       });
@@ -271,18 +325,24 @@ export default function Sample() {
       setEvaluation(result);
       setCombatState("strike");
 
-      // STATE 4: Voice response from AI instructor via TTS
-      playTtsVoice(result.spokenFeedback);
+      if (drillMode === "boss" && result.verdict === "PASS") {
+        setBossSuccess(true);
+        playTtsVoice("THREAT NEUTRALIZED. Frame held under pressure. Protocol locked. Session complete.");
+      } else {
+        // Voice response from AI instructor via TTS
+        playTtsVoice(result.spokenFeedback);
+      }
     } catch (err) {
       console.error("[Pressure Chamber] Evaluation failed:", err);
-      // Fallback verdict
       const fallbackResult: AnalysisResponse = {
         verdict: "REWORK",
         score: 50,
         spokenFeedback:
-          "Signal interrupted. Reset your posture, take command of the room, and deliver the exact counter-statement now.",
+          "The Power Leak: Signal dropped under pressure. Here is the weaponized redefinition: " +
+          currentTarget +
+          ". Lock eye contact and execute the protocol.",
         detailedAnalysis: "Connection timeout. Prepare for re-engagement.",
-        verbatimCounterStatement: scenario.expectedCounterStatement,
+        verbatimCounterStatement: currentTarget,
         jadeScore: 50,
         composureScore: 50,
       };
@@ -298,7 +358,9 @@ export default function Sample() {
     abortActiveEngagements();
     setScenarioIndex(idx);
     setCombatState("idle");
+    setDrillMode("initial");
     setEvaluation(null);
+    setBossSuccess(false);
     setLiveTranscript("");
   };
 
@@ -324,7 +386,7 @@ export default function Sample() {
             <span className="card-brand-mark">◦</span>
             <div>
               <strong>The Lyceum</strong>
-              <small>S2S Combat Simulator</small>
+              <small>In-Media-Res Combat Chamber</small>
             </div>
           </a>
         </div>
@@ -373,7 +435,7 @@ export default function Sample() {
       {/* Main Simulator Stage */}
       <main className="card-stage">
         <div className="stage-note">
-          <i></i> SPEECH-TO-SPEECH (S2S) BEHAVIORAL PRESSURE CHAMBER <i></i>
+          <i></i> IN-MEDIA-RES LIVE VOICE COMBAT CHAMBER <i></i>
         </div>
 
         <div className="lesson-card">
@@ -382,28 +444,28 @@ export default function Sample() {
             {/* Status Header Badge */}
             {combatState === "idle" && (
               <div className="simulation-badge">
-                <ShieldAlert size={12} /> STANDBY · READY FOR ENGAGEMENT
+                <ShieldAlert size={12} /> STANDBY · READY FOR COLD AMBUSH
               </div>
             )}
 
             {combatState === "priming" && (
               <div className="simulation-badge state-priming">
                 <span className="pulse-radar-indicator"></span>
-                SIMULATION ACTIVE · NIGHTMARE SCENARIO
+                COLD AMBUSH ACTIVE · ZERO NARRATION
               </div>
             )}
 
             {combatState === "recording" && (
               <div className="simulation-badge state-recording">
                 <span className="pulse-radar-indicator"></span>
-                LIVE MIC ACTIVE · 45S PRESSURE CHAMBER
+                HOT COUNTER · 45S LIVE MIC WINDOW
               </div>
             )}
 
             {combatState === "processing" && (
               <div className="simulation-badge state-processing">
                 <Sparkles size={12} />
-                ANALYZING TACTICS & VOCAL CADENCE...
+                EXECUTING TACTICAL AUTOPSY...
               </div>
             )}
 
@@ -421,8 +483,8 @@ export default function Sample() {
                   <AlertTriangle size={12} />
                 )}
                 {evaluation?.verdict === "PASS"
-                  ? "TACTICAL KILL · BOUNDARY PRESERVED"
-                  : "FATAL BLUNDER · STATUS LOSS DETECTED"}
+                  ? "FRAME HELD · PASS"
+                  : "POWER LEAK DETECTED · REWORK"}
               </div>
             )}
 
@@ -432,15 +494,72 @@ export default function Sample() {
               <h1 className="clean-card-title">{scenario.title}</h1>
             </div>
 
-            {/* STATE 1: IDLE / PRIMING VIEW */}
+            {/* PHASE 1: COLD AMBUSH (IDLE / PRIMING VIEW) */}
             {(combatState === "idle" || combatState === "priming") && (
               <div style={{ width: "100%", maxWidth: "680px", margin: "10px auto 20px" }}>
-                <p className="card-body" style={{ fontSize: "16px", lineHeight: "1.7", marginBottom: "24px" }}>
-                  {scenario.nightmareScenario}
-                </p>
+                
+                {drillMode === "boss" && (
+                  <div className="boss-banner">
+                    <Flame size={14} /> RELENTLESS BOSS MODE ENGAGED · EXTREME RESISTANCE
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    padding: "20px 24px",
+                    background: "rgba(239, 68, 68, 0.06)",
+                    borderLeft: "4px solid #ef4444",
+                    borderRadius: "4px",
+                    textAlign: "left",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <small
+                    style={{
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: "#ef4444",
+                      display: "block",
+                      marginBottom: "6px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Hostile Trigger Line (Direct In-Character Attack):
+                  </small>
+                  <p
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontSize: "19px",
+                      fontStyle: "italic",
+                      lineHeight: "1.5",
+                      color: "var(--navy)",
+                      margin: 0,
+                    }}
+                  >
+                    &ldquo;
+                    {drillMode === "boss"
+                      ? scenario.bossGauntletLine
+                      : scenario.opponentLine}
+                    &rdquo;
+                  </p>
+                  <span
+                    style={{
+                      display: "block",
+                      marginTop: "10px",
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: "10px",
+                      color: "var(--muted)",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    ⏱ 5 seconds. Mic is hot. Deliver your counter-statement.
+                  </span>
+                </div>
 
                 {/* Central Voice Orb */}
-                <div className="hero-voice-stage" style={{ height: "240px" }}>
+                <div className="hero-voice-stage" style={{ height: "220px" }}>
                   <div className="hero-orbit orbit-a"></div>
                   <div className="hero-orbit orbit-b"></div>
                   {combatState === "priming" && (
@@ -451,9 +570,9 @@ export default function Sample() {
                   )}
                   <button
                     className={`hero-voice-bubble ${combatState === "priming" ? "state-speaking" : ""}`}
-                    onClick={combatState === "idle" ? startPriming : startRecordingPhase}
+                    onClick={() => (combatState === "idle" ? startPriming("initial") : startRecordingPhase())}
                     type="button"
-                    title={combatState === "idle" ? "Start Simulation" : "Skip directly to speaking"}
+                    title={combatState === "idle" ? "Trigger Cold Ambush" : "Skip directly to speaking"}
                   >
                     <div className="hero-bubble-shine"></div>
                     {combatState === "priming" ? (
@@ -466,22 +585,21 @@ export default function Sample() {
 
                 <div className="combat-actions">
                   {combatState === "idle" ? (
-                    <button className="btn-commit" onClick={startPriming} type="button">
-                      Engage Simulation <ArrowRight size={14} />
+                    <button className="btn-commit" onClick={() => startPriming("initial")} type="button">
+                      Trigger Cold Ambush <ArrowRight size={14} />
                     </button>
                   ) : (
                     <button className="btn-commit" onClick={startRecordingPhase} type="button">
-                      Deliver Response Now <Mic size={14} />
+                      Open Hot Mic Now <Mic size={14} />
                     </button>
                   )}
                 </div>
               </div>
             )}
 
-            {/* STATE 2: RECORDING (45-SECOND COUNTDOWN PRESSURE CHAMBER) */}
+            {/* PHASE 2: THE HOT COUNTER (45-SECOND LIVE RECORDING) */}
             {combatState === "recording" && (
               <div style={{ width: "100%", maxWidth: "640px" }}>
-                {/* 45-Second Countdown Stage */}
                 <div className="countdown-timer-stage">
                   <svg className="countdown-svg" viewBox="0 0 200 200">
                     <circle className="bg" cx="100" cy="100" r={radius} />
@@ -502,39 +620,45 @@ export default function Sample() {
                   </svg>
                   <div className="countdown-center">
                     <span className="countdown-seconds">{remainingSeconds}s</span>
-                    <span className="countdown-label">Window Remaining</span>
+                    <span className="countdown-label">
+                      {remainingMs < 10000 ? "DEADLINE CLOSING" : "HOT COUNTER WINDOW"}
+                    </span>
                   </div>
                 </div>
 
-                {/* Volume metering bar */}
-                <div className="live-volume-meter">
-                  {[...Array(16)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="live-volume-bar"
-                      style={{
-                        height: `${Math.max(4, (liveVolume / 100) * 16 * (0.5 + Math.random() * 0.5))}px`,
-                        background: remainingMs < 10000 ? "#dc2626" : "var(--beige-2)",
-                      }}
-                    />
-                  ))}
+                {/* Volume Equalizer */}
+                <div className="live-volume-meter" title="Mic Volume">
+                  {[...Array(12)].map((_, i) => {
+                    const threshold = (i + 1) * 8;
+                    const isActive = liveVolume >= threshold;
+                    return (
+                      <span
+                        key={i}
+                        className="live-volume-bar"
+                        style={{
+                          height: isActive ? `${Math.min(16, 4 + (liveVolume / 6))}px` : "4px",
+                          opacity: isActive ? 1 : 0.25,
+                        }}
+                      />
+                    );
+                  })}
                 </div>
 
-                {/* Real-time speech transcript box */}
+                {/* Live Speech Recognition Transcript */}
                 <div className="live-transcript-box is-recording">
                   {liveTranscript ? (
-                    <span>&ldquo;{liveTranscript}&rdquo;</span>
+                    <span>{liveTranscript}</span>
                   ) : (
                     <span className="live-transcript-placeholder">
-                      <Mic size={16} /> Deliver your counter-statement out loud now...
+                      <Mic size={14} /> Speak your counter-statement clearly...
                     </span>
                   )}
                 </div>
 
-                {/* Controls */}
+                {/* Manual Commit & Abort */}
                 <div className="combat-actions">
                   <button className="btn-commit" onClick={commitRecording} type="button">
-                    <Square size={14} /> Commit Counter-Strike
+                    <CheckCircle2 size={14} /> Commit Tactical Strike
                   </button>
                   <button
                     className="btn-secondary"
@@ -547,7 +671,7 @@ export default function Sample() {
               </div>
             )}
 
-            {/* STATE 3: PROCESSING / ANALYSIS */}
+            {/* PHASE 3: THE TACTICAL AUTOPSY */}
             {combatState === "processing" && (
               <div style={{ padding: "40px 20px" }}>
                 <div className="hero-voice-stage" style={{ height: "200px" }}>
@@ -557,17 +681,24 @@ export default function Sample() {
                   </div>
                 </div>
                 <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "24px", marginTop: "20px" }}>
-                  Auditing Tactical Frame...
+                  Conducting Tactical Autopsy...
                 </h3>
-                <p className="card-body" style={{ maxWidth: "480px", margin: "10px auto 0" }}>
-                  Screening verbal output for JADE (Justify, Argue, Defend, Explain), downward inflection, and boundary solidity.
+                <p className="card-body" style={{ maxWidth: "520px", margin: "10px auto 0" }}>
+                  Diagnosing power leakage (surrender, whining, false aggression), measuring conversational leverage, and restructuring response into verbatim protocol.
                 </p>
               </div>
             )}
 
-            {/* STATE 4: THE STRIKE (EVALUATION & VERDICT) */}
+            {/* PHASE 4 & 5: THE TACTICAL AUTOPSY & TWO-STAGE GAUNTLET */}
             {combatState === "strike" && evaluation && (
               <div className="strike-verdict-card">
+                
+                {bossSuccess && (
+                  <div className="boss-banner" style={{ background: "rgba(16, 185, 129, 0.12)", borderColor: "rgba(16, 185, 129, 0.3)", color: "#10b981" }}>
+                    <CheckCircle2 size={14} /> THREAT NEUTRALIZED. Frame held under pressure. Protocol locked. Session complete.
+                  </div>
+                )}
+
                 <div className="verdict-header">
                   <div>
                     <span
@@ -579,7 +710,7 @@ export default function Sample() {
                         textTransform: "uppercase",
                       }}
                     >
-                      Combat Analysis Result
+                      {drillMode === "boss" ? "Gauntlet Boss Mode" : "Tactical Combat Autopsy"}
                     </span>
                     <h2
                       className={`verdict-title ${
@@ -587,8 +718,8 @@ export default function Sample() {
                       }`}
                     >
                       {evaluation.verdict === "PASS"
-                        ? "TACTICAL KILL · PASS"
-                        : "FATAL BLUNDER · REWORK"}
+                        ? "FRAME HELD · PASS"
+                        : "POWER LEAKAGE · REWORK"}
                     </h2>
                   </div>
                   <div className="verdict-scores">
@@ -601,49 +732,73 @@ export default function Sample() {
                   </div>
                 </div>
 
-                {/* Instructor Verbal Feedback */}
-                <div className="diagnosis-text">
-                  <strong>Instructor Assessment:</strong> {evaluation.spokenFeedback}
+                {/* BLOCK 1: THE POWER LEAK */}
+                <div className="autopsy-block autopsy-leak">
+                  <span className="autopsy-label">Block 1 · The Power Leak</span>
+                  <div>{evaluation.spokenFeedback}</div>
                 </div>
 
-                {evaluation.detailedAnalysis && (
-                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 14px", lineHeight: "1.6" }}>
-                    <em>{evaluation.detailedAnalysis}</em>
-                  </p>
-                )}
-
-                {/* Target Verbatim Counter-Statement */}
-                <div className="verbatim-target-box">
+                {/* BLOCK 2: THE WEAPONIZED REDEFINITION */}
+                <div className="autopsy-block autopsy-redefinition">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <small>Verbatim Counter-Statement ({scenario.formulaName})</small>
+                    <span className="autopsy-label">Block 2 · Weaponized Redefinition ({scenario.formulaName})</span>
                     <button
                       onClick={() => copyToClipboard(evaluation.verbatimCounterStatement)}
-                      style={{ background: "transparent", border: 0, color: "var(--beige-2)", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'DM Mono', monospace" }}
+                      style={{
+                        background: "transparent",
+                        border: 0,
+                        color: "#10b981",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "10px",
+                        fontFamily: "'DM Mono', monospace",
+                      }}
                       type="button"
                     >
                       {copied ? <Check size={12} /> : <Copy size={12} />}
                       {copied ? "Copied" : "Copy"}
                     </button>
                   </div>
-                  <p>&ldquo;{evaluation.verbatimCounterStatement}&rdquo;</p>
+                  <p style={{ margin: "6px 0 0", fontStyle: "italic", fontSize: "14.5px", fontFamily: "'Playfair Display', serif" }}>
+                    &ldquo;{evaluation.verbatimCounterStatement}&rdquo;
+                  </p>
                 </div>
 
-                {/* Formula Steps */}
-                <div style={{ marginTop: "16px", borderTop: "1px solid var(--line)", paddingTop: "14px" }}>
-                  <small style={{ fontFamily: "'DM Mono', monospace", fontSize: "8px", letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase" }}>
-                    Execution Formula:
-                  </small>
-                  <ul style={{ margin: "8px 0 0", paddingLeft: "18px", fontSize: "12.5px", color: "var(--muted)", lineHeight: "1.7" }}>
-                    {scenario.formulaSteps.map((step, sIdx) => (
-                      <li key={sIdx}>{step}</li>
-                    ))}
-                  </ul>
+                {/* BLOCK 3: MECHANICAL BREAKDOWN */}
+                <div className="autopsy-block autopsy-breakdown">
+                  <span className="autopsy-label">Block 3 · Mechanical Breakdown</span>
+                  <div>{scenario.mechanicalBreakdown}</div>
                 </div>
 
-                {/* Actions */}
+                {/* PHASE 5: THE TWO-STAGE GAUNTLET */}
+                <div className="gauntlet-panel">
+                  <span className="gauntlet-title">
+                    <Swords size={13} /> Progressive Combat Drills
+                  </span>
+                  <div className="gauntlet-btn-group">
+                    <button
+                      className={`btn-gauntlet ${drillMode === "recalibration" ? "active" : ""}`}
+                      onClick={() => startPriming("recalibration")}
+                      type="button"
+                    >
+                      <RotateCcw size={12} /> Drill 1: Clean Reset (Recalibrate)
+                    </button>
+                    <button
+                      className={`btn-gauntlet ${drillMode === "boss" ? "active" : ""}`}
+                      onClick={() => startPriming("boss")}
+                      type="button"
+                    >
+                      <Flame size={12} /> Drill 2: Relentless Gauntlet (Boss)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Navigation Actions */}
                 <div className="combat-actions" style={{ marginTop: "24px" }}>
-                  <button className="btn-commit" onClick={startRecordingPhase} type="button">
-                    <RotateCcw size={14} /> Re-engage Drill (45s)
+                  <button className="btn-commit" onClick={() => startPriming("initial")} type="button">
+                    <RotateCcw size={14} /> Re-run Ambush
                   </button>
                   <button
                     className="btn-secondary"
@@ -662,8 +817,8 @@ export default function Sample() {
 
       {/* Global Footer */}
       <footer className="card-footer-global">
-        <span>THE LYCEUM · VOICE COMBAT LABORATORY</span>
-        <span>45-SECOND PRESSURE DRILL · V2.1 S2S</span>
+        <span>THE LYCEUM · IN-MEDIA-RES COMBAT CHAMBER</span>
+        <span>5-STATE SEQUENTIAL PIPELINE · 45S HOT MIC</span>
       </footer>
     </div>
   );

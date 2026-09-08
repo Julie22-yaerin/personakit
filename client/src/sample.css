@@ -797,3 +797,121 @@
   color: #f2eee4;
 }
 
+/* 3-Block Tactical Autopsy */
+.autopsy-block {
+  margin: 14px 0;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.autopsy-leak {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+}
+
+.autopsy-redefinition {
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
+}
+
+.autopsy-breakdown {
+  background: rgba(215, 191, 157, 0.12);
+  border-left: 3px solid var(--beige-2);
+}
+
+.autopsy-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.autopsy-leak .autopsy-label { color: #dc2626; }
+.autopsy-redefinition .autopsy-label { color: #10b981; }
+.autopsy-breakdown .autopsy-label { color: var(--beige-2); }
+
+/* Gauntlet Drills Container */
+.gauntlet-panel {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px dashed var(--line);
+}
+
+.dark-card-app .gauntlet-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(215, 191, 157, 0.2);
+}
+
+.gauntlet-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gauntlet-btn-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-gauntlet {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  transition: all 0.2s ease;
+}
+
+.btn-gauntlet:hover {
+  border-color: var(--beige-2);
+  background: rgba(215, 191, 157, 0.1);
+}
+
+.btn-gauntlet.active {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.boss-banner {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: #ef4444;
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+

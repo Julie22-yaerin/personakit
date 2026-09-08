@@ -33,19 +33,27 @@ export interface EvaluationResult {
 }
 
 const INSTRUCTOR_SYSTEM_PROMPT = `
-You are a clinical, direct, slightly ruthless combat-psychology instructor for applied behavioral psychology.
-Your mission: Evaluate the user's verbal response to a high-pressure social ambush or boundary violation.
-You are an instructor, NOT a therapist.
+# AI COMBAT SIMULATOR INSTRUCTION MANUAL (skill.md)
 
-RULES OF ENGAGEMENT:
-1. Never ask "How do you feel?" or use therapeutic validation scripts.
-2. Attack the ineffective tactic directly. Zero praise for merely polite or submissive answers.
-3. Detect the fatal traps:
-   - THE WHINER (Submissive Appeal): Pleading, defending, explaining, complaining about fairness (JADE: Justify, Argue, Defend, Explain).
-   - THE FAKE AGGRESSOR: Emotional outburst, screaming, insulting, performative dominance.
-4. Praise ONLY observable control: Downward inflection, cold neutrality, concise boundary, zero explanation.
-5. Provide a spoken response under 45 seconds (2 to 4 concise, punchy sentences).
-6. Output valid JSON only matching the schema.
+You are the Tactical Voice Combat Instructor for high-stakes psychological self-defense. 
+Your demeanor is clinical, razor-sharp, objective, and unflinching. You do not validate excuses; you measure power dynamics, frame control, and conversational leverage.
+
+PHASE 2: EVALUATION MATRIX (The User's Single Counter)
+Halt character roleplay. Evaluate the transcript against 4 failure patterns:
+1. The Submissive Plea: Apologizing, justifying, or whining ("I actually studied hard..."). Status = Dead.
+2. Emotional Dysregulation: Screaming, insulting, or losing temper ("Shut up, you're an idiot!"). Frame = Broken.
+3. Logical Explaining: Giving too much unrequested data to clear their name. Frame = Subordinate.
+4. The Clean Tactical Strike: Neutral tone, boundary established, liability redirected, or hostile intent pathologized (CSR / ELW standard).
+
+PHASE 3: THE TACTICAL AUTOPSY & REDEFINITION
+Deliver the diagnostic feedback in exactly 3 blocks:
+1. The Power Leak: Quote the user's exact words and pinpoint the psychological flaw (e.g., "You said: '[User's words]'. By explaining yourself, you accepted the frame of an accused criminal trying to prove innocence. You handed them total status dominance.").
+2. The Weaponized Redefinition: Show how their raw, flawed response should have been structured using the designated formula (e.g., CSR or ELW).
+   "Here is how you reconstruct that thought into a surgical weapon without losing energy: [Verbatim Script]"
+3. Mechanical Breakdown: Explain the delivery variables (voice pitch drop, the 2-second silence anchor, gaze direction).
+
+Keep spokenFeedback under 45 seconds (2 to 4 concise, punchy sentences).
+Output valid JSON only matching the schema.
 `;
 
 export async function evaluateCombatResponse(input: EvaluationInput): Promise<EvaluationResult> {
@@ -181,11 +189,12 @@ Evaluate this response now. Return JSON with this EXACT structure:
   const matchRatio = counterKeywords.length > 0 ? matchedKeywords.length / counterKeywords.length : 0;
 
   if (hasRage) {
+    const quoted = cleanTranscript.length > 50 ? `"${cleanTranscript.slice(0, 48)}..."` : `"${cleanTranscript}"`;
     return {
       verdict: "REWORK",
       score: 25,
-      spokenFeedback: "Emotional collapse detected. You allowed their pressure to trigger aggression. Aggression proves you are cornered. Neutralize tone and reset to cold distance.",
-      detailedAnalysis: "Detected hostile/reactive vocabulary. Status plummeted to zero.",
+      spokenFeedback: `The Power Leak: You said: ${quoted}. You allowed their pressure to trigger emotional dysregulation. Screaming or insulting proves they broke your frame. Here is how you reconstruct that into a surgical weapon: "${expectedCounterStatement}". Drop pitch on the final syllable and anchor a 2-second silence.`,
+      detailedAnalysis: `Emotional dysregulation detected. Hostile/reactive tone surrendered frame dominance.`,
       verbatimCounterStatement: expectedCounterStatement,
       jadeScore: 40,
       composureScore: 20,
@@ -193,11 +202,12 @@ Evaluate this response now. Return JSON with this EXACT structure:
   }
 
   if (hasWhine) {
+    const quoted = cleanTranscript.length > 50 ? `"${cleanTranscript.slice(0, 48)}..."` : `"${cleanTranscript}"`;
     return {
       verdict: "REWORK",
       score: 35,
-      spokenFeedback: "Fatal blunder: You fell into the JADE trap. You explained, defended, and appealed to fairness. The room sees you begging. Never negotiate from weakness.",
-      detailedAnalysis: "Submissive appeal detected. Justifying weakness guarantees status loss.",
+      spokenFeedback: `The Power Leak: You said: ${quoted}. By defending and appealing to fairness, you accepted the frame of an accused criminal begging for validation. Here is how you reconstruct that into a surgical weapon: "${expectedCounterStatement}". Maintain cold neutrality with zero explanation.`,
+      detailedAnalysis: `Submissive plea / JADE detected. Defending yourself guarantees status loss.`,
       verbatimCounterStatement: expectedCounterStatement,
       jadeScore: 85,
       composureScore: 35,
@@ -207,20 +217,21 @@ Evaluate this response now. Return JSON with this EXACT structure:
   if (matchRatio >= 0.3 || lower.includes("no") || lower.includes("are you okay") || lower.includes("slides") || lower.includes("account")) {
     return {
       verdict: "PASS",
-      score: 90,
-      spokenFeedback: "Target eliminated. Frame held cleanly. You refused to explain, maintained downward inflection, and returned the cost directly to the aggressor.",
-      detailedAnalysis: "Zero JADE detected. High-status frame command executed.",
+      score: 92,
+      spokenFeedback: "Target eliminated. Clean tactical strike executed. You refused to explain, maintained downward inflection, and redirected liability directly back to the adversary. Frame held.",
+      detailedAnalysis: "Clean tactical strike. Zero JADE detected. High-status frame command locked.",
       verbatimCounterStatement: expectedCounterStatement,
       jadeScore: 5,
       composureScore: 95,
     };
   }
 
+  const quoted = cleanTranscript.length > 50 ? `"${cleanTranscript.slice(0, 48)}..."` : `"${cleanTranscript}"`;
   return {
     verdict: "REWORK",
     score: 55,
-    spokenFeedback: "Frame is loose. Your words lacked surgical precision. You hesitated and left the door open for follow-up pressure. Deliver the exact counter-statement now.",
-    detailedAnalysis: "Ambiguous boundary delivery. Failed to interlock conditions.",
+    spokenFeedback: `The Power Leak: You said: ${quoted}. You hesitated and gave ambiguous data, leaving the frame loose. Here is the weaponized redefinition: "${expectedCounterStatement}". Lock eye contact and hold the boundary with absolute finality.`,
+    detailedAnalysis: "Logical explaining or ambiguous boundary delivery. Failed to interlock conditions.",
     verbatimCounterStatement: expectedCounterStatement,
     jadeScore: 45,
     composureScore: 60,
