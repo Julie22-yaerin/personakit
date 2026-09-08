@@ -1,103 +1,87 @@
-# Landing Page Module Specification (FROZEN v1.0)
+# Landing Page & Registration Form Specification (FROZEN v2.0)
 
-> **Status**: FROZEN / PRODUCTION READY  
-> **Last Updated**: 2026-09-04  
+> **Status**: FROZEN / PRODUCTION LOCKED  
+> **Last Updated**: 2026-09-08  
 > **Repository**: `personakit`  
 > **Branch**: `main`  
-> **Tag**: `landing-v1.0-frozen`
+> **Tags**: `landing-v2.0-frozen`, `landing-registration-frozen`  
+> **Production Domain**: `https://thelyceum.site`  
 
 ---
 
-## 1. Overview & Architecture
+## 1. Overview & Scope of Freeze
 
-The Landing Page module ("The Lyceum") serves as the primary gateway for PersonaKit. It features a responsive layout, an interactive application modal for membership, Firebase email verification, and an automated n8n webhook notification triggered strictly upon successful email verification.
+The **Landing Page** and the **Registration Form (Modal)** on the frontend are now completely **FROZEN**. No further modifications or styling adjustments are permitted on these components without explicit instruction from the user.
 
 ```
-+-----------------------------------------------------------------------------------+
-|                                 Landing Page                                      |
-|  +-----------------------------------------------------------------------------+  |
-|  |               Hero & Value Proposition ("The Lyceum")                       |  |
-|  |       [Apply for Membership] button triggers ApplyModal                     |  |
-|  +-----------------------------------------------------------------------------+  |
-|                                        |                                          |
-|                                        v                                          |
-|  +-----------------------------------------------------------------------------+  |
-|  |                     Application & Email Flow                                |  |
-|  | 1. User submits { name, email } in ApplyModal                               |  |
-|  | 2. sendVerificationEmail(email, name) sends Firebase Auth link             |  |
-|  | 3. Stores pending state in localStorage ("pending_applicant_email/name")      |  |
-|  +-----------------------------------------------------------------------------+  |
-+-----------------------------------------------------------------------------------+
-                                         |
-                       User clicks verification link in inbox
-                                         |
-                                         v
-+-----------------------------------------------------------------------------------+
-|                            Verification & Webhook Flow                            |
-| 1. useEmailVerification hook detects url params (oobCode / apiKey / mode)         |
-| 2. applyActionCode() or signInWithEmailLink() validates token                     |
-| 3. Verification status turns "verified"                                           |
-| 4. triggerSignupWebhook(name, email) dispatched:                                  |
-|    - Endpoint: https://yearin22.app.n8n.cloud/webhook/website-signup-welcome      |
-|    - Server-side proxy: /api/signup-webhook (5s timeout, max 1 retry)             |
-|    - Client fallback: fetch with keepalive: true                                  |
-|    - De-duplication: marked in localStorage ("webhook_sent_<email>")              |
-|    - Non-blocking: failures logged, user experience never interrupted             |
-+-----------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+|                                    LANDING PAGE (FROZEN)                                |
+|                                                                                         |
+|  - Brand & Navigation: The Lyceum ("Protocol-grade social engineering")                 |
+|  - Hero Section: "Master the room. Command the frame."                                  |
+|  - Interactive Curriculum Link: /sample (The Cold Simulation Drills)                    |
+|  - Call to Action: [Unlock Access] / [Deploy Protocol] triggers Application Modal      |
++-----------------------------------------------------------------------------------------+
+                                             |
+                                             v
++-----------------------------------------------------------------------------------------+
+|                              REGISTRATION FORM / MODAL (FROZEN)                         |
+|                                                                                         |
+|  1. Protocol Access Modal:                                                              |
+|     - Name (required string)                                                            |
+|     - Email (required valid email)                                                      |
+|     - Role / Context ("What is your role, operator?")                                   |
+|     - Budget Range ("What would you budget for a 3-month tactical deployment?")         |
+|  2. Submission Handling:                                                                |
+|     - Primary: POST /api/apply (Express server proxy with 1-email/IP/device limits)     |
+|     - Resilient Fallback: Direct POST to n8n webhook if server unreachable              |
+|     - Instant Visual Confirmation: "Threat profile logged. Protocol queued."            |
++-----------------------------------------------------------------------------------------+
+                                             |
+                                             v
++-----------------------------------------------------------------------------------------+
+|                             PIPELINE & RATE LIMITING BACKEND                            |
+|                                                                                         |
+|  - Endpoint: POST /api/apply & POST /api/signup-webhook                                 |
+|  - Target Webhook: https://yearin22.app.n8n.cloud/webhook/website-signup-welcome        |
+|  - Rate Limits: 1 Email = 1 Submission | 1 IP = 1 Submission | 1 Device = 1 Submission |
+|  - Testing Exemption: huongnoiichuche@gmail.com bypasses duplicate checks               |
++-----------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Core Modules & Frozen Files
+## 2. Core Frozen Files
 
-| File | Purpose & Behavior | Status |
+The following files constitute the Landing Page & Registration Form frontend and are **STRICTLY FROZEN**:
+
+| File | Component / Purpose | Freeze Status |
 | :--- | :--- | :---: |
-| `client/src/pages/Home.tsx` | Complete landing page layout ("The Lyceum"), features section, membership modal, state handling. | **FROZEN** |
-| `client/src/hooks/useEmailVerification.ts` | Hook managing email link auth, verification state listeners, and post-verification webhook dispatch. | **FROZEN** |
-| `client/src/lib/webhook.ts` | n8n Webhook integration with server-proxy priority, keepalive fallback, timeout, retry, and deduplication. | **FROZEN** |
-| `client/src/lib/firebase.ts` | Firebase initialization (`pclick-9f190`), Google Analytics, and Auth client. | **FROZEN** |
-| `server/index.ts` | Express server hosting production static build and `/api/signup-webhook` proxy. | **FROZEN** |
-| `vite.config.ts` | Vite configuration with local dev proxy middleware for `/api/signup-webhook`. | **FROZEN** |
-| `package.json` | Dependencies locked (`firebase`, `express`, `lucide-react`, `wouter`, etc.). | **FROZEN** |
+| `client/src/pages/Home.tsx` | Entire Landing Page layout, navigation, hero, social proof, and Registration Modal ("Protocol Access"). | 🔒 **LOCKED & FROZEN** |
+| `client/index.html` | Page title, meta viewport, font links, and favicon for The Lyceum. | 🔒 **LOCKED & FROZEN** |
+| `client/src/lib/webhook.ts` | Client-side webhook helpers and payload schema definitions. | 🔒 **LOCKED & FROZEN** |
+| `server/index.ts` | Backend `/api/apply` & `/api/signup-webhook` dispatch and deduplication logic. | 🔒 **LOCKED & FROZEN** |
 
 ---
 
-## 3. Key Specifications
+## 3. Webhook Integration Details
 
-### 3.1 Firebase Configuration & Authentication
-- **Project ID**: `pclick-9f190`
-- **Auth Domain**: `pclick-9f190.firebaseapp.com`
-- **Link Verification**: Uses Firebase Action URL handler (`/` redirect URL with parameters `apiKey`, `mode=signIn|verifyEmail`, and `oobCode`).
-- **Resend Flow**: User can request a fresh verification link from the UI with automated cooldown.
-
-### 3.2 Webhook Specification
-- **URL**: `https://yearin22.app.n8n.cloud/webhook/website-signup-welcome`
+- **Production Webhook URL**: `https://yearin22.app.n8n.cloud/webhook/website-signup-welcome`
 - **Method**: `POST`
-- **Content-Type**: `application/json`
 - **Payload Schema**:
   ```json
   {
-    "name": "<string, required>",
-    "email": "<string, required>",
-    "interest": "<string, optional>",
-    "context": "<string, optional>",
-    "situation": "<string, optional>",
-    "goal": "<string, optional>",
-    "booking_link": "<string, optional>"
+    "name": "string",
+    "email": "string",
+    "context": "string",
+    "budget": "string (e.g. 'under-500', '500-1000', '1000-2000', '2000-plus')"
   }
   ```
-- **Trigger Rule**: Triggered immediately when visitor submits the application modal ("Apply for access"), and reaffirmed upon Firebase email verification.
-- **Resilience**:
-  - Non-blocking (never interrupts user UI regardless of webhook HTTP response).
-  - 5000ms timeout per attempt.
-  - At most 1 retry on network failures.
-  - Debounced within 5s to avoid duplicate double-clicks while allowing re-tests.
-  - Primary route: Server-side Express `/api/signup-webhook` proxy (shields client from CORS & protects webhook).
-  - Fallback route: Direct client-side fetch with `keepalive: true`.
+- **Response**: `{"message":"Workflow was started"}` (HTTP 200)
 
 ---
 
-## 4. Verification & Testing
-- **Production Build**: Verified with `npm run build` (Vite client bundling + esbuild server bundling complete cleanly in < 5s).
-- **TypeScript Checking**: Clean, no compiler or bundling errors.
-- **Git State**: Clean working tree, tagged `landing-v1.0-frozen`.
+## 4. Unfreeze Policy
+
+Any future work on other parts of the application (such as `/sample` interactive tutor cards, voice engines, audio generation, or new curriculum modules) must NOT touch or modify `client/src/pages/Home.tsx` or the registration flow unless the user explicitly commands:
+`"rã đông landing page"` or `"unfreeze landing page"`.
