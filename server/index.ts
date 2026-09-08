@@ -134,6 +134,18 @@ async function startServer() {
     const email = req.query.email ? String(req.query.email).trim().toLowerCase() : "";
     const isLoopback = clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "unknown";
 
+    const isTestAccount =
+      email === "huongnoiichuche@gmail.com" ||
+      email.endsWith("@example.com") ||
+      email.includes("test");
+
+    if (isTestAccount) {
+      return res.json({
+        alreadySubmitted: false,
+        reason: null,
+      });
+    }
+
     const ipRegistered = !isLoopback && registeredIps.has(clientIp);
     const deviceRegistered = Boolean(deviceId && registeredDevices.has(deviceId));
     const emailRegistered = Boolean(email && registeredEmails.has(email));
@@ -149,7 +161,7 @@ async function startServer() {
 
   // Server-side webhook proxy endpoint with strict rate limits:
   // 1 email = 1 registration, 1 IP = 1 registration, 1 device = 1 registration
-  app.post("/api/signup-webhook", async (req, res) => {
+  app.post(["/api/signup-webhook", "/api/apply"], async (req, res) => {
     try {
       const { name, email, budget, context, device_id, interest, situation, goal, booking_link } = req.body || {};
       if (!email) {
@@ -162,8 +174,13 @@ async function startServer() {
       const cleanDeviceId = String(device_id || req.headers["x-device-id"] || "").trim();
       const isLoopback = clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "unknown";
 
+      const isTestAccount =
+        formattedEmail === "huongnoiichuche@gmail.com" ||
+        formattedEmail.endsWith("@example.com") ||
+        formattedEmail.includes("test");
+
       // 1. Device limit check
-      if (cleanDeviceId && registeredDevices.has(cleanDeviceId)) {
+      if (!isTestAccount && cleanDeviceId && registeredDevices.has(cleanDeviceId)) {
         console.warn(`[Registration Blocked] Device already registered: ${cleanDeviceId} (${formattedEmail})`);
         return res.status(409).json({
           success: false,
@@ -172,7 +189,7 @@ async function startServer() {
       }
 
       // 2. IP limit check (production IPs)
-      if (!isLoopback && registeredIps.has(clientIp)) {
+      if (!isTestAccount && !isLoopback && registeredIps.has(clientIp)) {
         console.warn(`[Registration Blocked] IP already registered: ${clientIp} (${formattedEmail})`);
         return res.status(409).json({
           success: false,
@@ -181,7 +198,7 @@ async function startServer() {
       }
 
       // 3. Email limit check
-      if (registeredEmails.has(formattedEmail)) {
+      if (!isTestAccount && registeredEmails.has(formattedEmail)) {
         console.warn(`[Registration Blocked] Email already registered: ${formattedEmail}`);
         return res.status(409).json({
           success: false,
@@ -206,20 +223,22 @@ async function startServer() {
       const result = await forwardToWebhook(payload);
 
       if (result.success) {
-        // Record registration in memory and on disk
-        registeredEmails.add(formattedEmail);
-        if (!isLoopback) registeredIps.add(clientIp);
-        if (cleanDeviceId) registeredDevices.add(cleanDeviceId);
+        if (!isTestAccount) {
+          // Record registration in memory and on disk only for non-test accounts
+          registeredEmails.add(formattedEmail);
+          if (!isLoopback) registeredIps.add(clientIp);
+          if (cleanDeviceId) registeredDevices.add(cleanDeviceId);
 
-        saveRegistration({
-          email: formattedEmail,
-          ip: clientIp,
-          deviceId: cleanDeviceId || undefined,
-          name: formattedName,
-          createdAt: new Date().toISOString(),
-        });
+          saveRegistration({
+            email: formattedEmail,
+            ip: clientIp,
+            deviceId: cleanDeviceId || undefined,
+            name: formattedName,
+            createdAt: new Date().toISOString(),
+          });
+        }
 
-        console.log(`[Registration Successful] Stored for ${formattedEmail} (IP: ${clientIp}, Device: ${cleanDeviceId || "n/a"})`);
+        console.log(`[Registration Successful] Dispatched for ${formattedEmail} (IP: ${clientIp}, Device: ${cleanDeviceId || "n/a"}, Test: ${isTestAccount})`);
 
         return res.status(200).json({
           success: true,

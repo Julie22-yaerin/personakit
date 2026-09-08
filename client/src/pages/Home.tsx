@@ -405,7 +405,14 @@ export default function Home() {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(payload),
-                    }).catch(() => {});
+                    }).catch(() => {
+                      // Fallback directly to n8n webhook if server endpoint is unreachable
+                      fetch("https://yearin22.app.n8n.cloud/webhook/website-signup-welcome", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                      }).catch(() => {});
+                    });
                     setSubmitted(true);
                   }}
                 >
